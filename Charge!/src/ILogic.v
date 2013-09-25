@@ -86,7 +86,6 @@ Infix "-|-"  := lequiv (at level 85, no associativity).
    conjunction. This makes singleton contexts work. *)
 Class ILogic Frm {ILOps: ILogicOps Frm} := {
   lentailsPre:> PreOrder lentails;
-(*  lequiv_eq : forall P Q, P -|- Q -> P = Q;*)
   ltrueR: forall C, C |-- ltrue;
   lfalseL: forall C, lfalse |-- C;
   lforallL: forall T x (P: T -> Frm) C, P x |-- C -> lforall P |-- C;
