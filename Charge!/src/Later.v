@@ -1,5 +1,5 @@
 Require Import Setoid Morphisms RelationClasses Program.Basics Omega.
-Require Import ILogic ILInsts ILQuantTac.
+Require Import ILogic ILInsts BaseTactics ILQuantTac.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -147,3 +147,10 @@ Local Existing Instance ILPre_ILogic.
 End ILogic_nat.
 
 Global Opaque ILLaterPreOps.
+
+Section LaterEnv.
+	Context {A : Type} `{ILA : ILLater A}.
+	
+	Definition later_env : env A := env_add_unop (env_empty A) 0 illater.
+	
+End LaterEnv.

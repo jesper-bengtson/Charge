@@ -475,7 +475,7 @@ Tactic Notation "lexistsL" simple_intropattern(x1) simple_intropattern(x2) simpl
 
 Lemma test_el {A B : Type} `{H : Embed B A} {HBPO: EmbedOp Prop B} {HPB : Embed Prop B} {HO : EmbedOp Prop A} {HE: Embed Prop A} {HA : ILogic A} {HB : ILogic B} 
     (P Q R : A) (S : B) (T : Prop) (f : nat -> A) (g : nat -> B) (h : nat -> Prop) :
-  (S //\\ Exists y, g y) /\\ (P //\\ (Exists y, f y) \\// R //\\ (T //\\ Exists y, h y) /\\ Exists x, f x) |-- ltrue.
+  (S //\\ Exists y, g y) /\\ (P //\\ (Exists y, f y) //\\ R //\\ (T //\\ Exists y, h y) /\\ Exists x, f x) |-- ltrue.
 Proof.
   lexistsL a b c d.
   lexistsL. apply ltrueR.
@@ -491,24 +491,23 @@ Qed.
 	Definition find_res_eval_forall {A : Type} {ILA : ILogicOps A} (p : find_res A) :=
 		find_res_eval_forall_aux (find_closure p).
  
-	
-Fixpoint pull_forall {A : Type} {ILA : ILogicOps A}
+(* Extracting universal quantifiers of the left of an entailment is currently next to useless.
+   Forall does not propagate over any connective, especially not conjunction unless the type
+   that is being quantified over is inhabitted. Until we fix a Gallina function that checks
+   for wether types are inhabitted or not, this method is not useful. *) 
+ 
+Fixpoint pull_forall_r {A : Type} {ILA : ILogicOps A}
 (t : @deep_op A _) (de_env : env A) (tac_env : env (find_res A)) : option (find_res A) :=
 match t with
-	| t_and t1 t2   => find_res_binop land (pull_forall t1 de_env tac_env) (pull_forall t2 de_env tac_env)
 	| t_forall T f  => Some (@mkf A (Tcons T Tnil) f)
-	| t_and_inj B _ _ _ _ _ _ a b => find_res_binop lembedand (pull_forall a (env_empty B) (env_empty (find_res B)))
-	                         (pull_forall b de_env tac_env)
-	| t_and_prop _ _ a b => find_res_binop lembedand (pull_forall a (env_empty Prop) (env_empty (find_res Prop)))
-	                         (pull_forall b de_env tac_env)
     | t_unop n p => 
     	match ((fst tac_env) [n]) with
-    		| Some f => unop_option f (pull_forall p de_env tac_env)
+    		| Some f => unop_option f (pull_forall_r p de_env tac_env)
     		| None => None
     	end
 	| t_binop n p q =>
 		match ((snd tac_env) [n]) with
-			| Some f => binop_option f (pull_forall p de_env tac_env) (pull_forall q de_env tac_env)
+			| Some f => binop_option f (pull_forall_r p de_env tac_env) (pull_forall_r q de_env tac_env)
 			| None => None
 		end
     | _ => match deep_op_eval de_env t with
@@ -551,29 +550,29 @@ Qed.
                        (de_env2 : env B) (tac_env2 : env (find_res B))
                        (p : @deep_op A _) (q : @deep_op B _) (op : A -> B -> C) 
                        {H : Proper (lentails ==> lentails ==> lentails) op} 
-      (Hp : match deep_op_eval de_env1 p, pull_forall p de_env1 tac_env1 with
+      (Hp : match deep_op_eval de_env1 p, pull_forall_r p de_env1 tac_env1 with
 	    | None, None => True
 	    | Some p, Some q => find_res_eval_forall q |-- p
-	    | _, _ => False
+	    | _, _ => True
 	  end)
-      (Hq : match deep_op_eval de_env2 q, pull_forall q de_env2 tac_env2 with
+      (Hq : match deep_op_eval de_env2 q, pull_forall_r q de_env2 tac_env2 with
 	    | None, None => True
 	    | Some p, Some q => find_res_eval_forall q |-- p
-	    | _, _ => False
+	    | _, _ => True
 	  end) 
         (Hop1 : forall T (f : T -> A) g, Forall x, op (f x) g |-- op (Forall x, f x) g)
         (Hop2 : forall T f (g : T -> B), Forall x, op f (g x) |-- op f (Forall x, g x)) :
 match binop_option op (deep_op_eval de_env1 p) (deep_op_eval de_env2 q), 
-      find_res_binop op (pull_forall p de_env1 tac_env1) (pull_forall q de_env2 tac_env2) with
+      find_res_binop op (pull_forall_r p de_env1 tac_env1) (pull_forall_r q de_env2 tac_env2) with
   | None, None     => True
   | Some p, Some q => find_res_eval_forall q |-- p
-  | _, _           => False
+  | _, _           => True
 end.
 Proof.
 	remember (deep_op_eval de_env1 p) as o1.
 	remember (deep_op_eval de_env2 q) as o2.
-	remember (pull_forall p de_env1 tac_env1) as o3.
-	remember (pull_forall q de_env2 tac_env2) as o4.
+	remember (pull_forall_r p de_env1 tac_env1) as o3.
+	remember (pull_forall_r q de_env2 tac_env2) as o4.
 	destruct o1, o2, o3, o4; simpl in *; try intuition congruence.
 	etransitivity; [|apply H; [apply Hp | apply Hq]].
 	destruct f; destruct f0.
@@ -583,64 +582,87 @@ Qed.
 
   	Lemma env_sound_aux_ar {A : Type} `{ILA : ILogic A}
   	(de_env : env A) (tac_env : env (find_res A))
-    (t : @deep_op A _) :
-    match deep_op_eval de_env t, pull_forall t de_env tac_env with
+    (t : @deep_op A _) (H : env_sound_lr de_env tac_env find_res_eval_forall) :
+    match deep_op_eval de_env t, pull_forall_r t de_env tac_env with
       | None, None     => True
       | Some p, Some q => find_res_eval_forall q |-- p
-      | _, _           => False
+      | _, _           => True
     end.
     Proof.
     	induction t.
     	+ simpl; reflexivity.
     	+ simpl; reflexivity.
     	+ simpl; reflexivity.   
-        + apply binop_sound_ar; [apply IHt1; apply _ | apply IHt2; apply _ | |]. 
-          intros. admit. (*apply landforallDR.*)
-          intros. admit. (*rewrite landC, <- landforallDR. setoid_rewrite landC at 1. reflexivity.*)
         + simpl; remember (deep_op_eval de_env t1) as o1.
 	      remember (deep_op_eval de_env t2) as o2.
 	      destruct o1, o2; simpl; (try intuition congruence); reflexivity.
         + simpl; remember (deep_op_eval de_env t1) as o1.
 	      remember (deep_op_eval de_env t2) as o2.
 	      destruct o1, o2; simpl; (try intuition congruence); reflexivity.
-        + admit.
-        + admit.
+        + simpl; remember (deep_op_eval de_env t1) as o1.
+	      remember (deep_op_eval de_env t2) as o2.
+	      destruct o1, o2; simpl; (try intuition congruence); reflexivity.
+        + simpl.
+          specialize (IHt ILA de_env tac_env H).
+          remember (fst de_env) [n] as o1.
+          remember (fst tac_env) [n] as o2.
+          remember (deep_op_eval de_env t) as o3.
+          remember (pull_forall_r t de_env tac_env) as o4.
+          destruct o1, o2, o3, o4; simpl in *; try intuition congruence.
+          symmetry in Heqo2;
+          destruct H as [H _]; specialize (H f n Heqo2); destruct H as [g [H3 [H4 H5]]];
+          rewrite <- Heqo1 in H3; inversion H3; subst.
+          rewrite H5. apply H4. apply IHt.
+        + simpl. 
+          specialize (IHt1 ILA de_env tac_env H); specialize (IHt2 ILA de_env tac_env H).
+          remember (snd de_env) [n] as o1.
+          remember (snd tac_env) [n] as o2.
+          remember (deep_op_eval de_env t1) as o3.
+          remember (deep_op_eval de_env t2) as o4.
+          remember (pull_forall_r t1 de_env tac_env) as o5.
+          remember (pull_forall_r t2 de_env tac_env) as o6.
+          destruct o1, o2, o3, o4, o5, o6; simpl in *; try intuition congruence.
+          symmetry in Heqo2;
+          destruct H as [_ H]; specialize (H f n Heqo2); destruct H as [g [H3 [H4 H5]]];
+          rewrite <- Heqo1 in H3; inversion H3; subst.
+          rewrite H5. apply H4; [apply IHt1 | apply IHt2].
         + simpl. reflexivity.
         + simpl. reflexivity.
-        + apply binop_sound_ar.
-          apply IHt1. assumption.
-          apply IHt2. assumption. admit. admit.
-(*          intros. unfold lembedand. rewrite <- embedlforall, landforallDR. reflexivity.
-          intros. unfold lembedand. rewrite landC, <- landforallDR. setoid_rewrite landC at 1. reflexivity.*)
         + simpl. remember (deep_op_eval (env_empty B) t1) as o1.
           remember (deep_op_eval de_env t2) as o2.
           destruct o1, o2; simpl; (try intuition congruence); reflexivity.
-        + apply binop_sound_ar.
-          apply IHt1. apply _.
-          apply IHt2. assumption. admit. admit. (*
-          intros. unfold lembedand. rewrite <- embedlforall, landforallDR. reflexivity.
-          intros. unfold lembedand. rewrite landC, <- landforallDR. setoid_rewrite landC at 1. reflexivity.*)
+        + simpl. remember (deep_op_eval (env_empty B) t1) as o1.
+          remember (deep_op_eval de_env t2) as o2.
+          destruct o1, o2; simpl; (try intuition congruence); reflexivity.
+        + simpl. remember (deep_op_eval (env_empty Prop) t1) as o1.
+          remember (deep_op_eval de_env t2) as o2.
+          destruct o1, o2; simpl; (try intuition congruence); reflexivity.
         + simpl. remember (deep_op_eval (env_empty Prop) t1) as o1.
           remember (deep_op_eval de_env t2) as o2.
           destruct o1, o2; simpl; (try intuition congruence); reflexivity.
     Qed.
     
+    Implicit Arguments env_sound_aux_ar [[A] [ILOps] [ILA]].
+    
+    
   	Lemma env_sound_ar {A : Type} `{ILA : ILogic A}
   	 (de_env : env A) (tac_env : env (find_res A))
-    (t : @deep_op A _) (P : A) :
-    match deep_op_eval de_env t, pull_forall t de_env tac_env with
+    (t : @deep_op A _) (H : env_sound_lr de_env tac_env find_res_eval_forall) (P : A) :
+    match deep_op_eval de_env t, pull_forall_r t de_env tac_env with
       | None, None     => True
       | Some p, Some q => P |-- find_res_eval_forall q -> P |-- p
-      | _, _           => False
+      | _, _           => True
     end.
     Proof.
     	pose proof (env_sound_aux_ar de_env tac_env t).
     	remember (deep_op_eval de_env t) as o1.
-    	remember (pull_forall t de_env tac_env) as o2.
+    	remember (pull_forall_r t de_env tac_env) as o2.
     	destruct o1, o2; simpl in *; try intuition congruence.
-    	intros. rewrite <- H; assumption.
+    	intros. rewrite <- H0; assumption.
     Qed. 
-
+    
+    Implicit Arguments env_sound_ar [[A] [ILOps] [ILA]].
+    
 End PullForallRight.
   
 Ltac lforallR_aux :=
@@ -648,7 +670,8 @@ Ltac lforallR_aux :=
     | |- ?P |-- ?Q =>
       let A := type of Q in 
       let t := quote_term Q in
-       apply (env_sound_ar (env_empty A) (env_empty (find_res A)) t P);
+       apply (env_sound_ar (env_empty A) (env_empty (find_res A)) t 
+              (env_sound_lr_empty (env_empty A) find_res_eval_forall) P);
         simpl; cbv [find_res_eval_forall find_res_eval_forall_aux]; simpl
     | |- _ => fail 1 "Goal is not an entailment"
   end.
@@ -672,6 +695,9 @@ Tactic Notation "lforallR" simple_intropattern(x1) simple_intropattern(x2) simpl
 Tactic Notation "lforallR" simple_intropattern(x1) simple_intropattern(x2) simple_intropattern(x3)  simple_intropattern(x4) :=
 	first [simple apply lforallR; intro x1 | lforallR_aux; simple apply lforallR; intro x1]; lforallR x2 x3 x4.
    
+(* This example wont work until we have a means for hanlding type inhabitation. *)  
+ 
+(*
 Lemma test_ar {A B : Type} `{H : Embed B A} {HBPO: EmbedOp Prop B} {HPB : Embed Prop B} {HO : EmbedOp Prop A} {HE: Embed Prop A} {HA : ILogic A} {HB : ILogic B} 
     (P Q R : A) (S : B) (T : Prop) (f : nat -> A) (g : nat -> B) (h : nat -> Prop) :
   lfalse |-- (S //\\ Forall y, g y) /\\ (P //\\ (Forall y, f y) //\\ R //\\ (T //\\ Forall y, h y) /\\ Forall x, f x).
@@ -679,9 +705,38 @@ Proof.
 	lforallR a b c d.
 	apply lfalseL.
 Qed.
+*)
 
 Section PullForallLeft.  
-   
+
+Fixpoint pull_forall_l {A : Type} {ILA : ILogicOps A}
+(t : @deep_op A _) (de_env : env A) (tac_env : env (find_res A)) : option (find_res A) :=
+match t with
+	| t_and t1 t2   => find_res_binop land (pull_forall_l t1 de_env tac_env) (pull_forall_l t2 de_env tac_env)
+	| t_or  t1 t2   => find_res_binop lor (pull_forall_l t1 de_env tac_env) (pull_forall_l t2 de_env tac_env)
+	| t_forall T f  => Some (@mkf A (Tcons T Tnil) f)
+	| t_and_inj B _ _ _ _ _ _ a b => find_res_binop lembedand (pull_forall_l a (env_empty B) (env_empty (find_res B)))
+	                         (pull_forall_l b de_env tac_env)
+	| t_and_prop _ _ a b => find_res_binop lembedand (pull_forall_l a (env_empty Prop) (env_empty (find_res Prop)))
+	                         (pull_forall_l b de_env tac_env)
+    | t_unop n p => 
+    	match ((fst tac_env) [n]) with
+    		| Some f => unop_option f (pull_forall_l p de_env tac_env)
+    		| None => None
+    	end
+	| t_binop n p q =>
+		match ((snd tac_env) [n]) with
+			| Some f => binop_option f (pull_forall_l p de_env tac_env) (pull_forall_l q de_env tac_env)
+			| None => None
+		end
+    | _ => match deep_op_eval de_env t with
+    	     | Some t => Some (@mkf A Tnil t)
+    	     | None   => None
+    	   end
+end.   
+
+
+
 	Lemma find_res_unop_sound_al {Ts : Tlist} {A B : Type} {ILA : ILogicOps A} `{ILB : ILogic B} 
 	        (f : arrows Ts A) (op : A -> B) 
 	        (Hop : forall T (f : T -> A) , op (Forall x, f x) |-- Forall x, op (f x)) :
@@ -715,29 +770,29 @@ Qed.
                     (de_env2 : env B) (tac_env2 : env (find_res B))
                     (p : @deep_op A _) (q : @deep_op B _) (op : A -> B -> C) 
                   {H : Proper (lentails ==> lentails ==> lentails) op} 
-      (Hp : match deep_op_eval de_env1 p, pull_forall p de_env1 tac_env1 with
+      (Hp : match deep_op_eval de_env1 p, pull_forall_l p de_env1 tac_env1 with
 	    | None, None => True
 	    | Some p, Some q => p |-- find_res_eval_forall q
-	    | _, _ => False
+	    | _, _ => True
 	  end)
-      (Hq : match deep_op_eval de_env2 q, pull_forall q de_env2 tac_env2 with
+      (Hq : match deep_op_eval de_env2 q, pull_forall_l q de_env2 tac_env2 with
 	    | None, None => True
 	    | Some p, Some q => p |-- find_res_eval_forall q
-	    | _, _ => False
+	    | _, _ => True
 	  end) 
         (Hop1 : forall T (f : T -> A) g, op (Forall x, f x) g |-- Forall x, (op (f x) g))
         (Hop2 : forall T f (g : T -> B), op f (Forall x, g x) |-- Forall x, (op f (g x))) :
 match binop_option op (deep_op_eval de_env1 p) (deep_op_eval de_env2 q), 
-      find_res_binop op (pull_forall p de_env1 tac_env1) (pull_forall q de_env2 tac_env2) with
+      find_res_binop op (pull_forall_l p de_env1 tac_env1) (pull_forall_l q de_env2 tac_env2) with
   | None, None     => True
   | Some p, Some q => p |-- find_res_eval_forall q
-  | _, _           => False
+  | _, _           => True
 end.
 Proof.
 	remember (deep_op_eval de_env1 p) as o1.
 	remember (deep_op_eval de_env2 q) as o2.
-	remember (pull_forall p de_env1 tac_env1) as o3.
-	remember (pull_forall q de_env2 tac_env2) as o4.
+	remember (pull_forall_l p de_env1 tac_env1) as o3.
+	remember (pull_forall_l q de_env2 tac_env2) as o4.
 	destruct o1, o2, o3, o4; simpl in *; try intuition congruence.
 	etransitivity.
 	apply H.
@@ -747,75 +802,101 @@ Proof.
 	apply find_res_binop_sound_al; assumption.
 Qed.
 
-
   	Lemma env_sound_aux_al {A : Type} `{ILA : ILogic A}
   		 (de_env : env A) (tac_env : env (find_res A))
-    (t : @deep_op A _) :
-    match deep_op_eval de_env t, pull_forall t de_env tac_env with
+    (t : @deep_op A _) (H : env_sound_rl de_env tac_env find_res_eval_forall) :
+    match deep_op_eval de_env t, pull_forall_l t de_env tac_env with
       | None, None     => True
       | Some p, Some q => p |-- find_res_eval_forall q
-      | _, _           => False
+      | _, _           => True
     end.
     Proof.
     	induction t.
     	+ simpl; reflexivity.
     	+ simpl; reflexivity.
     	+ simpl; reflexivity.   
-        + apply binop_sound_al; [apply IHt1; apply _ | apply IHt2; apply _ | |]. 
+        + apply binop_sound_al; [apply IHt1; assumption | apply IHt2; assumption | |]. 
           intros. apply landforallDL.
           intros. rewrite landC, landforallDL. setoid_rewrite landC at 1. reflexivity.
+        + apply binop_sound_al; [apply IHt1; assumption | apply IHt2; assumption | |]. 
+          intros. apply lorforallDL.
+          intros. rewrite lorC, lorforallDL. setoid_rewrite lorC at 1. reflexivity.
         + simpl; remember (deep_op_eval de_env t1) as o1.
 	      remember (deep_op_eval de_env t2) as o2.
 	      destruct o1, o2; simpl; (try intuition congruence); reflexivity.
-        + simpl; remember (deep_op_eval de_env t1) as o1.
-	      remember (deep_op_eval de_env t2) as o2.
-	      destruct o1, o2; simpl; (try intuition congruence); reflexivity.
-        + admit.
-        + admit.
+        + simpl.
+          specialize (IHt ILA de_env tac_env H).
+          remember (fst de_env) [n] as o1.
+          remember (fst tac_env) [n] as o2.
+          remember (deep_op_eval de_env t) as o3.
+          remember (pull_forall_l t de_env tac_env) as o4.
+          destruct o1, o2, o3, o4; simpl in *; try intuition congruence.
+          symmetry in Heqo2;
+          destruct H as [H _]; specialize (H f n Heqo2); destruct H as [g [H3 [H4 H5]]];
+          rewrite <- Heqo1 in H3; inversion H3; subst.
+          rewrite <- H5. apply H4. apply IHt.
+        + simpl. 
+          specialize (IHt1 ILA de_env tac_env H); specialize (IHt2 ILA de_env tac_env H).
+          remember (snd de_env) [n] as o1.
+          remember (snd tac_env) [n] as o2.
+          remember (deep_op_eval de_env t1) as o3.
+          remember (deep_op_eval de_env t2) as o4.
+          remember (pull_forall_l t1 de_env tac_env) as o5.
+          remember (pull_forall_l t2 de_env tac_env) as o6.
+          destruct o1, o2, o3, o4, o5, o6; simpl in *; try intuition congruence.
+          symmetry in Heqo2;
+          destruct H as [_ H]; specialize (H f n Heqo2); destruct H as [g [H3 [H4 H5]]];
+          rewrite <- Heqo1 in H3; inversion H3; subst.
+          rewrite <- H5. apply H4; [apply IHt1 | apply IHt2].
         + simpl. reflexivity.
         + simpl. reflexivity.
         + apply binop_sound_al.
-          apply IHt1. assumption.
-          apply IHt2. assumption.
+          apply IHt1. assumption. apply env_sound_rl_empty.
+          apply IHt2; assumption.
           intros. unfold lembedand. rewrite <- embedlforall, landforallDL. reflexivity.
           intros. unfold lembedand. rewrite landC, landforallDL. setoid_rewrite landC at 1. reflexivity.
         + simpl. remember (deep_op_eval (env_empty B) t1) as o1.
           remember (deep_op_eval de_env t2) as o2.
           destruct o1, o2; simpl; (try intuition congruence); reflexivity.
         + apply binop_sound_al.
-          apply IHt1. apply _.
-          apply IHt2. assumption.
+          apply IHt1. apply _. apply env_sound_rl_empty.
+          apply IHt2; assumption.
           intros. unfold lembedand. rewrite <- embedlforall, landforallDL. reflexivity.
           intros. unfold lembedand. rewrite landC, landforallDL. setoid_rewrite landC at 1. reflexivity.
         + simpl. remember (deep_op_eval (env_empty Prop) t1) as o1.
           remember (deep_op_eval de_env t2) as o2.
           destruct o1, o2; simpl; (try intuition congruence); reflexivity.
     Qed.
+
+    Implicit Arguments env_sound_aux_al [[A] [ILOps] [ILA]].
     
   	Lemma env_sound_al {A : Type} `{ILA : ILogic A}
   	(de_env : env A) (tac_env : env (find_res A))
-    (t : @deep_op A _) (P : A) :
-    match deep_op_eval de_env t, pull_forall t de_env tac_env with
+    (t : @deep_op A _) (H : env_sound_rl de_env tac_env find_res_eval_forall) (P : A) :
+    match deep_op_eval de_env t, pull_forall_l t de_env tac_env with
       | None, None     => True
       | Some p, Some q => find_res_eval_forall q |-- P -> p |-- P
-      | _, _           => False
+      | _, _           => True
     end.
     Proof.
     	pose proof (env_sound_aux_al de_env tac_env t).
     	remember (deep_op_eval de_env t) as o1.
-    	remember (pull_forall t de_env tac_env) as o2.
+    	remember (pull_forall_l t de_env tac_env) as o2.
     	destruct o1, o2; simpl in *; try intuition congruence.
-    	intros. rewrite H; assumption.
+    	intros. rewrite H0; assumption.
     Qed. 
-
+    
 End PullForallLeft.
+
+Implicit Arguments env_sound_al [[A] [ILOps] [ILA]].
 
 Ltac lforallL_aux :=
   match goal with
     | |- ?P |-- ?Q =>
       let A := type of P in 
       let t := quote_term P in
-       apply (env_sound_al (env_empty A) (env_empty (find_res A)) t Q);
+       apply (env_sound_al (env_empty A) (env_empty (find_res A)) t 
+              (env_sound_rl_empty (env_empty A) find_res_eval_forall) Q);
         simpl; cbv [find_res_eval_forall find_res_eval_forall_aux]; simpl
     | |- _ => fail 1 "Goal is not an entailment"
   end.

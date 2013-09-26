@@ -163,7 +163,13 @@ Definition env (A : Type) := ((env_unops A) * (env_binops A))%type.
 
 Definition env_empty (A : Type) : env A := 
 	(@empty nat _ _ (A -> A), @empty nat _ _ (A -> A -> A)).
-
+	
+Definition env_add_unop {A : Type} (e : env A) (n : nat) (f : A -> A) : env A := 
+	((fst e) [n <- f], snd e).
+	
+Definition env_add_binop {A : Type} (e : env A) (n : nat) (f : A -> A -> A) : env A := 
+	(fst e, (snd e) [n <- f]).
+	
 Fixpoint deep_op_eval (A : Type) {ILA : ILogicOps A} (env : env A) (e : deep_op) : option A := 
   match e with
     | t_atom p => Some p
@@ -247,7 +253,62 @@ Lemma env_sound_lr_empty {A B : Type} {ILA : ILogicOps A} (de_env : env A) (tac_
 Proof.
 	split; intros n f H; simpl in H; rewrite empty_o in H; inversion H.
 Qed.		
+
+Lemma env_sound_lr_add_unop_tac {A B : Type} {ILA : ILogicOps A} (e1 : env A) (e2 : env B) (n : nat) (eval : B -> A) (f : B -> B) 
+	(H : env_sound_lr e1 e2 eval) (Hg : exists g : A -> A, (fst e1) [n] = Some g /\ (forall a, eval (f a) |-- g (eval a)) /\
+	Proper (lentails ==> lentails) g) : env_sound_lr e1 (env_add_unop e2 n f) eval.
+Proof.
+	destruct Hg as [g [Hn [Heval Hprop]]].
+	split; [|apply H].
+	intros h m Hm; unfold env_add_unop in Hm; simpl in Hm.
+	rewrite add_o in Hm; destruct (eq_dec n m).
+	+ inversion Hm; subst.
+	  exists g. intuition. rewrite <- H0. assumption.
+	+ apply H. apply Hm.
+Qed.
+
+Lemma env_sound_lr_add_unop {A B : Type} {ILA : ILogicOps A} (e1 : env A) (e2 : env B) (n : nat) (eval : B -> A) (f : A -> A) 
+	    				    (H : env_sound_lr e1 e2 eval) (Hn : (fst e2) [n] = None) :
+env_sound_lr (env_add_unop e1 n f) e2 eval. 
+Proof.
+	split; [|apply H].
+	intros g m Hm.
+	destruct (eq_dec n m).
+	+ rewrite H0 in Hn. rewrite Hn in Hm. inversion Hm.
+	+ destruct H as [H _]. specialize (H g m Hm).
+	  destruct H as [h [H1 [H2 H3]]].
+	  exists h; intuition.
+	  unfold env_add_unop. simpl. rewrite add_neq_o; assumption.
+Qed.
 		
+Lemma env_sound_lr_add_binop_tac {A B : Type} {ILA : ILogicOps A} (e1 : env A) (e2 : env B) (n : nat) (eval : B -> A) (f : B -> B -> B) 
+	(H : env_sound_lr e1 e2 eval) (Hg : exists g : A -> A -> A, (snd e1) [n] = Some g /\ (forall a b, eval (f a b) |-- g (eval a) (eval b)) /\
+	Proper (lentails ==> lentails ==> lentails) g) : env_sound_lr e1 (env_add_binop e2 n f) eval.
+Proof.
+	destruct Hg as [g [Hn [Heval Hprop]]].
+	split; [apply H|].
+	intros h m Hm; unfold env_add_unop in Hm; simpl in Hm.
+	rewrite add_o in Hm; destruct (eq_dec n m).
+	+ inversion Hm; subst.
+	  exists g. intuition. rewrite <- H0. assumption.
+	+ apply H. apply Hm.
+Qed.
+
+Lemma env_sound_lr_add_binop {A B : Type} {ILA : ILogicOps A} (e1 : env A) (e2 : env B) (n : nat) (eval : B -> A) (f : A -> A -> A) 
+	    				    (H : env_sound_lr e1 e2 eval) (Hn : (snd e2) [n] = None) :
+env_sound_lr (env_add_binop e1 n f) e2 eval. 
+Proof.
+	split; [apply H|].
+	intros g m Hm.
+	destruct (eq_dec n m).
+	+ rewrite H0 in Hn. rewrite Hn in Hm. inversion Hm.
+	+ destruct H as [_ H]. specialize (H g m Hm).
+	  destruct H as [h [H1 [H2 H3]]].
+	  exists h; intuition.
+	  unfold env_add_unop. simpl. rewrite add_neq_o; assumption.
+Qed.
+		
+
 		
 Definition unop_sound_rl (A B : Type) {ILA : ILogicOps A} (de_env : env A) (tac_env : env B) 
        (tac_eval : B -> A) := forall f n, (fst tac_env) [n] = Some f ->
@@ -270,3 +331,56 @@ Proof.
 	split; intros n f H; simpl in H; rewrite empty_o in H; inversion H.
 Qed.		
 	
+Lemma env_sound_rl_add_unop_tac {A B : Type} {ILA : ILogicOps A} (e1 : env A) (e2 : env B) (n : nat) (eval : B -> A) (f : B -> B) 
+	(H : env_sound_rl e1 e2 eval) (Hg : exists g : A -> A, (fst e1) [n] = Some g /\ (forall a,  g (eval a) |-- eval (f a)) /\
+	Proper (lentails ==> lentails) g) : env_sound_rl e1 (env_add_unop e2 n f) eval.
+Proof.
+	destruct Hg as [g [Hn [Heval Hprop]]].
+	split; [|apply H].
+	intros h m Hm; unfold env_add_unop in Hm; simpl in Hm.
+	rewrite add_o in Hm; destruct (eq_dec n m).
+	+ inversion Hm; subst.
+	  exists g. intuition. rewrite <- H0. assumption.
+	+ apply H. apply Hm.
+Qed.
+
+Lemma env_sound_rl_add_unop {A B : Type} {ILA : ILogicOps A} (e1 : env A) (e2 : env B) (n : nat) (eval : B -> A) (f : A -> A) 
+	    				    (H : env_sound_rl e1 e2 eval) (Hn : (fst e2) [n] = None) :
+env_sound_rl (env_add_unop e1 n f) e2 eval. 
+Proof.
+	split; [|apply H].
+	intros g m Hm.
+	destruct (eq_dec n m).
+	+ rewrite H0 in Hn. rewrite Hn in Hm. inversion Hm.
+	+ destruct H as [H _]. specialize (H g m Hm).
+	  destruct H as [h [H1 [H2 H3]]].
+	  exists h; intuition.
+	  unfold env_add_unop. simpl. rewrite add_neq_o; assumption.
+Qed.
+		
+Lemma env_sound_rl_add_binop_tac {A B : Type} {ILA : ILogicOps A} (e1 : env A) (e2 : env B) (n : nat) (eval : B -> A) (f : B -> B -> B) 
+	(H : env_sound_rl e1 e2 eval) (Hg : exists g : A -> A -> A, (snd e1) [n] = Some g /\ (forall a b, g (eval a) (eval b) |-- eval (f a b)) /\
+	Proper (lentails ==> lentails ==> lentails) g) : env_sound_rl e1 (env_add_binop e2 n f) eval.
+Proof.
+	destruct Hg as [g [Hn [Heval Hprop]]].
+	split; [apply H|].
+	intros h m Hm; unfold env_add_unop in Hm; simpl in Hm.
+	rewrite add_o in Hm; destruct (eq_dec n m).
+	+ inversion Hm; subst.
+	  exists g. intuition. rewrite <- H0. assumption.
+	+ apply H. apply Hm.
+Qed.
+
+Lemma env_sound_rl_add_binop {A B : Type} {ILA : ILogicOps A} (e1 : env A) (e2 : env B) (n : nat) (eval : B -> A) (f : A -> A -> A) 
+	    				    (H : env_sound_rl e1 e2 eval) (Hn : (snd e2) [n] = None) :
+env_sound_rl (env_add_binop e1 n f) e2 eval. 
+Proof.
+	split; [apply H|].
+	intros g m Hm.
+	destruct (eq_dec n m).
+	+ rewrite H0 in Hn. rewrite Hn in Hm. inversion Hm.
+	+ destruct H as [_ H]. specialize (H g m Hm).
+	  destruct H as [h [H1 [H2 H3]]].
+	  exists h; intuition.
+	  unfold env_add_unop. simpl. rewrite add_neq_o; assumption.
+Qed.
