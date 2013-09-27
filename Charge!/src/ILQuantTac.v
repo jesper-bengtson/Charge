@@ -491,7 +491,7 @@ Qed.
 	Definition find_res_eval_forall {A : Type} {ILA : ILogicOps A} (p : find_res A) :=
 		find_res_eval_forall_aux (find_closure p).
  
-(* Extracting universal quantifiers of the left of an entailment is currently next to useless.
+(* Extracting universal quantifiers of the right of an entailment is currently next to useless.
    Forall does not propagate over any connective, especially not conjunction unless the type
    that is being quantified over is inhabitted. Until we fix a Gallina function that checks
    for wether types are inhabitted or not, this method is not useful. *) 

@@ -194,42 +194,44 @@ Fixpoint deep_op_eval (A : Type) {ILA : ILogicOps A} (env : env A) (e : deep_op)
     				   end
   end.
 
-Ltac quote_term P :=
+Ltac quote_term_aux f P :=
   match P with
     | ltrue => constr:(t_true)
     | lfalse => constr:(t_false)
     | ?P1 //\\ ?P2 =>
-      let t1 := quote_term P1 in
-      let t2 := quote_term P2 in
+      let t1 := f P1 in
+      let t2 := f P2 in
       constr:(t_and t1 t2)
     | ?P1 \\// ?P2 =>
-      let t1 := quote_term P1 in
-      let t2 := quote_term P2 in
+      let t1 := f P1 in
+      let t2 := f P2 in
       constr:(t_or t1 t2)
     | ?P1 -->> ?P2 => 
-      let t1 := quote_term P1 in
-      let t2 := quote_term P2 in
+      let t1 := f P1 in
+      let t2 := f P2 in
       constr:(t_impl t1 t2)
     | lexists ?f => constr:(t_exists f)
     | lforall ?f => constr:(t_forall f)
     | ?P1 /\\ ?P2 => 
-      let t1 := quote_term P1 in
-      let t2 := quote_term P2 in
+      let t1 := f P1 in
+      let t2 := f P2 in
       constr:(t_and_prop _ t1 t2)
     | ?P1 ->> ?P2 => 
-      let t1 := quote_term P1 in
-      let t2 := quote_term P2 in
+      let t1 := f P1 in
+      let t2 := f P2 in
       constr:(t_impl_prop _ t1 t2)
     | ?P1 /\\ ?P2 => 
-      let t1 := quote_term P1 in
-      let t2 := quote_term P2 in
+      let t1 := f P1 in
+      let t2 := f P2 in
       constr:(t_and_inj _ _ _ t1 t2)
     | ?P1 ->> ?P2 => 
-      let t1 := quote_term P1 in
-      let t2 := quote_term P2 in
+      let t1 := f P1 in
+      let t2 := f P2 in
       constr:(t_impl_inj _ _ _ t1 t2)
     | _ => constr:(t_atom P)
   end. 
+  
+  Ltac quote_term P := quote_term_aux quote_term P.
 
 
 Definition unop_sound_lr (A B : Type) {ILA : ILogicOps A} (de_env : env A) (tac_env : env B) 
