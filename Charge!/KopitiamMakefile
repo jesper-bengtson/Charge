@@ -24,25 +24,27 @@ OBJECTS = \
 	bin/Logics/SepAlg.vo \
 	bin/Equiv.vo \
 	bin/Tactics/LaterBaseTactics.vo \
+	bin/Stack/Stack.vo \
 	bin/Logics/ILInsts.vo
 
 all: $(OBJECTS)
 clean:
 	rm -f $(OBJECTS)
 
-bin/Tactics/BIBaseTactics.vo: bin/Logics/BILogic.vo bin/Tactics/BaseTactics.vo src/Tactics/BIBaseTactics.v
+bin/Logics/IBILogic.vo: bin/Logics/BILInsts.vo src/Logics/IBILogic.v bin/Logics/BILogic.vo bin/Tactics/ILQuantTac.vo bin/Logics/ILogic.vo bin/Logics/SepAlg.vo bin/Logics/ILInsts.vo
+bin/Logics/ILEmbed.vo: src/Logics/ILEmbed.v bin/Logics/ILogic.vo
+bin/Logics/Later.vo: bin/Tactics/ILQuantTac.vo bin/Logics/ILInsts.vo src/Logics/Later.v bin/Logics/ILogic.vo
+bin/Equiv.vo: src/Equiv.v
+bin/Tactics/LaterQuantTac.vo: bin/Logics/Later.vo bin/Logics/ILEmbed.vo bin/Tactics/ILQuantTac.vo src/Tactics/LaterQuantTac.v bin/Tactics/BaseTactics.vo bin/Logics/ILogic.vo bin/Tactics/LaterBaseTactics.vo
+bin/Stack/Stack.vo: src/Stack/Stack.v
+bin/Tactics/BIQuantTac.vo: bin/Logics/ILEmbed.vo bin/Tactics/BIBaseTactics.vo src/Tactics/BIQuantTac.v bin/Logics/BILogic.vo bin/Tactics/ILQuantTac.vo bin/Tactics/BaseTactics.vo bin/Logics/ILogic.vo
+bin/Logics/ILogic.vo: src/Logics/ILogic.v
+bin/Tactics/ILQuantTac.vo: src/Tactics/ILQuantTac.v bin/Tactics/BaseTactics.vo bin/Logics/ILEmbed.vo bin/Logics/ILogic.vo
+bin/Logics/BILogic.vo: bin/Tactics/ILQuantTac.vo src/Logics/BILogic.v bin/Logics/ILogic.vo
 bin/Logics/ILInsts.vo: bin/Tactics/ILQuantTac.vo src/Logics/ILInsts.v bin/Logics/ILEmbed.vo bin/Logics/ILogic.vo
 bin/Logics/BILInsts.vo: bin/Logics/BILogic.vo bin/Tactics/ILQuantTac.vo bin/Logics/ILogic.vo bin/Logics/SepAlg.vo bin/Equiv.vo bin/Logics/ILInsts.vo src/Logics/BILInsts.v
-bin/Tactics/LaterQuantTac.vo: bin/Logics/Later.vo bin/Logics/ILEmbed.vo bin/Tactics/ILQuantTac.vo src/Tactics/LaterQuantTac.v bin/Tactics/BaseTactics.vo bin/Logics/ILogic.vo bin/Tactics/LaterBaseTactics.vo
-bin/Logics/ILEmbed.vo: src/Logics/ILEmbed.v bin/Logics/ILogic.vo
-bin/Logics/BILogic.vo: bin/Tactics/ILQuantTac.vo src/Logics/BILogic.v bin/Logics/ILogic.vo
-bin/Equiv.vo: src/Equiv.v
-bin/Tactics/ILQuantTac.vo: src/Tactics/ILQuantTac.v bin/Tactics/BaseTactics.vo bin/Logics/ILEmbed.vo bin/Logics/ILogic.vo
-bin/Tactics/ILEmbedTac.vo: bin/Tactics/BaseTactics.vo bin/Logics/ILEmbed.vo bin/Logics/ILogic.vo src/Tactics/ILEmbedTac.v
-bin/Logics/Later.vo: bin/Tactics/ILQuantTac.vo bin/Logics/ILInsts.vo src/Logics/Later.v bin/Logics/ILogic.vo
-bin/Logics/IBILogic.vo: bin/Logics/BILInsts.vo src/Logics/IBILogic.v bin/Logics/BILogic.vo bin/Tactics/ILQuantTac.vo bin/Logics/ILogic.vo bin/Logics/SepAlg.vo bin/Logics/ILInsts.vo
-bin/Tactics/BIQuantTac.vo: bin/Logics/ILEmbed.vo bin/Tactics/BIBaseTactics.vo src/Tactics/BIQuantTac.v bin/Logics/BILogic.vo bin/Tactics/ILQuantTac.vo bin/Tactics/BaseTactics.vo bin/Logics/ILogic.vo
-bin/Logics/SepAlg.vo: bin/Equiv.vo src/Logics/SepAlg.v
-bin/Tactics/LaterBaseTactics.vo: bin/Logics/Later.vo src/Tactics/LaterBaseTactics.v bin/Tactics/BaseTactics.vo
-bin/Logics/ILogic.vo: src/Logics/ILogic.v
 bin/Tactics/BaseTactics.vo: bin/Logics/ILEmbed.vo bin/Logics/ILogic.vo src/Tactics/BaseTactics.v
+bin/Tactics/LaterBaseTactics.vo: bin/Logics/Later.vo src/Tactics/LaterBaseTactics.v bin/Tactics/BaseTactics.vo
+bin/Tactics/BIBaseTactics.vo: bin/Logics/BILogic.vo bin/Tactics/BaseTactics.vo src/Tactics/BIBaseTactics.v
+bin/Tactics/ILEmbedTac.vo: bin/Tactics/BaseTactics.vo bin/Logics/ILEmbed.vo bin/Logics/ILogic.vo src/Tactics/ILEmbedTac.v
+bin/Logics/SepAlg.vo: bin/Equiv.vo src/Logics/SepAlg.v
