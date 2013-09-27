@@ -4,7 +4,7 @@ Require Import BaseTactics ILogic ILEmbed.
 Set Implicit Arguments.
 Unset Strict Implicit.
 Set Maximal Implicit Insertion.
- 
+  
   Record find_res (A : Type) := mkf {
     find_types : Tlist;
     find_closure : arrows find_types A
@@ -870,7 +870,7 @@ Qed.
 
     Implicit Arguments env_sound_aux_al [[A] [ILOps] [ILA]].
     
-  	Lemma env_sound_al {A : Type} `{ILA : ILogic A}
+  	Lemma env_sound_al' {A : Type} `{ILA : ILogic A}
   	(de_env : env A) (tac_env : env (find_res A))
     (t : @deep_op A _) (H : env_sound_rl de_env tac_env find_res_eval_forall) (P : A) :
     match deep_op_eval de_env t, pull_forall_l t de_env tac_env with
@@ -885,7 +885,18 @@ Qed.
     	destruct o1, o2; simpl in *; try intuition congruence.
     	intros. rewrite H0; assumption.
     Qed. 
-    
+
+  	Lemma env_sound_al {A : Type} `{ILA : ILogic A}
+  	(de_env : env A) (tac_env : env (find_res A))
+    (t : @deep_op A _) (H : env_sound_rl de_env tac_env find_res_eval_forall) (P : A) (Q : find_res A) 
+    (H1 : deep_op_eval de_env t = Some P) (H2 :  pull_forall_l t de_env tac_env = Some Q) :
+    P |-- find_res_eval_forall Q.
+    Proof.
+    	pose proof (@env_sound_al' A _ _ de_env tac_env t H (find_res_eval_forall Q)).
+    	rewrite H1, H2 in H0. apply H0. reflexivity.
+    Qed.
+	
+
 End PullForallLeft.
 
 Implicit Arguments env_sound_al [[A] [ILOps] [ILA]].
@@ -895,9 +906,9 @@ Ltac lforallL_aux :=
     | |- ?P |-- ?Q =>
       let A := type of P in 
       let t := quote_term P in
-       apply (env_sound_al (env_empty A) (env_empty (find_res A)) t 
-              (env_sound_rl_empty (env_empty A) find_res_eval_forall) Q);
-        simpl; cbv [find_res_eval_forall find_res_eval_forall_aux]; simpl
+      etransitivity; [eapply (env_sound_al (env_empty A) (env_empty (find_res A)) t 
+      	(env_sound_rl_empty (env_empty A) find_res_eval_forall)); [reflexivity | simpl; reflexivity] |
+      	cbv [find_res_eval_forall find_res_eval_forall_aux]; simpl]
     | |- _ => fail 1 "Goal is not an entailment"
   end.
   
@@ -925,6 +936,7 @@ Lemma test_al {A B : Type} `{H : Embed B A} {HBPO: EmbedOp Prop B} {HPB : Embed 
     (P Q R : A) (S : B) (T : Prop) (f : nat -> A) (g : nat -> B) (h : nat -> Prop) :
   (S //\\ Forall y, g y) /\\ (P //\\ (Forall y, f y) //\\ R //\\ (T //\\ Forall y, h y) /\\ Forall x, f x) |-- ltrue.
 Proof.
+	Check deep_op_eval (env_empty A).
   lforallL 2 3 4 5.
   apply ltrueR.
 Qed.

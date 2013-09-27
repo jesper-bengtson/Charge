@@ -1,5 +1,5 @@
 Require Import Maps MapInterface MapFacts.
-Require Import ILogic ILEmbed BaseTactics ILQuantTac Later.
+Require Import ILogic ILEmbed BaseTactics ILQuantTac Later LaterBaseTactics.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -30,17 +30,15 @@ Section PullForallLeft.
 
 End PullForallLeft.
 
-Local Transparent MapInterface.find MapInterface.empty MapInterface.add OrderedType.compare.
-
 Ltac lforallL_aux :=
   match goal with
     | |- ?P |-- ?Q =>
       let A := type of P in 
-      let t := quote_term P in idtac t (*
-       apply (env_sound_al later_env later_env_tac t 
-              later_env_sound Q);
-        simpl; cbv [find_res_eval_forall find_res_eval_forall_aux]; simpl*)
-    | |- _ => fail 1 "Goal is not an entailment"
+      let t := quote_term P in
+      etransitivity; [eapply (env_sound_al later_env later_env_tac t 
+      	later_env_sound); [reflexivity | simpl; reflexivity] |
+      	cbv [find_res_eval_forall find_res_eval_forall_aux]; simpl]
+    | |- _ => ILQuantTac.lforallL_aux
   end.
   
 Ltac lforallL2 := 
@@ -66,14 +64,8 @@ Tactic Notation "lforallL" constr(x1) constr(x2) constr(x3) constr(x4) :=
 Lemma test_al {A B : Type} `{H : Embed B A} {HBPO: EmbedOp Prop B} {HPB : Embed Prop B} {HO : EmbedOp Prop A} {HE: Embed Prop A} 
 	{HAL : ILLOperators A} {HA : ILLater A} {HBL : ILLOperators B} {HB : ILLater B} 
     (P Q R : A) (S : B) (T : Prop) (f : nat -> A) (g : nat -> B) (h : nat -> Prop) :
-  (S //\\ Forall y, g y) /\\ (P //\\ (Forall y, f y) //\\ R //\\ (T //\\ Forall y, h y) /\\ Forall x, f x) |-- ltrue.
+  (S //\\ Forall y, g y) /\\ |>(P //\\ (|>Forall y, |>f y) //\\ |>(R //\\ (T //\\ Forall y, h y) /\\ Forall x, f x)) |-- ltrue.
 Proof.
-	apply (env_sound_al later_env later_env_tac (t_and_inj illogic H HPB (t_and (t_atom S) (t_forall (fun y : nat => g y)))
-   (t_and (t_atom P)
-      (t_and (t_forall (fun y : nat => f y))
-         (t_and (t_atom R)
-            (t_and_prop HE (t_and (t_atom T) (t_forall (fun y : nat => h y)))
-               (t_forall (fun x : nat => f x))))))) later_env_sound ltrue).
-  lforallL 2 3 4 5.
+	lforallL 2 3 4 5.
   apply ltrueR.
 Qed.
