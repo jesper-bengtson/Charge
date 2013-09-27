@@ -3,6 +3,7 @@ Require Import BILogic BaseTactics.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
+Set Maximal Implicit Insertion.
 
 Section BIEnv.
 	Context {A : Type} `{ILA : BILogic A}.

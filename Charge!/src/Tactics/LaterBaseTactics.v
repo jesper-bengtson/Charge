@@ -3,6 +3,7 @@ Require Import Later BaseTactics.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
+Set Maximal Implicit Insertion.
 
 Section LaterEnv.
 	Context {A : Type} `{ILA : ILLater A}.

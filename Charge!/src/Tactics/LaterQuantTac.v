@@ -3,6 +3,7 @@ Require Import ILogic ILEmbed BaseTactics ILQuantTac Later LaterBaseTactics.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
+Set Maximal Implicit Insertion.
 
 Section PullForallLeft.
 
