@@ -3,6 +3,7 @@ Require Import ILogic ILQuantTac.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
+Set Maximal Implicit Insertion.
 
 Section BILogic.
   Context {A : Type}.
@@ -104,7 +105,7 @@ Section CoreInferenceRules.
     P ** (Exists x : T, Q x) |-- Exists x : T, P ** Q x.
   Proof.
     rewrite sepSPC; rewrite wandSepSPAdj.
-    lexistsL x; rewrite <- wandSPAdj. reflexivity.
+    lexistsL x; erewrite <- wandSPAdj. reflexivity.
     eapply lexistsR; rewrite sepSPC; reflexivity.
   Qed.
 
@@ -131,9 +132,9 @@ Section BILogicMorphisms.
     Proper (lentails ++> lentails ++> lentails) sepSP.
   Proof.
     intros P P' HP Q Q' HQ.
-    etransitivity; [apply bilsep; exact HP|].
+    etransitivity; [eapply bilsep; exact HP|].
     rewrite -> sepSPC.
-    etransitivity; [apply bilsep; exact HQ|].
+    etransitivity; [eapply bilsep; exact HQ|].
     rewrite -> sepSPC. reflexivity.
   Qed.  
 

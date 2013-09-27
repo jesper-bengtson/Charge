@@ -3,6 +3,7 @@ Require Import ILogic ILInsts ILQuantTac.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
+Set Maximal Implicit Insertion.
 
 Section LaterSect.
   Context {A : Type}.

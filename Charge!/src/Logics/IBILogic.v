@@ -3,6 +3,7 @@ Require Import ILogic ILInsts BILInsts ILQuantTac BILogic SepAlg.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
+Set Maximal Implicit Insertion.
 
 Section IBILogicSect.
   Context {A : Type} `{HBI: BILogic A}.

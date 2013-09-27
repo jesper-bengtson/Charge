@@ -4,6 +4,7 @@ Require Import Equiv SepAlg.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
+Set Maximal Implicit Insertion.
 
 Section BISepAlg.
   Context {A} `{sa : SepAlg A}.
