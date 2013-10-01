@@ -113,11 +113,7 @@ Hint Extern 0 (?P |-- ?Q) => (is_evar P; reflexivity) || (is_evar Q; reflexivity
 
 Section ILogicEquiv2.
   Context `{IL: ILogic Frm}.
-(*  
-  Definition lequiv P Q := P |-- Q /\ Q |-- P.
 
-  Global Instance lequivEquiv : Equiv Frm | 0 := { equiv := lequiv }.
-*)
   Global Instance lequivEquivalence : Equivalence lequiv.
   Proof.
     unfold lequiv. constructor; red.

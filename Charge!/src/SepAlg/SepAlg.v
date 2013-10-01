@@ -1,5 +1,5 @@
 Require Import Setoid Morphisms RelationClasses Program.Basics Omega.
-Require Import Equiv.
+Require Import Rel OrderedType.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -11,8 +11,8 @@ Section SepAlgSect.
     sa_mul : T -> T -> T -> Prop
   }.
 
-  Class SepAlg T `{e : Equiv T} `{SAOps: SepAlgOps T} : Type := {
-    sa_type            :> Equivalence equiv;
+  Class SepAlg T `{e : Rel T} `{SAOps: SepAlgOps T} : Type := {
+    sa_type            :> Equivalence rel;
     sa_mulC a b c      : sa_mul a b c -> sa_mul b a c;
     sa_mulA a b c      : forall ab abc, sa_mul a b ab -> sa_mul ab c abc ->
                                         exists bc, sa_mul b c bc /\ sa_mul a bc abc;
@@ -50,7 +50,7 @@ Section SepAlgCompat.
   Qed.
 
 
-  Global Instance sa_mul_proper : Proper (equiv ==> equiv ==> equiv ==> iff) sa_mul.
+  Global Instance sa_mul_proper : Proper (rel ==> rel ==> rel ==> iff) sa_mul.
   Proof.
   	intros a b Hab c d Hcd f g Hfg; split; intros H.
   	+ eapply sa_mul_mon; [eassumption|].

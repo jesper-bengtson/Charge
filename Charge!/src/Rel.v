@@ -16,22 +16,23 @@ Proof.
   firstorder.
 Qed.
 
-Class Equiv (A : Type) := equiv : relation A.
+Class Rel (A : Type) := rel : relation A.
+(*
 Infix "===" := equiv (at level 70, no associativity).
 
 Instance Equiv_eq {A : Type} : Equiv A | 100 := eq.
-
-Instance Equiv_option {A} {Heq: Equiv A} : Equiv (option A) | 0 := {
-    equiv := fun a b => 
+*)
+Instance Equiv_option {A} {Heq: Rel A} : Rel (option A) | 0 := {
+    rel := fun a b => 
                (a = None /\ b = None) \/
-               (exists x y, a = Some x /\ b = Some y /\ x === y)
+               (exists x y, a = Some x /\ b = Some y /\ rel x y)
 }.
 
-Instance Equiv_unit: Equiv unit | 0 := fun _ _ => True.
+Instance Equiv_unit: Rel unit | 0 := fun _ _ => True.
 
-Instance Equivalence_unit : Equivalence (@equiv unit _).
+Instance Equivalence_unit : Equivalence (@rel unit _).
 Proof. firstorder. Qed.
-
+(*
 Instance Equivalence_option {A} {Heq: Equiv A} {Hequiv : Equivalence equiv} :
   Equivalence (@equiv (option A) Equiv_option).
 Proof.
@@ -83,3 +84,4 @@ Section EquivProducts.
   Qed.
 
 End EquivProducts.
+*)

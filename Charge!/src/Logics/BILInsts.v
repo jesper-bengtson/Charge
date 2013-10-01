@@ -1,6 +1,6 @@
 Require Import Setoid Morphisms RelationClasses Program.Basics. 
 Require Import ILogic BILogic ILQuantTac ILInsts.
-Require Import Equiv SepAlg.
+Require Import Rel SepAlg.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -9,11 +9,11 @@ Set Maximal Implicit Insertion.
 Section BISepAlg.
   Context {A} `{sa : SepAlg A}.
   Context {B} `{IL: ILogic B}.
-  Context {HPre : PreOrder (@equiv A _)}.
+  Context {HPre : PreOrder (@rel A _)}.
 
   Open Scope sa_scope.
 
-  Program Instance SABIOps: BILOperators (ILPreFrm equiv B) := {
+  Program Instance SABIOps: BILOperators (ILPreFrm rel B) := {
     empSP := mkILPreFrm (fun x => Exists a : (sa_unit x), ltrue) _;
     sepSP P Q :=  mkILPreFrm (fun x => Exists x1, Exists x2, Exists H : sa_mul x1 x2 x,
                                                 P x1 //\\ Q x2) _;
@@ -37,7 +37,7 @@ Section BISepAlg.
   Local Existing Instance ILPre_ILogic.
   Local Transparent ILPre_Ops.
 
-  Definition SABILogic : BILogic (ILPreFrm equiv B).
+  Definition SABILogic : BILogic (ILPreFrm rel B).
   Proof.
     split.
     + apply _.
