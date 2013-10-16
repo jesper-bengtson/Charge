@@ -222,6 +222,179 @@ Proof.
 	lpropandR; intuition.
 Qed.
 
+Section PullAndLeft.
+
+	Lemma find_prop_unop_sound_al {A B : Type} {ILA : ILogicOps A} `{ILB : ILogic B} 
+						{HA : EmbedOp Prop A} {HB : EmbedOp Prop B} 
+						{HEA : Embed Prop A} {HEB : Embed Prop B}
+	        (Ps : list Prop) (f : A) (op : A -> B) 
+        (Hop : forall (P : Prop) p, op (P /\\ p) |-- P /\\ op p) :
+	      op (find_prop_eval_and_aux Ps f) |-- find_prop_eval_and_aux Ps (op f).
+	Proof.
+		induction Ps.
+		simpl. reflexivity.
+		simpl in *. rewrite Hop.
+		apply lpropandL; intro H. apply lpropandR; [apply H|].
+		rewrite IHPs. reflexivity.
+	Qed.
+  	
+ 
+ Lemma find_prop_binop_sound_al {A B C : Type} {ILA : ILogicOps A} {ILB : ILogicOps B} `{ILC : ILogic C}
+						{HA : EmbedOp Prop A} {HB : EmbedOp Prop B} {HC : EmbedOp Prop C}
+						{HAE : Embed Prop A} {HBE : Embed Prop B} {HCE : Embed Prop C}
+         (Ps Qs : list Prop) (f : A) (g : B) (op : A -> B -> C) 
+        (Hop1 : forall (P : Prop) p q, op (P /\\ p) q |-- P /\\ op p q)
+        (Hop2 : forall (P : Prop) p q, op p (P /\\ q) |-- P /\\ op p q) :
+      op (find_prop_eval_and_aux Ps f) (find_prop_eval_and_aux Qs g)
+      |-- find_prop_eval_and_aux (Ps ++ Qs) (op f g).
+Proof.
+	induction Ps; simpl in *.
+	+ apply find_prop_unop_sound_al.
+	  intros. apply Hop2.
+	+ rewrite Hop1. 
+	  apply lpropandL; intro H. apply lpropandR; [apply H|].
+	  rewrite <- IHPs; reflexivity.
+Qed.
+ 
+  Lemma binop_sound_al {A B C : Type} {ILA : ILogicOps A} {ILB : ILogicOps B} `{ILC : ILogic C} 
+						{HA : EmbedOp Prop A} {HB : EmbedOp Prop B} {HC : EmbedOp Prop C}
+ 						{HAE : Embed Prop A} {HBE : Embed Prop B} {HCE : Embed Prop C}
+                       (de_env1 : env A) (tac_env1 : env (find_prop A))
+                       (de_env2 : env B) (tac_env2 : env (find_prop B))
+                       (p : @deep_op A _) (q : @deep_op B _) (op : A -> B -> C) 
+                       {H : Proper (lentails ==> lentails ==> lentails) op} 
+      (Hp : match deep_op_eval de_env1 p, pull_and p de_env1 tac_env1 with
+	    | None, None => True
+	    | Some p, Some q => p |-- find_prop_eval_and q 
+	    | _, _ => False
+	  end)
+      (Hq : match deep_op_eval de_env2 q, pull_and q de_env2 tac_env2 with
+	    | None, None => True
+	    | Some p, Some q => p |-- find_prop_eval_and q
+	    | _, _ => False
+	  end) 
+        (Hop1 : forall (P : Prop) p q, op (P /\\ p) q |-- P /\\ op p q)
+        (Hop2 : forall (P : Prop) p q, op p (P /\\ q) |-- P /\\ op p q) :
+match binop_option op (deep_op_eval de_env1 p) (deep_op_eval de_env2 q), 
+      find_prop_binop op (pull_and p de_env1 tac_env1) (pull_and q de_env2 tac_env2) with
+  | None, None     => True
+  | Some p, Some q => p |-- find_prop_eval_and q
+  | _, _           => False
+end.
+Proof.
+	remember (deep_op_eval de_env1 p) as o1.
+	remember (deep_op_eval de_env2 q) as o2.
+	remember (pull_and p de_env1 tac_env1) as o3.
+	remember (pull_and q de_env2 tac_env2) as o4.
+	destruct o1, o2, o3, o4; simpl in *; try intuition congruence.
+	etransitivity; [apply H; [apply Hp | apply Hq]|].
+	destruct f; destruct f0. simpl. 
+	unfold find_prop_eval_and. simpl. apply find_prop_binop_sound_al.
+	apply Hop1. apply Hop2.
+Qed.
+
+  	Lemma env_sound_aux_al {A : Type} `{ILA : ILogic A} {HA : EmbedOp Prop A} {HAE : Embed Prop A} (de_env : env A) (tac_env : env (find_prop A))
+    (t : @deep_op A _) :
+    match deep_op_eval de_env t, pull_and t de_env tac_env with
+      | None, None     => True
+      | Some p, Some q => p |-- find_prop_eval_and q
+      | _, _           => False
+    end.
+    Proof.
+    	induction t.
+    	+ simpl; reflexivity.
+    	+ simpl; reflexivity.
+    	+ simpl; reflexivity.   
+        + simpl. apply binop_sound_al; [apply IHt1; apply _ | apply IHt2; apply _ | |]. 
+          intros. unfold lembedand. rewrite <- landA. reflexivity. 
+          intros. unfold lembedand. rewrite <- landA, (landC _ (embed P)), landA. reflexivity.
+        + simpl; remember (deep_op_eval de_env t1) as o1.
+	      remember (deep_op_eval de_env t2) as o2.
+	      destruct o1, o2; simpl; (try intuition congruence); reflexivity.
+        + simpl; remember (deep_op_eval de_env t1) as o1.
+	      remember (deep_op_eval de_env t2) as o2.
+	      destruct o1, o2; simpl; (try intuition congruence); reflexivity.
+        + admit.
+        + admit.
+        + simpl. reflexivity.
+        + simpl. reflexivity.
+        + apply binop_sound_al.
+          apply IHt1. assumption. assumption.
+          apply IHt2. assumption. assumption.
+          intros. apply lpropandAR.
+          intros. apply lpropandAC. 
+        + simpl. remember (deep_op_eval (env_empty B) t1) as o1.
+          remember (deep_op_eval de_env t2) as o2.
+          destruct o1, o2; simpl; (try intuition congruence); reflexivity.
+        + simpl in *.    
+          specialize (IHt2 _ HA HAE de_env tac_env).
+          remember (deep_op_eval (env_empty Prop) t1) as o1.
+          remember (deep_op_eval de_env t2) as o2.
+          remember (pull_and t2 de_env tac_env) as o3.
+          destruct o1, o2, o3; try (simpl; intuition congruence).
+          simpl. rewrite IHt2. destruct f; simpl.
+          unfold find_prop_eval_and. simpl.
+          unfold lembedand. 
+          apply landR; [apply landL1; apply emb_prop_eq|apply landL2; reflexivity].
+        + simpl. remember (deep_op_eval (env_empty Prop) t1) as o1.
+          remember (deep_op_eval de_env t2) as o2.
+          destruct o1, o2; simpl; (try intuition congruence); reflexivity.
+    Qed.
+    
+  	Lemma env_sound_al {A : Type} `{ILA : ILogic A} {EmbOp : EmbedOp Prop A} {Emb : Embed Prop A}
+  	(de_env : env A) (tac_env : env (find_prop A))
+    (t : @deep_op A _) (P : A) :
+    match deep_op_eval de_env t, pull_and t de_env tac_env with
+      | None, None     => True
+      | Some p, Some q => find_prop_eval_and q |-- P -> p |-- P
+      | _, _           => False
+    end.
+    Proof.
+    	pose proof (env_sound_aux_al de_env tac_env t).
+    	remember (deep_op_eval de_env t) as o1.
+    	remember (pull_and t de_env tac_env) as o2.
+    	destruct o1, o2; simpl in *; try intuition congruence.
+    	intros. rewrite H; assumption.
+    Qed. 
+
+End PullAndLeft.
+  
+Ltac lpropandL_aux :=
+  match goal with
+    | |- ?P |-- ?Q =>
+      let A := type of P in 
+      let t := quote_term P in 
+       apply (env_sound_al (env_empty A) (env_empty (find_prop A)) t Q);
+        simpl; cbv [find_prop_eval_and find_prop_eval_and_aux]; simpl
+    | |- _ => fail 1 "Goal is not an entailment"
+  end.
+  
+ 
+Ltac lpropandL2 := lpropandL_aux; repeat (apply lpropandL; intro).
+
+Tactic Notation "lpropandL" := lpropandL2.
+Tactic Notation "lpropandL" simple_intropattern(x1) :=
+	first [simple apply lpropandL with x1 | lpropandL_aux; simple apply lpropandL; intro x1].
+Tactic Notation "lpropandL" simple_intropattern(x1) simple_intropattern(x2) :=
+	first [simple apply lpropandL with x1 | lpropandL_aux; simple apply lpropandL; intro x1]; lpropandL x2.
+Tactic Notation "lpropandL" simple_intropattern(x1) simple_intropattern(x2) simple_intropattern(x3) :=
+	first [simple apply lpropandL with x1 | lpropandL_aux; simple apply lpropandL; intro x1]; lpropandL x2 x3.
+Tactic Notation "lpropandL" simple_intropattern(x1) simple_intropattern(x2) simple_intropattern(x3) simple_intropattern(x4) :=
+	first [simple apply lpropandL with x1 | lpropandL_aux; simple apply lpropandL; intro x1]; lpropandL x2 x3 x4.
+
+   
+Local Existing Instance EmbedOpId.
+Local Existing Instance EmbedId.   
+   
+Lemma test_al {A B : Type} `{H : Embed B A} {HBPO: EmbedOp Prop B} {HPB : Embed Prop B} {HO : EmbedOp Prop A} {HE: Embed Prop A} {HA : ILogic A} {HB : ILogic B} 
+    (P Q R : A) (S : B) (a b c d : Prop) (f : nat -> A) (g : nat -> B) (h : nat -> Prop) :
+  (a /\\ P) //\\ b /\\ (c /\\ S) /\\ Q //\\ (d /\\ R) |-- ltrue.
+Proof.
+	lpropandL Ha Hb Hc Hd.
+	apply ltrueR.
+Qed.
+
+
 
  	Fixpoint find_prop_eval_impl_aux {A : Type} {ILA : ILogicOps A} {H: EmbedOp Prop A} (Ps : list Prop) (a : A) : A :=
  		match Ps with
