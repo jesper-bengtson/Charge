@@ -21,7 +21,9 @@ Section Expr.
   Proof.
     split; intuition congruence.
   Qed.
-
+  
+  Definition open_const {B : Type} (b : B) : open B := fun s => b.
+  
   Definition V_expr (v : val) : expr := fun s => v.
   Definition var_expr (x : A) : expr := fun s => s x.
   Definition empty_open : expr := fun x => null.

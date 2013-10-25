@@ -6,6 +6,7 @@ Require Import SepAlg.
 (* This requires the Containers library from 
    http://coq.inria.fr/pylons/contribs/view/Containers/v8.4 *)
 Require Import MapInterface MapFacts.
+Require Import BILInsts.
 
 (* String is an ordered type *)
 
@@ -139,6 +140,8 @@ Section SepAlgMap.
                              | None => ~ In k a /\ ~ In k b
                            end
   }.
+
+  Definition map_unit {A : Type} : Map [K, A] := empty A.
 
   Lemma sa_mul_add {A : Type} {a b c : Map [K, A]} {k : K} {y : A}
     (Habc : sa_mul a b c) (Hnotin : ~ In k b) :

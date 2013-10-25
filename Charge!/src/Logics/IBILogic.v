@@ -6,7 +6,7 @@ Unset Strict Implicit.
 Set Maximal Implicit Insertion.
 
 Section IBILogicSect.
-  Context {A : Type} `{HBI: BILogic A}.
+  Context {A : Type} {ILOps : ILogicOps A} {BIOps: BILOperators A}.
 
   Class IBILogic := {
     ibil_bil :> BILogic A;
@@ -15,7 +15,7 @@ Section IBILogicSect.
 
 End IBILogicSect.
 
-Implicit Arguments IBILogic [[ILOps] [BILOp]].
+Implicit Arguments IBILogic [[ILOps] [BIOps]].
 
 Section IBILogicProperties.
 
@@ -114,7 +114,8 @@ End IBISepAlg.
 Section IBILPre.
   Context T (ord: relation T) {ord_Pre: PreOrder ord}.
   Context {A : Type} `{HBI: IBILogic A}.
-
+  Context {BIL : BILogic A} {IL : ILogic A}.
+  
   Local Existing Instance ILPre_Ops.
   Local Existing Instance ILPre_ILogic.
   Local Existing Instance BILPre_Ops.

@@ -19,7 +19,7 @@ Section BISepAlg.
                                                 P x1 //\\ Q x2) _;
     wandSP P Q := mkILPreFrm (fun x => Forall x1, Forall x2, Forall H : sa_mul x x1 x2,  
                                                  P x1 -->> Q x2) _
-  }.
+  }. 
   Next Obligation.
   	lexistsL H1. eapply lexistsR. rewrite <- H. assumption. apply ltrueR.
   Qed.
@@ -37,8 +37,7 @@ Section BISepAlg.
   Local Existing Instance ILPre_ILogic.
   Local Transparent ILPre_Ops.
 
-  Definition SABILogic : BILogic (ILPreFrm rel B).
-  Proof.
+  Definition SABILogic : BILogic (ILPreFrm rel B). 
     split.
     + apply _.
     + intros P Q x; simpl.
@@ -71,8 +70,9 @@ Section BISepAlg.
       - destruct (sa_unit_ex x) as [u [H1 H2]].
         lexistsR x u H2 H1. 
         apply landR; [reflexivity| apply ltrueR].
-  Qed.
-
+        
+  Qed. 
+  
 End BISepAlg.
 
 Global Opaque SABIOps.

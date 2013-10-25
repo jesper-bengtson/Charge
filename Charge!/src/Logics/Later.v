@@ -1,5 +1,5 @@
 Require Import Setoid Morphisms RelationClasses Program.Basics Omega.
-Require Import ILogic ILInsts ILQuantTac.
+Require Import ILogic ILInsts ILEmbed ILQuantTac.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -24,7 +24,6 @@ Class ILLater {ILLOps: ILLOperators A} := {
 }.
 End LaterSect.
 
-Check @illater.
 Implicit Arguments ILLater [[ILLOps] [ILOps]].
 Notation "'|>' a"  := (illater a) (at level 71).
 
@@ -79,7 +78,7 @@ Section ILogic_nat.
   Context {A : Type}.
   Context `{IL: ILogic A}.
 
-  Program Definition ILLaterPreOps : ILLOperators (ILPreFrm ge A)  := 
+  Program Definition ILLaterNatOps : ILLOperators (ILPreFrm ge A)  := 
     {|
       illater P := mkILPreFrm (fun x => Forall y : nat, Forall H : y < x, P y) _
     |}.
@@ -90,11 +89,11 @@ Section ILogic_nat.
   Qed.
 
 Local Transparent ILPre_Ops.
-Local Existing Instance ILLaterPreOps.
+Local Existing Instance ILLaterNatOps.
 Local Existing Instance ILPre_Ops.
 Local Existing Instance ILPre_ILogic.
 
-  Instance ILLaterPre : ILLater (ILPreFrm ge A).
+  Instance ILLaterNat : ILLater (ILPreFrm ge A).
   Proof.
     split.
     + apply _.
@@ -146,4 +145,67 @@ Local Existing Instance ILPre_ILogic.
 
 End ILogic_nat.
 
+Section IBILPre.
+  Context T (ord: relation T) {ord_Pre: PreOrder ord}.
+  Context {A : Type} `{HBI: ILLater A}.
+  Context {IL : ILogic A}.
+  
+  Local Existing Instance ILPre_Ops.
+  Local Existing Instance ILPre_ILogic.
+
+  Local Transparent ILPre_Ops.
+
+  Program Instance ILLaterPreOps : ILLOperators (ILPreFrm ord A) := {|
+    illater P := mkILPreFrm (fun t => |>(P t)) _
+  |}.
+  Next Obligation.
+    rewrite H. reflexivity.
+  Qed.
+  
+  Program Definition ILLaterPre : ILLater (ILPreFrm ord A).
+  Proof.
+    split.
+    + apply _.
+    + intros P HP x. apply spec_lob. apply HP.
+    + intros P x. apply spec_later_weaken.
+    + intros P Q; split; intros x; simpl; 
+        setoid_rewrite <- spec_later_impl;
+        do 2 setoid_rewrite spec_later_forall; reflexivity.
+    + intros B F; split; intros x; simpl; apply spec_later_forall.
+    + intros B F x; simpl; apply spec_later_exists.
+    + intros B F I x; simpl; apply spec_later_exists_inhabited; apply I.
+  Qed.
+
+End IBILPre.
+
+Section IBILogic_Fun.
+  Context (T: Type).
+  Context {A : Type} `{ILL: ILLater A}.
+
+  Local Existing Instance ILFun_Ops.
+  Local Existing Instance ILFun_ILogic.
+
+  Local Transparent ILFun_Ops.
+
+  Program Instance ILLaterFunOps : ILLOperators (T -> A) := {|
+    illater P := fun t => |>(P t)
+  |}.
+  
+  Program Definition ILLaterFun : ILLater (T -> A).
+  Proof.
+    split.
+    + apply _.
+    + intros P HP x. apply spec_lob. apply HP.
+    + intros P x. apply spec_later_weaken.
+    + intros P Q; split; intros x; simpl;
+      apply spec_later_impl.
+    + intros B F; split; intros x; simpl; apply spec_later_forall.
+    + intros B F x; simpl; apply spec_later_exists.
+    + intros B F I x; simpl; apply spec_later_exists_inhabited; apply I.
+  Qed.
+
+End IBILogic_Fun.
+
 Global Opaque ILLaterPreOps.
+Global Opaque ILLaterNatOps.
+Global Opaque ILLaterFunOps.

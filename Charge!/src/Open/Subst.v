@@ -222,3 +222,33 @@ Section MoreLemmas.
 Close Scope open_scope.
 
 End MoreLemmas.
+
+Section SubstFresh.
+
+  Context {A : Type} `{HEq: DecidableEq A}.
+  Context {R : ValNull}.
+
+    Definition subst_fresh (vs: A -> val) (xs: list A) : subst :=
+      fun x' => if In_dec dec_eq x' xs then V_expr (vs x') else var_expr x'.
+
+   Fixpoint subst_fresh_l (vs: A -> val) (xs: list A) : list (@expr A R) :=
+      match xs with
+      | nil => nil
+      | x::xs' => V_expr (vs x) :: subst_fresh_l vs xs'
+      end.
+
+    (* TODO: switch the two alt. definitions. *)
+    Lemma subst_fresh_alt (vs: A -> val) (xs: list A) :
+      subst_fresh vs xs = substl (zip xs (subst_fresh_l vs xs)).
+    Proof.
+      induction xs as [|x]; [reflexivity|].
+      apply functional_extensionality.
+      intro x'. simpl. destruct (dec_eq x' x).
+      + subst x'. unfold subst_fresh. simpl.
+        destruct (dec_eq x x); congruence.
+      + rewrite <- IHxs. unfold subst_fresh.
+        simpl. destruct (dec_eq x x'); [congruence|].
+        destruct (in_dec dec_eq x' xs); reflexivity.
+    Qed.
+
+End SubstFresh.

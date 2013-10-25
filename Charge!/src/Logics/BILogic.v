@@ -7,7 +7,7 @@ Set Maximal Implicit Insertion.
 
 Section BILogic.
   Context {A : Type}.
-  Context `{HIL: ILogic A}.
+  Context {HILOp: ILogicOps A}.
 
   Class BILOperators (A : Type) := {
     empSP  : A;
@@ -26,7 +26,7 @@ Section BILogic.
 
 End BILogic.
 
-Implicit Arguments BILogic [[BILOp] [ILOps]].
+Implicit Arguments BILogic [[BILOp] [HILOp]].
 
 Notation "a '**' b"  := (sepSP a b)
   (at level 75, right associativity).

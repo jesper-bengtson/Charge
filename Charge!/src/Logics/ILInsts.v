@@ -114,13 +114,28 @@ Section Embed_ILogic_Pre.
   Context {B : Type} `{ILB: ILogic B}.
   Context {HEmbOp : EmbedOp A B} {HEmb : Embed A B}.
 
-  Program Instance EmbedILPreDropOp : EmbedOp A (ILPreFrm ord B) := {
-     embed := fun a => mkILPreFrm (fun x => embed a) _
-  }.
-
   Local Existing Instance ILPre_Ops.
 
-  Instance EmbedILPreDrop : Embed A (ILPreFrm ord B).
+  Program Instance EmbedILPreDropOpEq : EmbedOp A (ILPreFrm ord A) := {
+     embed := fun a => mkILPreFrm (fun x => a) _
+  }.
+  
+  Instance EmbedILPreDropEq : Embed A (ILPreFrm ord A).
+  Proof.
+    split; intros.
+    + simpl; intros. assumption.
+    + split; intros t; simpl; reflexivity.
+    + split; intros t; simpl; reflexivity.
+    + split; intros t; simpl. 
+      * lforallL t. apply lforallL; reflexivity.
+      * lforallR x H; reflexivity.
+  Qed.
+ 
+   Program Instance EmbedILPreDropOpNeq : EmbedOp A (ILPreFrm ord B) := {
+     embed := fun a => mkILPreFrm (fun x => embed a) _
+  }.
+ 
+   Instance EmbedILPreDropNeq : Embed A (ILPreFrm ord B).
   Proof.
     split; intros.
     + simpl; intros. apply embed_sound; assumption.
@@ -196,10 +211,10 @@ Section ILogic_Fun.
     - apply limplAdj; intuition.
   Qed.
 
-  Lemma ILFun_fold_entails x P Q (H : P |-- Q) :
-    P x |-- Q x.
+  Lemma ILFun_fold_entails x y P Q (Hxy : x = y) (HPQ : P |-- Q) :
+    P x |-- Q y.
   Proof.
-    apply H.
+    rewrite Hxy; apply HPQ.
   Qed.
 
 End ILogic_Fun.
@@ -249,9 +264,15 @@ End Embed_ILogic_Fun.
    connectives opaque. If a module wants to unfold those definitions, it should
    do [Transparent IL?_Ops], where ? is Pre or Fun. *)
 
+Ltac lintros x := 
+	match goal with 
+		| |- ?p |-- ?q => intros x
+	end.
+
 Global Opaque ILPre_Ops.
-Global Opaque EmbedILPreDropOp.
+Global Opaque EmbedILPreDropOpEq.
 Global Opaque EmbedILPreOp.
+Global Opaque EmbedILPreDropOpNeq.
 
 Global Opaque ILFun_Ops.
 Global Opaque EmbedILFunDropOp.

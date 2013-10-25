@@ -123,7 +123,16 @@ Section Properties.
     intros x y Heqxy t u Heqtu; split; intros [c H]; exists c;
     [rewrite <- Heqxy; rewrite <- Heqtu | rewrite  Heqxy; rewrite Heqtu]; assumption.
   Qed.
-
+  
+  Global Instance sa_subheap_subheap_proper :
+     Proper (subheap --> subheap ++> impl) (subheap (A := A)).
+  Proof.
+	intros x y [a Hyax] t u [b Hubt] [c Hxct].
+	destruct (sa_mulA Hyax Hxct) as [d [_ Hydt]].
+	destruct (sa_mulA Hydt Hubt) as [f [_ Hyfu]].
+	exists f. apply Hyfu.
+  Qed.
+	  
   Global Instance sa_compat_equiv_proper :
     Proper (equiv ==> equiv ==> iff) (compat (A := A)).
   Proof.
