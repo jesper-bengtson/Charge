@@ -47,7 +47,15 @@ Section Defs.
     apply functional_extensionality.
     intro x'. unfold stack_add. destruct (dec_eq x' x); reflexivity.
   Qed.
-
+  
+  Lemma stack_add_val_eq (s : stack) (x : A) v1 v2 (Hs : stack_add x v1 s = stack_add x v2 s) :
+  	v1 = v2.
+  Proof.
+    assert (stack_add x v1 s x = stack_add x v2 s x).
+    rewrite Hs. reflexivity.
+    do 2 rewrite stack_lookup_add in H0. apply H0.
+  Qed.
+  
 End Defs.
 
 Implicit Arguments stack [[B]].
