@@ -165,32 +165,6 @@ Section ILogicEmbedFacts.
   	rewrite <- H. rewrite embedltrue. apply ltrueR.
   Qed.
   
-(*    
-  Lemma landembedE {C : Type} {HCA : EmbedOp C A} {HCB : EmbedOp C B} `{HC: ILogic C} {HA' : Embed C A} 
-  	(P : A) (Q : B) (R : C) :
-  	R /\\ P /\\ Q |-- (R /\\ P) /\\ Q.
-  Proof.
-  	unfold lembedand.
-  	apply landR.
-  	rewrite <- landA.
-  	apply landL1.
-  	rewrite <- embedland.
-  	apply landR.
-  	apply landL1.
-  	apply landL1.
-  	apply landL1.
-  	apply landR1.
-  	apply land
-  	apply landL2.
-  	apply landR1. 
-  	apply landL1.
-  	rewrite <- (embed_existsL R).
-  	apply lexistsR.
-  	admit.
-  	apply landL2. reflexivity.
-  	apply landL2. apply landL2. reflexivity.
-  Qed.
-  *)
 End ILogicEmbedFacts.
 
 Section EmbedProp.
@@ -359,4 +333,3 @@ Section EmbedPropInj.
 	Qed.
 
 End EmbedPropInj.
-	

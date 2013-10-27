@@ -122,7 +122,22 @@ Section CoreInferenceRules.
     rewrite sepSPC; etransitivity; [|rewrite <- sepSPC; reflexivity].
     apply bilsep. lforallL x; reflexivity.
   Qed.
-
+  
+  Lemma bilandscDL (P Q R : A) : (P //\\ Q) ** R |-- (P ** R) //\\ (Q ** R).
+  Proof.
+  	apply landR.
+  	+ apply wandSepSPAdj; apply landL1; apply wandSepSPAdj; reflexivity. 
+  	+ apply wandSepSPAdj; apply landL2; apply wandSepSPAdj; reflexivity. 
+  Qed.
+  
+  Lemma bilorscDL (P Q R : A) : (P \\// Q) ** R -|- (P ** R) \\// (Q ** R).
+  Proof.
+  	split.
+  	+ apply wandSepSPAdj; apply lorL; apply wandSepSPAdj;
+  	  [apply lorR1 | apply lorR2]; reflexivity.
+  	+ apply lorL; apply bilsep; [apply lorR1 | apply lorR2]; reflexivity.
+  Qed.
+  
 End CoreInferenceRules.
 
 Section BILogicMorphisms.

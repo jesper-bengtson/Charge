@@ -254,8 +254,6 @@ Section Embed_ILogic_Fun.
     + split; intros t; simpl; apply embedImpl.
   Qed.
         
-
-
 End Embed_ILogic_Fun.
 
 (* Coq tends to unfold lentails on [simpl], which triggers unfolding of
