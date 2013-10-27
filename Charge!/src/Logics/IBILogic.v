@@ -28,6 +28,11 @@ Section IBILogicProperties.
     rewrite emp_trueE, empSPR.
     reflexivity.
   Qed.
+  
+  Lemma ibilsepand (p q : A) : p ** q |-- p //\\ q.
+  Proof.
+  	apply landR; [|rewrite sepSPC]; apply sep_forget; reflexivity.
+  Qed.
 
 End IBILogicProperties.
 
