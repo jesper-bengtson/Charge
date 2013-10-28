@@ -1,5 +1,5 @@
 Require Import Setoid Morphisms RelationClasses Program.Basics. 
-Require Import ILogic ILQuantTac.
+Require Import ILogic ILEmbed ILQuantTac.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -137,7 +137,7 @@ Section CoreInferenceRules.
   	  [apply lorR1 | apply lorR2]; reflexivity.
   	+ apply lorL; apply bilsep; [apply lorR1 | apply lorR2]; reflexivity.
   Qed.
-  
+    
 End CoreInferenceRules.
 
 Section BILogicMorphisms.
@@ -203,7 +203,17 @@ Section DerivedInferenceRules.
   Proof.
     rewrite <-HR, <-HP. apply sepSPAdj. reflexivity.
   Qed.
-
+  
+   
+  Lemma siexistsE {T : Type} (P : T -> A) (Q : A) :
+    (Exists x, P x) -* Q -|- Forall x, (P x -* Q).
+  Proof.
+    split.
+	+ apply lforallR; intro x. apply wandSepSPAdj; eapply wandSPL; [|reflexivity].
+	  lexistsR x. reflexivity.
+	+ apply wandSepSPAdj. rewrite bilexistsscR. lexistsL.
+	  rewrite sepSPC, bilforallscR. lforallL x. rewrite sepSPC. 
+	  apply wandSPL; reflexivity.
+  Qed.
+  
 End DerivedInferenceRules.
-
-

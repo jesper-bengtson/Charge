@@ -436,6 +436,28 @@ Section ILogicFacts.
       apply limplL; [apply ltrueR| apply landL1; reflexivity].
     + apply limplAdj; apply landL1; reflexivity.
   Qed.
+  
+  Lemma limplexistsE {T : Type} (P : T -> Frm) (Q : Frm) :
+    (Exists x, P x) -->> Q -|- Forall x, (P x -->> Q).
+  Proof.
+    split.
+	+ apply lforallR; intro x. apply limplAdj; apply limplL. 
+	  * apply lexistsR with x; reflexivity.
+	  * apply landL1; reflexivity.
+	+ apply limplAdj. rewrite landC, landexistsDL.
+	  apply lexistsL; intro x. rewrite landC, landforallDL.
+	  apply lforallL with x. apply limplL.
+	  * reflexivity.
+	  * apply landL1. reflexivity.
+  Qed.
+  
+  Lemma limplforallER {T : Type} (P : T -> Frm) (Q : Frm) :
+    Exists x, (P x -->> Q) |-- (Forall x, P x) -->> Q.
+  Proof.
+  	apply lexistsL; intro x. apply limplAdj. apply limplL.
+  	+ apply lforallL with x. reflexivity.
+  	+ apply landL1. reflexivity.
+  Qed.
 
 End ILogicFacts.
 

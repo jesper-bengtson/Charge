@@ -180,6 +180,22 @@ Section EmbedProp.
     apply lexistsR with Hp. apply ltrueR.
   Qed.
 
+  Lemma embedPropExistsL (p : Prop) (P : A) : Exists x : p, P |-- embed p.
+  Proof.
+    assert (Exists x : p, ltrue |-- p). {
+      intros HP. destruct HP as [HP _]. apply HP. 
+    }
+    etransitivity; [|rewrite <- H]; [reflexivity|].
+    rewrite <- embedlexists. apply lexistsL; intro Hp.
+    apply lexistsR with Hp. rewrite embedltrue. apply ltrueR.
+  Qed.
+  
+  (* TODO rename embedPropExists to embedPropExistsR *)
+  Lemma embedPropExists' (p : Prop) : Exists x : p, ltrue -|- embed p.
+  Proof.
+  	split; [apply embedPropExistsL | apply embedPropExists].
+  Qed.
+  
   Lemma embedPropL (p : Prop) C (H: p -> |-- C) :
     embed p |-- C.
   Proof.
