@@ -42,7 +42,7 @@ Section ILogic_Pre.
     lforallR t'' Ht'. lforallL t''.
     assert (ord t t'') as Ht'' by (transitivity t'; assumption).
     lforallL Ht''; reflexivity.
-  Qed.
+  Defined.
 
   Local Existing Instance ILPre_Ops.
 
@@ -79,11 +79,23 @@ Section ILogic_Pre.
 
   Global Instance ILPreFrm_pred_equiv_m:
     Equivalence ord ->
-    Proper (lequiv ++> ord ++> lequiv) ILPreFrm_pred.
+    Proper (lequiv ==> ord ==> lequiv) ILPreFrm_pred.
   Proof.
     intros Hord P P' HPt t t' Ht. split.
     - rewrite ->Ht. apply HPt. 
     - symmetry in Ht. rewrite <-Ht. apply HPt. 
+  Qed.
+
+  Global Instance ILPreFrm_pred_entails_eq_m:
+    Proper (lentails ++> eq ++> lentails) ILPreFrm_pred.
+  Proof.
+    intros P P' HPt t t' Ht. subst; apply HPt.
+  Qed.
+
+  Global Instance ILPreFrm_pred_equiv_eq_m:
+    Proper (lequiv ==> eq ==> lequiv) ILPreFrm_pred.
+  Proof.
+    intros P P' HPt t t' Ht. split; subst; apply HPt.
   Qed.
 
   Program Definition ILPreAtom {HPre : PreOrder ord} (t: T) :=
@@ -135,7 +147,7 @@ Section Embed_ILogic_Pre.
      embed := fun a => mkILPreFrm (fun x => embed a) _
   }.
  
-   Instance EmbedILPreDropNeq : Embed A (ILPreFrm ord B).
+  Instance EmbedILPreDropNeq : Embed A (ILPreFrm ord B).
   Proof.
     split; intros.
     + simpl; intros. apply embed_sound; assumption.
@@ -150,10 +162,8 @@ Section Embed_ILogic_Pre.
      embed := fun a => mkILPreFrm (fun x => embed (a x)) _
   }.
   Next Obligation.
-    intros.
-    apply embed_sound.
-    rewrite H; reflexivity.
-  Qed.
+  	rewrite H. reflexivity.
+  Defined.
 
   Instance EmbedILPre : Embed (ILPreFrm ord A) (ILPreFrm ord B).
   Proof.
@@ -166,8 +176,6 @@ Section Embed_ILogic_Pre.
       lforallR t' H; lforallL t' H; apply embedImpl.
   Qed.
         
-
-
 End Embed_ILogic_Pre.
 
 (** If [Frm] is a ILogic, then the function space [T -> Frm] is also an ilogic,

@@ -1,6 +1,6 @@
 Require Import Maps MapInterface MapFacts.
 Require Import ILogic ILEmbed BaseTactics ILEmbedTac Later LaterBaseTactics.
-
+(*
 Set Implicit Arguments.
 Unset Strict Implicit.
 Set Maximal Implicit Insertion.
@@ -71,3 +71,4 @@ Proof.
 	lforallL 2 3 4 5.
   apply ltrueR.
 Qed.
+*)

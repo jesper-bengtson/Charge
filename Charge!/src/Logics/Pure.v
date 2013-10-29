@@ -1,4 +1,5 @@
-Require Import ILogic BILogic ILEmbed ILQuantTac.
+Require Import ILogic ILInsts BILogic BILInsts ILEmbed ILQuantTac.
+Require Import Setoid.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -56,3 +57,79 @@ Section EmbedPropPure.
   
 End EmbedPropPure.
 
+Section PureBILogicFun.
+  Context {A : Type} `{ILA: ILogic A}.
+  Context {B : Type} `{BILB: BILogic B} {ILB : ILogic B}.
+  Context {HEmbOp : EmbedOp A B} {HEmb : Embed A B}.
+
+  Local Existing Instance EmbedILFunDropOp.
+  Local Existing Instance EmbedILFunDrop.
+  Local Existing Instance ILFun_Ops.
+  Local Existing Instance BILFun_Ops.
+  Transparent ILFun_Ops.
+  Transparent BILFun_Ops.
+  
+  Instance PureFunDrop {T : Type} (P : A) {H : @Pure B _ _ (embed P)} : 
+  	@Pure (T -> B) _ _ (embed P).
+  Proof.
+  	split.
+  	+ intros Q s; simpl; apply pureandscL.
+  	+ intros Q s; simpl; apply pureandscR.
+  	+ intros Q R; split; intro s; simpl; apply pureandscD. 
+  	+ intros Q s; simpl; apply puresiimpl.
+  Qed.
+  
+  Local Existing Instance EmbedILFunOp.
+
+  Instance PureFun {T : Type} (P : (T -> A)) {H : forall x, @Pure B _ _ (embed (P x))} : 
+  	@Pure (T -> B) _ _ (embed P).
+  Proof.
+  	split.
+  	+ intros Q s; simpl; apply pureandscL.
+  	+ intros Q s; simpl; apply pureandscR.
+  	+ intros Q R; split; intro s; simpl; apply pureandscD. 
+  	+ intros Q s; simpl; apply puresiimpl.
+  Qed.
+
+End PureBILogicFun.
+
+Section PureBILogicPre.
+
+  Context T (ord: relation T) {HPre: PreOrder ord}.
+  Context {A : Type} `{ILA: ILogic A}.
+  Context {B : Type} `{BILB: BILogic B} {ILB : ILogic B}.
+  Context {HEmbOp : EmbedOp A B} {HEmb : Embed A B}.
+
+
+  Local Existing Instance EmbedILPreDropOpNeq.
+  Local Existing Instance ILPre_Ops.
+  Local Existing Instance BILPre_Ops.
+  Transparent ILPre_Ops.
+  Transparent BILPre_Ops.
+
+  Instance PurePreDrop (P : A) {H : @Pure B _ _ (embed P)} : 
+  	@Pure (ILPreFrm ord B) _ _ (embed P).
+  Proof.
+  	split.
+  	+ intros Q s; simpl. apply pureandscL.
+  	+ intros Q s; simpl; apply pureandscR.
+  	+ intros Q R; split; intro s; simpl; apply pureandscD. 
+  	+ intros Q s; simpl; lforallR t' Ht; lforallL t' Ht.
+  	  apply puresiimpl.
+  Qed.
+  
+  Local Existing Instance EmbedILPreOp.
+
+  Instance PurePre (P : ILPreFrm ord A) {H : forall x, @Pure B _ _ (embed (P x))} : 
+  	@Pure (ILPreFrm ord B) _ _ (embed P).
+  Proof.
+  	split.
+  	+ intros Q s; simpl; apply pureandscL.
+  	+ intros Q s; simpl; apply pureandscR.
+  	+ intros Q R; split; intro s; simpl; apply pureandscD. 
+  	+ intros Q s; simpl; lforallR t' Ht; lforallL t' Ht; apply puresiimpl.
+  Qed.
+
+End PureBILogicPre.
+
+Check PurePre.

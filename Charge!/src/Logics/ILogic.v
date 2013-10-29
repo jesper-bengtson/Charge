@@ -7,7 +7,7 @@
   ---------------------------------------------------------------------------*)
 Require Import Setoid Morphisms RelationClasses Program.Basics Omega. 
 
-Set Implicit Arguments.
+Set Implicit Arguments. 
 Unset Strict Implicit.
 Set Maximal Implicit Insertion.
 
@@ -457,6 +457,20 @@ Section ILogicFacts.
   	apply lexistsL; intro x. apply limplAdj. apply limplL.
   	+ apply lforallL with x. reflexivity.
   	+ apply landL1. reflexivity.
+  Qed.
+  
+  (* The following two lemmas have an explicit forall to help unification *)
+  
+  Lemma lforallR2 {T : Type} (P : Frm) (Q : T -> Frm) (H : P |-- lforall Q) :
+  	forall x, P |-- Q x.
+  Proof.
+    intro x; rewrite H. apply lforallL with x; reflexivity.
+  Qed.
+
+  Lemma lexistsL2 {T : Type} (P : T -> Frm) (Q : Frm) (H : lexists P |-- Q) :
+  	forall x, P x |-- Q.
+  Proof.
+    intro x; rewrite <- H. apply lexistsR with x; reflexivity.
   Qed.
 
 End ILogicFacts.

@@ -17,7 +17,9 @@ OBJECTS = \
 	bin/Logics/ILInsts.vo \
 	bin/Logics/ILogic.vo \
 	bin/Logics/Later.vo \
+	bin/Logics/Pure.vo \
 	bin/Open/Open.vo \
+	bin/Open/OpenILogic.vo \
 	bin/Open/Stack.vo \
 	bin/Open/Subst.vo \
 	bin/Rel.vo \
@@ -38,13 +40,15 @@ clean:
 	rm -f $(OBJECTS)
 
 bin/Logics/BILInsts.vo: src/Logics/BILInsts.v bin/Logics/ILogic.vo bin/Logics/BILogic.vo bin/Tactics/ILQuantTac.vo bin/Logics/ILInsts.vo bin/Rel.vo bin/SepAlg/SepAlg.vo
-bin/Logics/BILogic.vo: src/Logics/BILogic.v bin/Logics/ILogic.vo bin/Tactics/ILQuantTac.vo
+bin/Logics/BILogic.vo: src/Logics/BILogic.v bin/Logics/ILogic.vo bin/Logics/ILEmbed.vo bin/Tactics/ILQuantTac.vo
 bin/Logics/IBILogic.vo: src/Logics/IBILogic.v bin/Logics/ILogic.vo bin/Logics/ILInsts.vo bin/Logics/BILInsts.vo bin/Tactics/ILQuantTac.vo bin/Logics/BILogic.vo bin/SepAlg/SepAlg.vo
 bin/Logics/ILEmbed.vo: src/Logics/ILEmbed.v bin/Logics/ILogic.vo
 bin/Logics/ILInsts.vo: src/Logics/ILInsts.v bin/Logics/ILogic.vo bin/Logics/ILEmbed.vo bin/Tactics/ILQuantTac.vo
 bin/Logics/ILogic.vo: src/Logics/ILogic.v
 bin/Logics/Later.vo: src/Logics/Later.v bin/Logics/ILogic.vo bin/Logics/ILInsts.vo bin/Logics/ILEmbed.vo bin/Tactics/ILQuantTac.vo
+bin/Logics/Pure.vo: src/Logics/Pure.v bin/Logics/ILogic.vo bin/Logics/ILInsts.vo bin/Logics/BILogic.vo bin/Logics/BILInsts.vo bin/Logics/ILEmbed.vo bin/Tactics/ILQuantTac.vo
 bin/Open/Open.vo: src/Open/Open.v bin/Open/Stack.vo bin/Rel.vo
+bin/Open/OpenILogic.vo: src/Open/OpenILogic.v bin/Logics/ILogic.vo bin/Logics/ILEmbed.vo bin/Logics/ILInsts.vo bin/Tactics/ILQuantTac.vo bin/Rel.vo bin/Open/Open.vo bin/Open/Stack.vo
 bin/Open/Stack.vo: src/Open/Stack.v bin/Rel.vo
 bin/Open/Subst.vo: src/Open/Subst.v bin/Open/Stack.vo bin/Open/Open.vo bin/Rel.vo
 bin/Rel.vo: src/Rel.v
