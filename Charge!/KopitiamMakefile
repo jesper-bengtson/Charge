@@ -24,6 +24,7 @@ OBJECTS = \
 	bin/Open/Subst.vo \
 	bin/Rel.vo \
 	bin/SepAlg/SepAlg.vo \
+	bin/SepAlg/SepAlgInsts.vo \
 	bin/SepAlg/SepAlgMap.vo \
 	bin/SepAlg/SepAlgPfun.vo \
 	bin/SepAlg/UUSepAlg.vo \
@@ -54,8 +55,9 @@ bin/Open/Stack.vo: src/Open/Stack.v bin/Rel.vo
 bin/Open/Subst.vo: src/Open/Subst.v bin/Open/Stack.vo bin/Open/Open.vo bin/Rel.vo
 bin/Rel.vo: src/Rel.v
 bin/SepAlg/SepAlg.vo: src/SepAlg/SepAlg.v bin/Rel.vo
-bin/SepAlg/SepAlgMap.vo: src/SepAlg/SepAlgMap.v bin/SepAlg/SepAlg.vo bin/Logics/BILInsts.vo bin/SepAlg/SepAlg.vo bin/Rel.vo
-bin/SepAlg/SepAlgPfun.vo: src/SepAlg/SepAlgPfun.v bin/Rel.vo bin/SepAlg/SepAlg.vo
+bin/SepAlg/SepAlgInsts.vo: src/SepAlg/SepAlgInsts.v bin/SepAlg/SepAlg.vo bin/Rel.vo
+bin/SepAlg/SepAlgMap.vo: src/SepAlg/SepAlgMap.v bin/SepAlg/SepAlg.vo bin/SepAlg/UUSepAlg.vo bin/Logics/BILInsts.vo bin/SepAlg/SepAlg.vo bin/Rel.vo
+bin/SepAlg/SepAlgPfun.vo: src/SepAlg/SepAlgPfun.v bin/Rel.vo bin/SepAlg/SepAlg.vo bin/SepAlg/UUSepAlg.vo
 bin/SepAlg/UUSepAlg.vo: src/SepAlg/UUSepAlg.v bin/SepAlg/SepAlg.vo bin/Rel.vo
 bin/Tactics/BIBaseTactics.vo: src/Tactics/BIBaseTactics.v bin/Logics/BILogic.vo bin/Tactics/BaseTactics.vo
 bin/Tactics/BIQuantTac.vo: src/Tactics/BIQuantTac.v bin/Logics/ILogic.vo bin/Logics/ILEmbed.vo bin/Tactics/BaseTactics.vo bin/Tactics/ILQuantTac.vo bin/Logics/BILogic.vo bin/Tactics/BIBaseTactics.vo

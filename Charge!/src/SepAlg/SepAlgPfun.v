@@ -1,5 +1,5 @@
 Require Import Setoid Morphisms Rel.
-Require Import SepAlg String List.
+Require Import SepAlg UUSepAlg String List.
 Require Import Program.Basics Program.Tactics Program.Syntax.
 Require Import OrderedType.
 
@@ -113,6 +113,15 @@ Section PartialFun.
 	  SepOpSolve.
 	+ intros * Hab H1 x; SepOpSolve.
  Qed.
+
+  Definition UUMapSepAlg : @UUSepAlg (X -> partial Y) _ _.
+  Proof.
+  	split.
+  	+ apply _.
+  	+ intros m u Hu x. simpl in Hu. remember (m x) as e. destruct e.
+  	  * split; [intuition|]. specialize (Hu x). intuition.
+  	  * left; split; [intuition|]. specialize (Hu x); intuition.
+  Qed.  
 
 End PartialFun.
 

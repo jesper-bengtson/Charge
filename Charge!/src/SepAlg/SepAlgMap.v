@@ -2,7 +2,7 @@ Require Import Maps.
 Require Import String Ascii.
 Require Import Compare_dec.
 Require Import OrderedType.
-Require Import SepAlg.
+Require Import SepAlg UUSepAlg.
 (* This requires the Containers library from 
    http://coq.inria.fr/pylons/contribs/view/Containers/v8.4 *)
 Require Import MapInterface MapFacts.
@@ -310,6 +310,18 @@ Section SepAlgMap.
       unfold Equivalence.equiv, rel, MapEquiv, Equal in Hab;
 	  apply H2; SepOpSolve.
 	+ intros * H2 H3 k. simpl in *. SepOpSolve.
+  Qed.
+  
+  Definition UUMapSepAlg A : @UUSepAlg (Map [K, A]) _ _.
+  Proof.
+  	split.
+  	+ apply MapSepAlg.
+  	+ intros m u Hu x. simpl in Hu. remember (m [x]) as e. destruct e.
+  	  * left. rewrite find_mapsto_iff, in_find_iff. split; [intuition | intros H2; apply H2].
+  	    rewrite elements_o; apply elements_Empty in Hu. rewrite Hu. reflexivity.
+  	  * rewrite in_find_iff. split. intros H2. congruence.
+  	    rewrite in_find_iff. intros H2. apply H2.
+  	    apply elements_Empty in Hu. rewrite elements_o, Hu. reflexivity.
   Qed.
 
 End SepAlgMap.

@@ -1,4 +1,4 @@
-Require Import Setoid Morphisms RelationClasses.
+Require Import Setoid Morphisms RelationClasses OrderedType.
 Require Import String.
 
 Class DecidableEq (A : Type) := { dec_eq (a b : A) : {a = b} + {a <> b} }.
@@ -32,49 +32,21 @@ Instance Equiv_unit: Rel unit | 0 := fun _ _ => True.
 
 Instance Equivalence_unit : Equivalence (@rel unit _).
 Proof. firstorder. Qed.
-(*
-Instance Equivalence_option {A} {Heq: Equiv A} {Hequiv : Equivalence equiv} :
-  Equivalence (@equiv (option A) Equiv_option).
-Proof.
-  split.
-  + intros x; destruct x; unfold equiv, Equiv_option; [right | left; firstorder].
-    exists a; exists a; intuition.
-  + intros x y Hxy. destruct x, y; [| intuition firstorder | intuition firstorder |].
-    * unfold equiv, Equiv_option in *; right; 
-      destruct Hxy as [| [x [y [Hx [Hy Hxy]]]]]; [intuition congruence|].
-      exists y; exists x; intuition.
-    * unfold equiv, Equiv_option; left; intuition.
-  + intros x y z Hxy Hyz; unfold equiv, Equiv_option in *;
-    destruct x, y, z; (try intuition congruence).
-    * destruct Hxy as [| [x [y [Hx [Hy Hxy]]]]]; [intuition congruence|].
-      destruct Hyz as [| [y' [z [Hy' [Hz Hyz]]]]]; [intuition congruence|].
-      inversion Hx; inversion Hy; inversion Hy'; inversion Hz; repeat subst.
-      right. exists x; exists z; intuition. etransitivity; eassumption.
-    * destruct Hxy as [| [x [y [Hx [Hy Hxy]]]]]; [intuition congruence|].
-      destruct Hyz as [| [y' [z [Hy' [Hz Hyz]]]]]; [intuition congruence|].
-      inversion Hz.
-    * destruct Hxy as [| [x [y [Hx [Hy Hxy]]]]]; [intuition congruence|].
-      destruct Hyz as [| [y' [z [Hy' [Hz Hyz]]]]]; [intuition congruence|].
-      inversion Hy.
-    * destruct Hxy as [| [x [y [Hx [Hy Hxy]]]]]; [intuition congruence|].
-      destruct Hyz as [| [y' [z [Hy' [Hz Hyz]]]]]; [intuition congruence|].
-      inversion Hx.
-Qed.
 
 Section EquivProducts.
-  Context {A B : Type} `{eA : Equiv A} `{eB : Equiv B}.
-  Context {HA: Equivalence (@equiv _ eA)}.
-  Context {HB: Equivalence (@equiv _ eB)}.
+  Context {A B : Type} `{eA : Rel A} `{eB : Rel B}.
+  Context {HA: Equivalence (@rel _ eA)}.
+  Context {HB: Equivalence (@rel _ eB)}.
 
-  Global Instance Equiv_prod : Equiv (A * B) :=
-    fun p1 p2 => (fst p1 === fst p2) /\ (snd p1 === snd p2).
+  Global Instance Rel_prod : Rel (A * B) :=
+    fun p1 p2 => (rel (fst p1) (fst p2) /\ rel (snd p1) (snd p2)).
 
-  Global Instance prod_proper : Proper (equiv ==> equiv ==> equiv) (@pair A B).
+  Global Instance prod_proper : Proper (rel ==> rel ==> rel) (@pair A B).
   Proof.
     intros a a' Ha b b' Hb; split; assumption.
   Qed.
 
-  Global Instance equiv_prod : Equivalence equiv.
+  Global Instance equiv_prod : Equivalence rel.
   Proof.
     split.
       intros [a b]; split; reflexivity.
@@ -84,4 +56,4 @@ Section EquivProducts.
   Qed.
 
 End EquivProducts.
-*)
+
