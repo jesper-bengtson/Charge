@@ -274,6 +274,48 @@ Ltac lintros x :=
 	match goal with 
 		| |- ?p |-- ?q => intros x
 	end.
+	
+Section Functor.
+	Context {A : Type} `{HILA : ILogic A}.
+	Context {B : Type} `{HILB : ILogic B}.
+	
+	Local Existing Instance ILPre_Ops.
+	Local Existing Instance ILPre_ILogic.
+
+	Definition mkFunctor (f : A -> B) 
+		(pf : forall P Q, P |-- Q -> f P |-- f Q) := @mkILPreFrm A lentails B _ f pf.
+
+End Functor.
+Print mkFunctor.
+Implicit Arguments mkFunctor [[A] [ILOps] [B] [ILOps0]]. 
+
+Section TestFunctor.
+	Context {A : Type} `{ILA : ILogic A}.
+
+	Local Existing Instance ILPre_Ops.
+	Local Existing Instance ILPre_ILogic.
+
+	Program Definition rhs1 {T : Type} (P : T -> A) := 
+		mkFunctor (fun Q => Exists x, (land (P x) Q)) _.
+	Next Obligation.
+		setoid_rewrite H. reflexivity.
+	Qed.
+	
+	Program Definition lhs1 {T : Type} (P : T -> A) := 
+		mkFunctor (land (Exists x, P x)) _.
+	Next Obligation.
+		rewrite H. reflexivity.
+	Qed.
+	
+	Lemma test_lexists {T : Type} (P : T -> A) :
+		lhs1 P |-- rhs1 P.
+	Proof.
+		unfold lhs1, rhs1; simpl.
+		intros. apply landexistsDL.
+	Qed.
+		
+End TestFunctor.
+
 
 Global Opaque ILPre_Ops.
 Global Opaque EmbedILPreDropOpEq.

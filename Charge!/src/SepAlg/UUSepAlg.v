@@ -24,4 +24,5 @@ Section SepAlgUniqueUnit.
 	Qed.
 	
 End SepAlgUniqueUnit.
-	
+
+Implicit Arguments UUSepAlg [[e] [SAOps]].

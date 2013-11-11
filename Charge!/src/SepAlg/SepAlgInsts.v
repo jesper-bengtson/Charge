@@ -1,4 +1,4 @@
-Require Import SepAlg Rel.
+Require Import UUSepAlg SepAlg Rel.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -7,7 +7,7 @@ Set Maximal Implicit Insertion.
 Section SAProd.
   Context A B `{HA: SepAlg A} `{HB: SepAlg B}.
 
-  Instance SepRelOps_prod: SepAlgOps (A * B) := {|
+  Instance SepAlgOps_prod: SepAlgOps (A * B) := {|
     sa_unit ab := sa_unit (fst ab) /\ sa_unit (snd ab);
     sa_mul a b c :=
       sa_mul (fst a) (fst b) (fst c) /\
@@ -33,4 +33,21 @@ Section SAProd.
       unfold Equivalence.equiv in Heq; destruct Heq; simpl in *.
       rewrite <- H, <- H0; intuition.
   Qed.
+  
 End SAProd.
+
+Section UUSAProd.
+	Context A B `{HA : UUSepAlg A} `{HB: UUSepAlg B}.
+	
+	Local Existing Instance SepAlgOps_prod.
+	Local Existing Instance SepAlg_prod.
+	
+	Instance UUSepAlg_prod : UUSepAlg (A * B).
+	Proof.
+		split.
+		+ apply _.
+		+ intros. destruct H as [H1 H2]. destruct u; simpl in *.
+		  split; apply uusa_unit; assumption.
+	Qed.
+	
+End UUSAProd.

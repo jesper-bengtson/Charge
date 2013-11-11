@@ -16,6 +16,7 @@ OBJECTS = \
 	bin/Logics/ILEmbed.vo \
 	bin/Logics/ILInsts.vo \
 	bin/Logics/ILogic.vo \
+	bin/Logics/ISC.vo \
 	bin/Logics/Later.vo \
 	bin/Logics/Pure.vo \
 	bin/Open/Open.vo \
@@ -47,6 +48,7 @@ bin/Logics/IBILogic.vo: src/Logics/IBILogic.v bin/Logics/ILogic.vo bin/Logics/IL
 bin/Logics/ILEmbed.vo: src/Logics/ILEmbed.v bin/Logics/ILogic.vo
 bin/Logics/ILInsts.vo: src/Logics/ILInsts.v bin/Logics/ILogic.vo bin/Logics/ILEmbed.vo bin/Tactics/ILQuantTac.vo
 bin/Logics/ILogic.vo: src/Logics/ILogic.v
+bin/Logics/ISC.vo: src/Logics/ISC.v bin/Logics/ILogic.vo bin/Logics/BILogic.vo
 bin/Logics/Later.vo: src/Logics/Later.v bin/Logics/ILogic.vo bin/Logics/ILInsts.vo bin/Logics/ILEmbed.vo bin/Tactics/ILQuantTac.vo
 bin/Logics/Pure.vo: src/Logics/Pure.v bin/Logics/ILogic.vo bin/Logics/ILInsts.vo bin/Logics/BILogic.vo bin/Logics/BILInsts.vo bin/Logics/ILEmbed.vo bin/Tactics/ILQuantTac.vo
 bin/Open/Open.vo: src/Open/Open.v bin/Open/Stack.vo bin/Rel.vo
@@ -55,7 +57,7 @@ bin/Open/Stack.vo: src/Open/Stack.v bin/Rel.vo
 bin/Open/Subst.vo: src/Open/Subst.v bin/Open/Stack.vo bin/Open/Open.vo bin/Rel.vo
 bin/Rel.vo: src/Rel.v
 bin/SepAlg/SepAlg.vo: src/SepAlg/SepAlg.v bin/Rel.vo
-bin/SepAlg/SepAlgInsts.vo: src/SepAlg/SepAlgInsts.v bin/SepAlg/SepAlg.vo bin/Rel.vo
+bin/SepAlg/SepAlgInsts.vo: src/SepAlg/SepAlgInsts.v bin/SepAlg/UUSepAlg.vo bin/SepAlg/SepAlg.vo bin/Rel.vo
 bin/SepAlg/SepAlgMap.vo: src/SepAlg/SepAlgMap.v bin/SepAlg/SepAlg.vo bin/SepAlg/UUSepAlg.vo bin/Logics/BILInsts.vo bin/SepAlg/SepAlg.vo bin/Rel.vo
 bin/SepAlg/SepAlgPfun.vo: src/SepAlg/SepAlgPfun.v bin/Rel.vo bin/SepAlg/SepAlg.vo bin/SepAlg/UUSepAlg.vo
 bin/SepAlg/UUSepAlg.vo: src/SepAlg/UUSepAlg.v bin/SepAlg/SepAlg.vo bin/Rel.vo
