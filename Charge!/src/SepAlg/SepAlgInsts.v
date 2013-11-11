@@ -34,6 +34,17 @@ Section SAProd.
       rewrite <- H, <- H0; intuition.
   Qed.
   
+  Lemma subheap_prod (a a' : A) (b b' : B) : subheap (a, b) (a', b') <-> subheap a a' /\ subheap b b'.
+  Proof.
+  	split; [intros [c [H1 H2]]| intros [[c H1] [d H2]]]; simpl in *.
+  	+ destruct c as [c d]; simpl in *; split.
+  	  * exists c. apply H1.
+  	  * exists d. apply H2.
+  	+ exists (c, d); simpl; split.
+  	  * apply H1.
+  	  * apply H2.
+  Qed.
+  
 End SAProd.
 
 Section UUSAProd.
