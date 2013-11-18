@@ -263,7 +263,25 @@ Section Embed_ILogic_Fun.
   Qed.
         
 End Embed_ILogic_Fun.
+(*
+Section ILogicFunInv.
 
+	Context {A B} `{IL : ILogic (A -> B)}.
+	
+  Program Definition ILFun_Ops : ILogicOps (T -> A) := {|
+    lentails P Q := forall t:T, P t |-- Q t;
+    ltrue        := fun t => ltrue;
+    lfalse       := fun t => lfalse;
+    limpl    P Q := fun t => P t -->> Q t;
+    land     P Q := fun t => P t //\\ Q t;
+    lor      P Q := fun t => P t \\// Q t;
+    lforall  A P := fun t => Forall a, P a t;
+    lexists  A P := fun t => Exists a, P a t
+  |}.
+	
+
+End ILogicFunInv.
+*)
 (* Coq tends to unfold lentails on [simpl], which triggers unfolding of
    several other connectives. When that happens, the goal can become quite
    unreadable. The workaround is to make the definition of entailment and
@@ -275,48 +293,6 @@ Ltac lintros x :=
 		| |- ?p |-- ?q => intros x
 	end.
 	
-Section Functor.
-	Context {A : Type} `{HILA : ILogic A}.
-	Context {B : Type} `{HILB : ILogic B}.
-	
-	Local Existing Instance ILPre_Ops.
-	Local Existing Instance ILPre_ILogic.
-
-	Definition mkFunctor (f : A -> B) 
-		(pf : forall P Q, P |-- Q -> f P |-- f Q) := @mkILPreFrm A lentails B _ f pf.
-
-End Functor.
-Print mkFunctor.
-Implicit Arguments mkFunctor [[A] [ILOps] [B] [ILOps0]]. 
-
-Section TestFunctor.
-	Context {A : Type} `{ILA : ILogic A}.
-
-	Local Existing Instance ILPre_Ops.
-	Local Existing Instance ILPre_ILogic.
-
-	Program Definition rhs1 {T : Type} (P : T -> A) := 
-		mkFunctor (fun Q => Exists x, (land (P x) Q)) _.
-	Next Obligation.
-		setoid_rewrite H. reflexivity.
-	Qed.
-	
-	Program Definition lhs1 {T : Type} (P : T -> A) := 
-		mkFunctor (land (Exists x, P x)) _.
-	Next Obligation.
-		rewrite H. reflexivity.
-	Qed.
-	
-	Lemma test_lexists {T : Type} (P : T -> A) :
-		lhs1 P |-- rhs1 P.
-	Proof.
-		unfold lhs1, rhs1; simpl.
-		intros. apply landexistsDL.
-	Qed.
-		
-End TestFunctor.
-
-
 Global Opaque ILPre_Ops.
 Global Opaque EmbedILPreDropOpEq.
 Global Opaque EmbedILPreOp.
