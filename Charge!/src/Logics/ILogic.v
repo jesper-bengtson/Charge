@@ -473,6 +473,32 @@ Section ILogicFacts.
     intro x; rewrite <- H. apply lexistsR with x; reflexivity.
   Qed.
 
+  Lemma landtrueL : forall a, ltrue //\\ a -|- a.
+  Proof.
+    intros. split. eapply landL2. reflexivity. apply landR; eauto.
+  Qed.
+
+  Lemma landtrueR : forall a, a //\\ ltrue -|- a.
+  Proof.
+    intros. split. eapply landL1. reflexivity. apply landR; eauto.
+  Qed.
+
+  Lemma curry : forall a b c, (a //\\ b) -->> c -|- a -->> (b -->> c).
+  Proof.
+    clear - IL.
+    intros.
+    split.
+    { eapply limplAdj.
+      eapply limplAdj.
+      rewrite landA.
+      eapply landAdj.
+      reflexivity. }
+    { eapply limplAdj.
+      rewrite <- landA.
+      eapply landAdj.
+      eapply landAdj. reflexivity. }
+  Qed.
+
 End ILogicFacts.
 
 (* Prop is an intuitionistic logic *)

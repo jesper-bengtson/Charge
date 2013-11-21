@@ -216,4 +216,25 @@ Section DerivedInferenceRules.
 	  apply wandSPL; reflexivity.
   Qed.
   
+  Lemma septrue : forall p, p |-- p ** ltrue.
+  Proof.
+    intros. rewrite <- empSPR at 1.
+    rewrite sepSPC. rewrite (sepSPC p).
+    apply bilsep. apply ltrueR.
+  Qed.
+
+  Lemma wand_curry : forall a b c, (a ** b) -* c -|- a -* (b -* c).
+  Proof.
+    intros; split.
+    { eapply wandSPAdj.
+      eapply wandSPAdj.
+      rewrite sepSPA.
+      eapply sepSPAdj.
+      reflexivity. }
+    { eapply wandSPAdj.
+      rewrite <- sepSPA.
+      eapply sepSPAdj.
+      eapply sepSPAdj. reflexivity. }
+  Qed.
+
 End DerivedInferenceRules.
