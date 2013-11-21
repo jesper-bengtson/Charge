@@ -2,7 +2,7 @@ Add Rec LoadPath "/Users/jebe/git/Charge/Charge!/bin".
 Add Rec LoadPath "/Users/jebe/git/mirror-core/src/" as MirrorCore.
 
 Require Import ILogic ILInsts BILogic BILInsts ILEmbed ILQuantTac.
-Require Import Setoid.
+Require Import Setoid Morphisms.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -63,8 +63,13 @@ Section Pure.
     intros. eapply pure_axiom in H; destruct H; intuition.
   Qed.
 
-  (** TODO : move to bil **)
-  
+  Global Instance Proper_pure_lequiv : Proper (lequiv ==> iff)%signature pure.
+  Proof.
+    red. red. intros.
+    do 2 rewrite pure_axiom.
+    unfold parameter_pure.
+    setoid_rewrite H. reflexivity.
+  Qed.
 
   Instance pure_ltrue : pure ltrue.
   Proof.
@@ -90,13 +95,6 @@ Section Pure.
       rewrite pureandscD; auto. apply landL1. reflexivity. }
   Qed.
 
-(*
-  Instance pure_limpl x y : pure x -> pure y ->  pure (x -->> y).
-  Proof.
-    intros. eapply pure_axiom.
-    constructor.
-    { 
-*)
   Instance pure_land x y : pure x -> pure y ->  pure (x //\\ y).
   Proof.
     intros.
@@ -141,6 +139,15 @@ Section Pure.
       apply landL1.
       eapply pureimplsi; auto. }
   Qed.
+
+(*
+  Instance pure_limpl x y : pure x -> pure y ->  pure (x -->> y).
+*)
+
+(*
+  Instance pure_lor x y : pure x -> pure y ->  pure (x \\// y).
+*)
+
 
 End Pure.
 
