@@ -105,7 +105,7 @@ Implicit Arguments ILogic [[ILOps]].
 Implicit Arguments lforallL [[ILOps] [Frm] [ILogic] [T] [P] [C]].
 Implicit Arguments lexistsR [[ILOps] [Frm] [ILogic] [T] [P] [C]].
 
-Notation "|-- P" := (ltrue |-- P) (at level 85, no associativity).
+Notation "|--  P" := (ltrue |-- P) (at level 85, no associativity).
 Hint Extern 0 (?x |-- ?x) => reflexivity.
 Hint Extern 0 (_ |-- ltrue) => apply ltrueR.
 Hint Extern 0 (lfalse |-- _) => apply lfalseL.
