@@ -1,7 +1,7 @@
 Add Rec LoadPath "/Users/jebe/git/Charge/Charge!/bin".
 Add Rec LoadPath "/Users/jebe/git/mirror-core/src/" as MirrorCore.
 
-Require Import ILogic ILInsts BILogic BILInsts ILEmbed ILQuantTac.
+Require Import ILogic ILInsts BILogic ILEmbed ILQuantTac.
 Require Import Setoid Morphisms.
 
 Set Implicit Arguments.
@@ -11,13 +11,6 @@ Set Maximal Implicit Insertion.
 Section Pure.
 
   Context {A : Type} {ILOPs : ILogicOps A} {BILOps : BILOperators A}.
-
-(* This version of Pure will not work for classical separation logics as that 
-   requires a negative occurrence of a recursive call for the rule that states that
-   P ** Q |-- P //\\ Q (both P and Q must be pure). This is most likely solvable,
-   and is true even for non-pure predicates in intuitionistic separation logic,
-   but I want to do it in a nice way. *)
-
 
   Class PureOp := {
     pure : A -> Prop
@@ -140,77 +133,81 @@ Section Pure.
       eapply pureimplsi; auto. }
   Qed.
 
-(*
-  Instance pure_limpl x y : pure x -> pure y ->  pure (x -->> y).
-*)
+  Instance pure_sc x y (Hx : pure x) (Hy : pure y) : pure (x ** y).
+  Proof.
+    eapply pure_axiom; repeat split; intros.
+    + rewrite sepSPA. 
+      do 2 (etransitivity; [|rewrite <- pureandsc; eauto]).
+      rewrite purescand by auto. apply landA.
+    + etransitivity; [|rewrite <- pureandsc; eauto].
+      rewrite landA. rewrite <- purescand by auto using pure_land.
+      rewrite <- purescand by auto.
+      apply sepSPA.
+    + etransitivity; [rewrite (purescand Hx Hy); reflexivity|].
+      etransitivity; [|rewrite <- pureandsc by auto; reflexivity].
+      rewrite <- pureandscD by eauto using pure_land. reflexivity.
+    + etransitivity; [|rewrite <- (@pureandsc x y) by auto; reflexivity].
+      rewrite purescand by auto.
+      rewrite pureandscD by auto using pure_land; reflexivity.
+    + etransitivity; [|rewrite purescand by auto; reflexivity].
+      etransitivity; [rewrite <- pureandsc by auto; reflexivity|].
+      rewrite puresiimpl by auto using pure_land; reflexivity.
+    + etransitivity; [|rewrite purescand by auto; reflexivity].
+      etransitivity; [rewrite <- pureandsc by auto; reflexivity|].
+      rewrite pureimplsi by auto using pure_land; reflexivity.
+  Qed.
 
 (*
+
+  Instance pure_limpl x y (Hx : pure x) (Hy : pure y) : pure (x -->> y).
+
   Instance pure_lor x y : pure x -> pure y ->  pure (x \\// y).
 *)
 
 
 End Pure.
 
-(*
+Implicit Arguments Pure [[A] [ILOPs] [BILOps]].
+
 Section EmbedPropPure.
 
   Context {A : Type} `{HIL: ILogic A} {HPropOp: EmbedOp Prop A} {HProp: Embed Prop A}.
   Context {BILOPA : BILOperators A} {BILA : BILogic A}.
+  Context (po : PureOp) (pur : Pure po).
 
-  Instance EmbedPropPureOp : PureOp := {
-     pure := fun P => exists p, P -|- embed p
-  }.
-
-  Instance EmbedPropPure : @Pure A _ _ EmbedPropPureOp.
+  Instance embed_prop_pure (p : Prop) : pure (embed p).
   Proof.
-    split; intros.
-    + destruct H as [p H].
-      rewrite H.
-      etransitivity; [rewrite embedPropExists|rewrite <- (embedPropExistsL p empSP)];
+    eapply pure_axiom; repeat split; intros.
+    + etransitivity; [rewrite embedPropExists|rewrite  <- (embedPropExistsL p empSP)];
       [reflexivity|].
       lexistsL Hp. rewrite sepSPC, <- bilexistsscL.
       lexistsR Hp. rewrite empSPR. apply landL2. reflexivity.
-    + destruct H as [p H], H0 as [q H0].
-      rewrite H, H0; apply landR.
-      * rewrite <- embedPropExists', sepSPC, bilexistsscR.
-        lexistsL Hp; lexistsR Hp; apply ltrueR.
-      * do 2 rewrite <- embedPropExists'. rewrite bilexistsscR.
-        lexistsL Hp; lexistsR Hp; apply ltrueR.
-    + destruct H as [p H]; rewrite H, <- embedPropExists'; split.
-      * apply landR.
-        - apply wandSepSPAdj. apply landL1.
-          lexistsL Hp. apply wandSepSPAdj.
-          lexistsR Hp. apply ltrueR.
-        - apply bilsep. apply landL2. reflexivity.
-      * rewrite landexistsDL; lexistsL Hp.
-        apply landL2. apply bilsep. apply landR; [|reflexivity].
+    + rewrite <- embedPropExists', sepSPC, bilexistsscR.
+      lexistsL Hp; lexistsR Hp. rewrite landC. eapply purescand; auto using pure_ltrue.
+    + rewrite <- embedPropExists'. apply landR.
+      * apply wandSepSPAdj. apply landL1.
+        lexistsL Hp. apply wandSepSPAdj.
         lexistsR Hp. apply ltrueR.
-    + destruct H as [p H].
-      rewrite H.
-      rewrite <- embedPropExists', siexistsE.
+      * apply bilsep. apply landL2. reflexivity.
+    + rewrite <- embedPropExists'; rewrite landexistsDL; lexistsL Hp.
+      apply landL2. apply bilsep. apply landR; [|reflexivity].
+      lexistsR Hp. apply ltrueR.
+    + rewrite <- embedPropExists', siexistsE.
       apply limplAdj. rewrite landC, landexistsDL.
       lexistsL Hp. apply landL2. lforallL Hp.
       transitivity ((ltrue -* Q) ** empSP); [apply empSPR|].
       apply wandSPL; [apply ltrueR | reflexivity].
-    + destruct H as [p H]; rewrite H.
-      apply wandSepSPAdj. rewrite <- embedPropExists', bilexistsscR.
+    + apply wandSepSPAdj. rewrite <- embedPropExists', bilexistsscR.
       lexistsL Hp. apply wandSepSPAdj.
       rewrite limplexistsE. lforallL Hp.
       transitivity ((ltrue -->> Q) //\\ ltrue); [apply landR; [reflexivity | apply ltrueR]|].
       apply limplL; [apply ltrueR|apply landL1].
-      destruct H0 as [q H0]; rewrite H0.
-      rewrite <- embedPropExists'.
-      lexistsL Hq. apply wandSepSPAdj. lexistsR Hq. apply ltrueR.
-  Qed.
-
-  Lemma pureEmbedProp (p : Prop) : pure (embed p).
-  Proof.
-    unfold pure; simpl.
-    exists p; reflexivity.
+      rewrite <- pureimplsi; auto using pure_ltrue.
+      apply limplAdj. apply landL1; reflexivity. assumption.
   Qed.
   
 End EmbedPropPure.
-*)
+
 
 (*
 Section PureBILogicFun.
