@@ -1,3 +1,5 @@
+Add Rec LoadPath "/Users/jebe/git/Charge/Charge!/bin".
+
 Require Import RelationClasses Setoid Morphisms.
 Require Import ILogic ILEmbed ILQuantTac.
 
@@ -21,6 +23,8 @@ Section ILogic_Pre.
   Proof.
     intros t t' Ht. apply ILPreFrm_closed; assumption.
   Qed.
+
+  Program Definition ILPreFrm_atom (a : A) := mk (fun t => a) _.
 
   Local Obligation Tactic :=
     repeat match goal with

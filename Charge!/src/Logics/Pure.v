@@ -18,10 +18,11 @@ Section Pure.
 
   Definition parameter_pure (pure : A -> Prop) (P : A) : Prop :=
     (forall Q, P //\\ Q |-- P ** Q) /\
-    (forall  Q, pure Q -> P ** Q |-- P //\\ Q) /\
+    (forall Q, pure Q -> P ** Q |-- P //\\ Q) /\
     (forall Q R, (P //\\ Q) ** R -|- P //\\ (Q ** R)) /\
     (forall Q, P -* Q |-- P -->> Q) /\
     (forall Q, pure Q -> P -->> Q |-- P -* Q).
+
 
   Class Pure {HP : PureOp} := {
     pure_axiom : forall p, pure p <-> parameter_pure pure p
@@ -168,140 +169,3 @@ Section Pure.
 End Pure.
 
 Implicit Arguments Pure [[A] [ILOPs] [BILOps]].
-
-Section EmbedPropPure.
-
-  Context {A : Type} `{HIL: ILogic A} {HPropOp: EmbedOp Prop A} {HProp: Embed Prop A}.
-  Context {BILOPA : BILOperators A} {BILA : BILogic A}.
-  Context (po : PureOp) (pur : Pure po).
-
-  Instance embed_prop_pure (p : Prop) : pure (embed p).
-  Proof.
-    eapply pure_axiom; repeat split; intros.
-    + etransitivity; [rewrite embedPropExists|rewrite  <- (embedPropExistsL p empSP)];
-      [reflexivity|].
-      lexistsL Hp. rewrite sepSPC, <- bilexistsscL.
-      lexistsR Hp. rewrite empSPR. apply landL2. reflexivity.
-    + rewrite <- embedPropExists', sepSPC, bilexistsscR.
-      lexistsL Hp; lexistsR Hp. rewrite landC. eapply purescand; auto using pure_ltrue.
-    + rewrite <- embedPropExists'. apply landR.
-      * apply wandSepSPAdj. apply landL1.
-        lexistsL Hp. apply wandSepSPAdj.
-        lexistsR Hp. apply ltrueR.
-      * apply bilsep. apply landL2. reflexivity.
-    + rewrite <- embedPropExists'; rewrite landexistsDL; lexistsL Hp.
-      apply landL2. apply bilsep. apply landR; [|reflexivity].
-      lexistsR Hp. apply ltrueR.
-    + rewrite <- embedPropExists', siexistsE.
-      apply limplAdj. rewrite landC, landexistsDL.
-      lexistsL Hp. apply landL2. lforallL Hp.
-      transitivity ((ltrue -* Q) ** empSP); [apply empSPR|].
-      apply wandSPL; [apply ltrueR | reflexivity].
-    + apply wandSepSPAdj. rewrite <- embedPropExists', bilexistsscR.
-      lexistsL Hp. apply wandSepSPAdj.
-      rewrite limplexistsE. lforallL Hp.
-      transitivity ((ltrue -->> Q) //\\ ltrue); [apply landR; [reflexivity | apply ltrueR]|].
-      apply limplL; [apply ltrueR|apply landL1].
-      rewrite <- pureimplsi; auto using pure_ltrue.
-      apply limplAdj. apply landL1; reflexivity. assumption.
-  Qed.
-  
-End EmbedPropPure.
-
-
-(*
-Section PureBILogicFun.
-  Context {A : Type} `{ILA: ILogic A}.
-  Context {B : Type} `{BILB: BILogic B} {ILB : ILogic B}.
-  Context {HEmbOp : EmbedOp A B} {HEmb : Embed A B}.
-
-  Local Existing Instance ILFun_Ops.
-  Local Existing Instance BILFun_Ops.
-  Transparent ILFun_Ops.
-  Transparent BILFun_Ops.
-
-  Instance PureFunOp {T : Type} {H : @PureOp B} : @PureOp (T -> B) := {
-    pure := fun f => forall x, pure (f x)
-  }.
-  
-  Instance PureFunDrop {T : Type} {HOp : @PureOp B} {H : @Pure B _ _ _} : 
-  	@Pure (T -> B) _ _ (@PureFunOp T HOp).
-  Proof.
-    split; intros.
-    + intros s; simpl; apply pureandsc; apply H0.
-    + intros s; simpl; apply purescand; [apply H0 | apply H1].
-    + split; intros s; simpl; apply pureandscD; apply H0.
-    + intros s; simpl; apply puresiimpl; apply H0.
-    + intros s; simpl; apply pureimplsi; [apply H0 | apply H1].
-  Qed.
-
-  Local Existing Instance EmbedILFunDropOp.
-  Local Existing Instance EmbedILFunDrop.
-Set Printing All.
-Check embed.
-  Lemma pure_fun_drop {T : Type} (P : B) {HOp : @PureOp B} 
-        (f : T -> A) (H : @pure (T -> B) (@PureFunOp T HOp) (@embed f)) : True.
-  Proof.
-    unfold pure; simpl. apply H.
-  Qed.
-
-  
-  Local Existing Instance EmbedILFunOp.
-
-  Instance PureFunOp {T : Type} (P : T -> A) {H : @PureOp B} : @PureOp (T -> B) := {
-    pure := fun f => forall x, pure (f x)
-  }.
-
-  Instance PureFun {T : Type} (P : (T -> A)) {H : forall x, @Pure B _ _ (embed (P x))} : 
-  	@Pure (T -> B) _ _ (embed P).
-  Proof.
-  	split.
-  	+ intros Q s; simpl; apply pureandscL.
-  	+ intros Q s; simpl; apply pureandscR.
-  	+ intros Q R; split; intro s; simpl; apply pureandscD. 
-  	+ intros Q s; simpl; apply puresiimpl.
-  Qed.
-
-End PureBILogicFun.
-
-Section PureBILogicPre.
-
-  Context T (ord: relation T) {HPre: PreOrder ord}.
-  Context {A : Type} `{ILA: ILogic A}.
-  Context {B : Type} `{BILB: BILogic B} {ILB : ILogic B}.
-  Context {HEmbOp : EmbedOp A B} {HEmb : Embed A B}.
-
-
-  Local Existing Instance EmbedILPreDropOpNeq.
-  Local Existing Instance ILPre_Ops.
-  Local Existing Instance BILPre_Ops.
-  Transparent ILPre_Ops.
-  Transparent BILPre_Ops.
-
-  Instance PurePreDrop (P : A) {H : @Pure B _ _ (embed P)} : 
-  	@Pure (ILPreFrm ord B) _ _ (embed P).
-  Proof.
-  	split.
-  	+ intros Q s; simpl. apply pureandscL.
-  	+ intros Q s; simpl; apply pureandscR.
-  	+ intros Q R; split; intro s; simpl; apply pureandscD. 
-  	+ intros Q s; simpl; lforallR t' Ht; lforallL t' Ht.
-  	  apply puresiimpl.
-  Qed.
-  
-  Local Existing Instance EmbedILPreOp.
-
-  Instance PurePre (P : ILPreFrm ord A) {H : forall x, @Pure B _ _ (embed (P x))} : 
-  	@Pure (ILPreFrm ord B) _ _ (embed P).
-  Proof.
-  	split.
-  	+ intros Q s; simpl; apply pureandscL.
-  	+ intros Q s; simpl; apply pureandscR.
-  	+ intros Q R; split; intro s; simpl; apply pureandscD. 
-  	+ intros Q s; simpl; lforallR t' Ht; lforallL t' Ht; apply puresiimpl.
-  Qed.
-
-End PureBILogicPre.
-
-Check PurePre.
-*)

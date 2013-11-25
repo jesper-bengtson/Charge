@@ -112,12 +112,8 @@ Section BISepAlg.
         apply limplAdj. apply limplL; [apply H| apply landL1; apply H0].
     + destruct H as [Hax1 [Hax2 [Hax3 [Hax4 Hax5]]]].
       unfold pure; simpl; intros.
-      
-      assert ((p //\\ empSP) h |--  p h').
-
-      
-        
-
+      admit. (* This is most likely not true *)
+  Qed.
   
 End BISepAlg.
 
@@ -128,7 +124,7 @@ Section BILPre.
   Context {A : Type} `{HBI: BILogic A}.
   Context {HIL : ILogic A}.
 
-  Program Definition BILPre_Ops : BILOperators (ILPreFrm ord A) := {|
+  Program Instance BILPre_Ops : BILOperators (ILPreFrm ord A) := {|
     empSP      := mkILPreFrm (fun t => empSP) _;
     sepSP  P Q := mkILPreFrm (fun t => P t ** Q t) _;
     wandSP P Q := mkILPreFrm (fun t => Forall t', Forall H : ord t t', P t' -* Q t') _
@@ -144,11 +140,10 @@ Section BILPre.
 
   Local Existing Instance ILPre_Ops.
   Local Existing Instance ILPre_ILogic.
-  Local Existing Instance BILPre_Ops.
 
   Local Transparent ILPre_Ops.
 
-  Definition BILPreLogic : BILogic (ILPreFrm ord A).
+  Instance BILPreLogic : BILogic (ILPreFrm ord A).
   Proof.
     split.
     + apply _.
@@ -163,6 +158,46 @@ Section BILPre.
     + intros P Q R H x; simpl; apply bilsep; apply H. 
     + intros P; split; intros x; simpl; apply empSPR.
   Qed.
+
+  Context {POA : @PureOp A} {PA : Pure POA}.
+
+  Instance PureBILPreOp : @PureOp (ILPreFrm ord A) := {
+    pure := fun a => forall t, pure (a t)
+  }.
+
+  Instance PureBILPre : Pure (PureBILPreOp).
+  Proof.
+    split; intros; split; intro H. 
+    + repeat split; intros; intro t; simpl.
+      * apply pureandsc with (po := POA); auto.
+      * apply purescand with (po := POA); auto.
+      * apply pureandscD with (po := POA); auto.
+      * apply pureandscD with (po := POA); auto.
+      * apply lforallR; intro t'; apply lforallR; intro Ht.
+        apply lforallL with t'; apply lforallL with Ht.
+        apply puresiimpl with (po := POA); auto.
+      * apply lforallR; intro t'; apply lforallR; intro Ht.
+        apply lforallL with t'; apply lforallL with Ht.
+        apply pureimplsi with (po := POA); auto.
+    + intros t; apply PA;
+      destruct H as [Hax1 [Hax2 [Hax3 [Hax4 Hax5]]]].
+      repeat split; intros.
+      * specialize (Hax1 (ILPreFrm_atom ord Q)); apply Hax1.
+      * specialize (Hax2 (ILPreFrm_atom ord Q)); apply Hax2; simpl; auto.
+      * specialize (Hax3 (ILPreFrm_atom ord Q) (ILPreFrm_atom ord R)); apply Hax3.        
+      * specialize (Hax3 (ILPreFrm_atom ord Q) (ILPreFrm_atom ord R)); apply Hax3.        
+      * admit.
+      * admit.
+        (* These two cases suffer from a very similar problem
+           as the admit in the SepAlg case. It will hopefully be solved when we change
+           how completeness of Pure works. *)
+  Qed.
+
+  Instance pureBILPre (a : ILPreFrm ord A) (H : forall t, pure (a t)) : pure a.
+  Proof.
+    simpl; apply H.
+  Qed.
+
 End BILPre.
 
 Global Opaque BILPre_Ops.
@@ -194,6 +229,38 @@ Section BILogic_Fun.
       apply wandSepSPAdj; apply H.
     + intros P Q R H x; simpl; apply bilsep; apply H.
     + intros P; split; intros x; simpl; apply empSPR.
+  Qed.
+
+  Context {POA : @PureOp A} {PA : Pure POA}.
+
+  Instance PureBILFunOp : @PureOp (T -> A) := {
+    pure := fun a => forall t, pure (a t)
+  }.
+
+  Instance PureBILFun : Pure (PureBILFunOp).
+  Proof.
+    split; intros; split; intro H. 
+    + repeat split; intros; intro t; simpl.
+      * apply pureandsc with (po := POA); auto.
+      * apply purescand with (po := POA); auto.
+      * apply pureandscD with (po := POA); auto.
+      * apply pureandscD with (po := POA); auto.
+      * apply puresiimpl with (po := POA); auto.
+      * apply pureimplsi with (po := POA); auto.
+    + intros t; apply PA;
+      destruct H as [Hax1 [Hax2 [Hax3 [Hax4 Hax5]]]].
+      repeat split; intros.
+      * specialize (Hax1 (fun t => Q)); apply Hax1.
+      * specialize (Hax2 (fun t => Q)); apply Hax2; simpl; auto.
+      * specialize (Hax3 (fun t => Q) (fun t => R)); apply Hax3.        
+      * specialize (Hax3 (fun t => Q) (fun t => R)); apply Hax3.        
+      * specialize (Hax4 (fun t => Q)); apply Hax4.
+      * specialize (Hax5 (fun t => Q)); apply Hax5; simpl; auto.
+  Qed.
+
+  Instance pureBILFun (a : T -> A) (H : forall t, pure (a t)) : pure a.
+  Proof.
+    simpl; apply H.
   Qed.
 
 End BILogic_Fun.

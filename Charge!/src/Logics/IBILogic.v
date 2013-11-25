@@ -1,5 +1,8 @@
+Add Rec LoadPath "/Users/jebe/git/Charge/Charge!/bin".
+
 Require Import RelationClasses Setoid Morphisms.
 Require Import ILogic ILInsts BILInsts ILQuantTac BILogic SepAlg.
+Require Import Pure.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -114,6 +117,46 @@ Section IBISepAlg.
     + apply _.
     + simpl; intros _. apply ltrueR.
   Qed.
+
+
+  Instance pureop_pure_bi_sepalg : PureOp := { 
+    pure := fun (P : ILPreFrm subheap B) => forall h h', P h |-- P h'
+  }.
+
+  Instance pure_bi_sepalg : Pure pureop_pure_bi_sepalg.
+  Proof.
+    split; intros; split; intro H.
+    + unfold pure in H; simpl in H; repeat split; intros; 
+      unfold pure in *; simpl in *; intros h; simpl.
+      * destruct (sa_unit_ex h) as [u [H1 H2]].
+        apply lexistsR with u. apply lexistsR with h.
+        eapply lexistsR. apply sa_mulC; apply H2.
+        apply landR; [apply landL1; apply H| apply landL2; reflexivity].
+      * apply lexistsL; intros x1.
+        apply lexistsL; intros x2.
+        apply lexistsL; intros Hx.
+        apply landR; [apply landL1; apply H | apply landL2; apply H0].
+      * apply lexistsL; intros x1; apply lexistsL; intro x2; apply lexistsL; intros Hx.
+        rewrite landA. apply landR; [apply landL1; apply H|].
+        apply lexistsR with x1; apply lexistsR with x2; apply lexistsR with Hx.
+        apply landL2. reflexivity.
+      * rewrite landC. apply landAdj.
+        apply lexistsL; intros x1; apply lexistsL; intro x2; apply lexistsL; intros Hx.
+        apply limplAdj. 
+        apply lexistsR with x1. apply lexistsR with x2. apply lexistsR with Hx.
+        rewrite landC, landA.
+        apply landR; [apply landL1; apply H | apply landL2; reflexivity].
+      * apply lforallR; intro x1; apply lforallR; intro Hx.
+        destruct Hx as [x2 Hx].
+        apply lforallL with x2; apply lforallL with x1. apply lforallL.
+        - assumption.
+        - apply limplAdj. apply limplL; [apply H | apply landL1; reflexivity].
+      * apply lforallR; intro x1; apply lforallR; intro x2; apply lforallR; intro Hx.
+        apply lforallL with h. apply lforallL; [reflexivity|].
+        apply limplAdj. apply limplL; [apply H| apply landL1; apply H0].
+    + destruct H as [Hax1 [Hax2 [Hax3 [Hax4 Hax5]]]].
+      admit.
+  Qed.  
 
 End IBISepAlg.
   
