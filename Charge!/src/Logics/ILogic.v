@@ -58,11 +58,11 @@ Infix "-->>"   := limpl (at level 77, right associativity).
 Notation "'Forall' x : T , p" := 
   (lforall (fun x : T => p)) (at level 78, x ident, right associativity).
 Notation "'Forall' x , p" := 
-  (lforall (fun x => p)) (at level 78, x ident, right associativity).
+  (lforall (fun x => p)) (at level 78, x ident, right associativity, only parsing).
 Notation "'Exists' x : T , p" := 
   (lexists (fun x : T => p)) (at level 78, x ident, right associativity).
 Notation "'Exists' x , p" := 
-  (lexists (fun x => p)) (at level 78, x ident, right associativity).
+  (lexists (fun x => p)) (at level 78, x ident, right associativity, only parsing).
 
 Section ILogicEquiv.
   Context `{IL: ILogicOps Frm}.
