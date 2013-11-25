@@ -24,8 +24,9 @@ Section Pure.
     (forall Q, pure Q -> P -->> Q |-- P -* Q).
 
 
-  Class Pure {HP : PureOp} := {
-    pure_axiom : forall p, pure p <-> parameter_pure pure p
+  Class Pure {HP : PureOp} :=
+  { pure_axiom : forall p, pure p -> parameter_pure pure p
+  ; pure_proper : Proper (lequiv ==> iff) pure
   }.
 
   Existing Class pure.
@@ -57,14 +58,7 @@ Section Pure.
     intros. eapply pure_axiom in H; destruct H; intuition.
   Qed.
 
-  Global Instance Proper_pure_lequiv : Proper (lequiv ==> iff)%signature pure.
-  Proof.
-    red. red. intros.
-    do 2 rewrite pure_axiom.
-    unfold parameter_pure.
-    setoid_rewrite H. reflexivity.
-  Qed.
-
+(*
   Instance pure_ltrue : pure ltrue.
   Proof.
     eapply pure_axiom.
@@ -157,8 +151,6 @@ Section Pure.
       etransitivity; [rewrite <- pureandsc by auto; reflexivity|].
       rewrite pureimplsi by auto using pure_land; reflexivity.
   Qed.
-
-(*
 
   Instance pure_limpl x y (Hx : pure x) (Hy : pure y) : pure (x -->> y).
 

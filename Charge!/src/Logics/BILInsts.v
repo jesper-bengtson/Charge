@@ -21,7 +21,7 @@ Section BISepAlg.
                                                 P x1 //\\ Q x2) _;
     wandSP P Q := mkILPreFrm (fun x => Forall x1, Forall x2, Forall H : sa_mul x x1 x2,  
                                                  P x1 -->> Q x2) _
-  }. 
+  }.
   Next Obligation.
   	lexistsL H1. eapply lexistsR. rewrite <- H. assumption. apply ltrueR.
   Qed.
@@ -72,8 +72,7 @@ Section BISepAlg.
       - destruct (sa_unit_ex x) as [u [H1 H2]].
         lexistsR x u H2 H1. 
         apply landR; [reflexivity| apply ltrueR].
-        
-  Qed. 
+  Qed.
 
   Instance pureop_bi_sepalg : PureOp := { 
     pure := fun (P : ILPreFrm rel B) => forall h h', P h |-- P h'
@@ -81,40 +80,59 @@ Section BISepAlg.
 
   Instance pure_bi_sepalg : Pure pureop_bi_sepalg.
   Proof.
-    split; intros; split; intro H.
-    + unfold pure in H; simpl in H; repeat split; intros; 
-      unfold pure in *; simpl in *; intros h; simpl.
-      * destruct (sa_unit_ex h) as [u [H1 H2]].
-        apply lexistsR with u. apply lexistsR with h.
-        eapply lexistsR. apply sa_mulC; apply H2.
-        apply landR; [apply landL1; apply H| apply landL2; reflexivity].
-      * apply lexistsL; intros x1.
-        apply lexistsL; intros x2.
-        apply lexistsL; intros Hx.
-        apply landR; [apply landL1; apply H | apply landL2; apply H0].
-      * apply lexistsL; intros x1; apply lexistsL; intro x2; apply lexistsL; intros Hx.
-        rewrite landA. apply landR; [apply landL1; apply H|].
-        apply lexistsR with x1; apply lexistsR with x2; apply lexistsR with Hx.
-        apply landL2. reflexivity.
-      * rewrite landC. apply landAdj.
-        apply lexistsL; intros x1; apply lexistsL; intro x2; apply lexistsL; intros Hx.
-        apply limplAdj. 
-        apply lexistsR with x1. apply lexistsR with x2. apply lexistsR with Hx.
-        rewrite landC, landA.
-        apply landR; [apply landL1; apply H | apply landL2; reflexivity].
-      * apply lforallR; intro x1; apply lforallR; intro Hx.
-        destruct (sa_unit_ex x1) as [u [H1 H2]].
-        apply lforallL with u; apply lforallL with x1. apply lforallL.
-        - eapply sa_mul_mon; try eassumption; symmetry; apply Hx.
-        - apply limplAdj. apply limplL; [apply H | apply landL1; reflexivity].
-      * apply lforallR; intro x1; apply lforallR; intro x2; apply lforallR; intro Hx.
-        apply lforallL with h. apply lforallL; [reflexivity|].
-        apply limplAdj. apply limplL; [apply H| apply landL1; apply H0].
-    + destruct H as [Hax1 [Hax2 [Hax3 [Hax4 Hax5]]]].
-      unfold pure; simpl; intros.
-      admit. (* This is most likely not true *)
+    constructor.
+    { unfold pure; simpl; constructor.
+      { unfold sepSP; simpl; intros.
+        destruct (sa_unit_ex t).
+        apply lexistsR with x.
+        apply lexistsR with t.
+        destruct H0.
+        apply sa_mulC in H1.
+        eapply lexistsR; eauto.
+        rewrite H. reflexivity. }
+      constructor.
+      { unfold sepSP; simpl; intros.
+        repeat (eapply lexistsL; intros).
+        rewrite H. rewrite H0. reflexivity. }
+      constructor.
+      { split; intros; unfold sepSP; simpl; intros.
+        { repeat (eapply lexistsL; intros).
+          apply landR. do 2 apply landL1. auto.
+          eapply lexistsR.
+          eapply lexistsR.
+          eapply lexistsR. eassumption.
+          eapply landR. apply landL1. apply landL2. reflexivity.
+          apply landL2. reflexivity. }
+        { rewrite landC.
+          rewrite landexistsDL.
+          repeat (eapply lexistsL; intros).
+          rewrite landexistsDL.
+          repeat (eapply lexistsL; intros).
+          rewrite landexistsDL.
+          repeat (eapply lexistsL; intros).
+          do 3 eapply lexistsR.
+          eassumption.
+          rewrite H.
+          rewrite landC. rewrite landA. reflexivity. } }
+      constructor.
+      { unfold wandSP; simpl; intros.
+        repeat (eapply lforallR; intros).
+        destruct (sa_unit_ex x).
+        destruct H0.
+        eapply lforallL with x1.
+        apply lforallL with x.
+        eapply lforallL.
+        rewrite x0. auto.
+        apply limplAdj. apply limplL. apply H. apply landL1. reflexivity. }
+      { unfold wandSP; simpl; intros.
+        repeat (eapply lforallR; intros).
+        eapply lforallL. eapply lforallL. reflexivity.
+        apply limplAdj. apply limplL; auto. apply landL1. auto. } }
+    { red. red. unfold pure; simpl.
+      intros. setoid_rewrite H.
+      reflexivity. }
   Qed.
-  
+
 End BISepAlg.
 
 Global Opaque SABIOps.
@@ -167,8 +185,8 @@ Section BILPre.
 
   Instance PureBILPre : Pure (PureBILPreOp).
   Proof.
-    split; intros; split; intro H. 
-    + repeat split; intros; intro t; simpl.
+    constructor.
+    { repeat split; intros; intro t; simpl.
       * apply pureandsc with (po := POA); auto.
       * apply purescand with (po := POA); auto.
       * apply pureandscD with (po := POA); auto.
@@ -178,19 +196,17 @@ Section BILPre.
         apply puresiimpl with (po := POA); auto.
       * apply lforallR; intro t'; apply lforallR; intro Ht.
         apply lforallL with t'; apply lforallL with Ht.
-        apply pureimplsi with (po := POA); auto.
-    + intros t; apply PA;
-      destruct H as [Hax1 [Hax2 [Hax3 [Hax4 Hax5]]]].
-      repeat split; intros.
-      * specialize (Hax1 (ILPreFrm_atom ord Q)); apply Hax1.
-      * specialize (Hax2 (ILPreFrm_atom ord Q)); apply Hax2; simpl; auto.
-      * specialize (Hax3 (ILPreFrm_atom ord Q) (ILPreFrm_atom ord R)); apply Hax3.        
-      * specialize (Hax3 (ILPreFrm_atom ord Q) (ILPreFrm_atom ord R)); apply Hax3.        
-      * admit.
-      * admit.
-        (* These two cases suffer from a very similar problem
-           as the admit in the SepAlg case. It will hopefully be solved when we change
-           how completeness of Pure works. *)
+        apply pureimplsi with (po := POA); auto. }
+    { do 2 red. unfold pure; simpl. intros.
+      split.
+      { intros. eapply pure_proper. 2: eapply H0. symmetry.
+        instantiate (1 := t).
+        red in H. red. unfold lentails in H. simpl in H.
+        intuition. }
+      { intros. eapply pure_proper. 2: eapply H0. symmetry.
+        instantiate (1 := t).
+        red in H. red. unfold lentails in H. simpl in H.
+        intuition. } }
   Qed.
 
   Instance pureBILPre (a : ILPreFrm ord A) (H : forall t, pure (a t)) : pure a.
@@ -239,23 +255,21 @@ Section BILogic_Fun.
 
   Instance PureBILFun : Pure (PureBILFunOp).
   Proof.
-    split; intros; split; intro H. 
-    + repeat split; intros; intro t; simpl.
+    constructor.
+    { intros. repeat split; intros; intro t; simpl.
       * apply pureandsc with (po := POA); auto.
       * apply purescand with (po := POA); auto.
       * apply pureandscD with (po := POA); auto.
       * apply pureandscD with (po := POA); auto.
       * apply puresiimpl with (po := POA); auto.
-      * apply pureimplsi with (po := POA); auto.
-    + intros t; apply PA;
-      destruct H as [Hax1 [Hax2 [Hax3 [Hax4 Hax5]]]].
-      repeat split; intros.
-      * specialize (Hax1 (fun t => Q)); apply Hax1.
-      * specialize (Hax2 (fun t => Q)); apply Hax2; simpl; auto.
-      * specialize (Hax3 (fun t => Q) (fun t => R)); apply Hax3.        
-      * specialize (Hax3 (fun t => Q) (fun t => R)); apply Hax3.        
-      * specialize (Hax4 (fun t => Q)); apply Hax4.
-      * specialize (Hax5 (fun t => Q)); apply Hax5; simpl; auto.
+      * apply pureimplsi with (po := POA); auto. }
+    { do 2 red; simpl; intros.
+      red in H. simpl in H.
+      split.
+      { intros. eapply pure_proper.
+        2: eapply H0. split. intuition. intuition. }
+      { intros. eapply pure_proper.
+        2: eapply H0. split. intuition. intuition. } }
   Qed.
 
   Instance pureBILFun (a : T -> A) (H : forall t, pure (a t)) : pure a.

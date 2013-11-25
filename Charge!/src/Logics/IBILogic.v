@@ -125,8 +125,9 @@ Section IBISepAlg.
 
   Instance pure_bi_sepalg : Pure pureop_pure_bi_sepalg.
   Proof.
-    split; intros; split; intro H.
-    + unfold pure in H; simpl in H; repeat split; intros; 
+    constructor.
+    { intros.
+      unfold pure in H; simpl in H; repeat split; intros; 
       unfold pure in *; simpl in *; intros h; simpl.
       * destruct (sa_unit_ex h) as [u [H1 H2]].
         apply lexistsR with u. apply lexistsR with h.
@@ -153,18 +154,23 @@ Section IBISepAlg.
         - apply limplAdj. apply limplL; [apply H | apply landL1; reflexivity].
       * apply lforallR; intro x1; apply lforallR; intro x2; apply lforallR; intro Hx.
         apply lforallL with h. apply lforallL; [reflexivity|].
-        apply limplAdj. apply limplL; [apply H| apply landL1; apply H0].
-    + destruct H as [Hax1 [Hax2 [Hax3 [Hax4 Hax5]]]].
-      admit.
-  Qed.  
+        apply limplAdj. apply limplL; [apply H| apply landL1; apply H0]. }
+    { unfold pure; simpl. do 2 red; intros.
+      red in H. simpl in H.
+      split; intro. intros.
+      destruct H.
+      rewrite H1. rewrite H0. rewrite H. reflexivity.
+      intros. destruct H.
+      rewrite H. rewrite H0. rewrite H1. reflexivity. }
+  Qed.
 
 End IBISepAlg.
-  
+
 Section IBILPre.
   Context T (ord: relation T) {ord_Pre: PreOrder ord}.
   Context {A : Type} `{HBI: IBILogic A}.
   Context {BIL : BILogic A} {IL : ILogic A}.
-  
+
   Local Existing Instance ILPre_Ops.
   Local Existing Instance ILPre_ILogic.
   Local Existing Instance BILPre_Ops.
