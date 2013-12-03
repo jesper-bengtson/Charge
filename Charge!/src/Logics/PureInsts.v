@@ -1,7 +1,7 @@
 Add Rec LoadPath "/Users/jebe/git/Charge/Charge!/bin".
 
 Require Import Setoid Morphisms RelationClasses Program.Basics. 
-Require Import ILogic BILogic BILInsts ILQuantTac ILInsts Pure ILEmbed.
+Require Import ILogic IBILogic BILogic BILInsts ILQuantTac ILInsts Pure ILEmbed.
 Require Import Rel SepAlg.
 
 Set Implicit Arguments.
@@ -79,9 +79,9 @@ Section PureBIInsts.
 
   Context {C : Type} {ILC : ILogicOps C} {HCOp: EmbedOp C B} {HC: Embed C B}.
 
-  Local Existing Instance EmbedILPreDropOpNeq.
+  Local Existing Instance EmbedILPreDropOp.
   Local Existing Instance EmbedILPreOp.
-  Transparent EmbedILPreDropOpNeq.
+  Transparent EmbedILPreDropOp.
   Transparent EmbedILPreOp.
 
   Instance pure_bi_embed_drop (p : C) : pure (@embed C (ILPreFrm rel B) _ p).
@@ -97,6 +97,102 @@ Section PureBIInsts.
   Qed.
 
 End PureBIInsts.
+
+Section PureIBIInsts.
+  Context {A} `{sa : SepAlg A}.
+  Context {B} `{IL: ILogic B}.
+  Context {HPre : PreOrder (@rel A _)}.
+
+  Existing Instance SAIBIOps.
+  Existing Instance SAIBILogic.
+  Existing Instance pureop_pure_ibi_sepalg.
+  Existing Instance pure_ibi_sepalg.
+  Existing Instance ILPre_Ops.
+  Existing Instance ILPre_ILogic.
+  
+  Transparent ILPre_Ops.
+  Transparent SAIBIOps.
+
+  Instance ibi_pure_ltrue : pure ltrue.
+  Proof.
+    intros h h'; reflexivity.
+  Qed.
+
+  Instance ibi_pure_lfalse : pure lfalse.
+  Proof.
+    intros h h'; reflexivity.
+  Qed.
+
+  Instance ibi_pure_emp : pure empSP.
+  Proof.
+    intros h h'; simpl; apply ltrueR.
+  Qed.
+
+  Instance ibi_pure_land p q (Hp : pure p) (Hq : pure q) : pure (p //\\ q).
+  Proof.
+    intros h h'; simpl.
+    specialize (Hp h h'); specialize (Hq h h').
+    rewrite Hp, Hq; reflexivity.
+  Qed.
+
+  Instance ibi_pure_lor p q (Hp : pure p) (Hq : pure q) : pure (p \\// q).
+  Proof.
+    intros h h'; simpl.
+    specialize (Hp h h'); specialize (Hq h h').
+    rewrite Hp, Hq; reflexivity.
+  Qed.
+
+  Instance ibi_pure_limpl p q (Hp : pure p) (Hq : pure q) : pure (p -->> q).
+  Proof.
+    intros h h'; simpl.
+    apply lforallR; intro h''; apply lforallR; intro H.
+    apply lforallL with h. apply lforallL; [reflexivity|].
+    specialize (Hp h'' h); specialize (Hq h h'').
+    rewrite Hp, Hq; reflexivity.
+  Qed.
+
+  Instance ibi_pure_lsc p q (Hp : pure p) (Hq : pure q) : pure (p ** q).
+  Proof.
+    intros h h'; simpl.
+    apply lexistsL; intro h''; apply lexistsL; intro h'''; apply lexistsL; intro H.
+    destruct (sa_unit_ex h') as [u [Ha H1]].
+    apply lexistsR with h'; apply lexistsR with u. apply lexistsR with H1.
+    specialize (Hp h'' h'); specialize (Hq h''' u).
+    rewrite Hp, Hq; reflexivity.
+  Qed.
+
+  Instance ibi_pure_lsi p q (Hp : pure p) (Hq : pure q) : pure (p -* q).
+  Proof.
+    intros h h'; simpl.
+    apply lforallR; intro h''; apply lforallR; intro h'''; apply lforallR; intro H.
+    destruct (sa_unit_ex h) as [u [Ha H1]].
+    apply lforallL with u; apply lforallL with h; apply lforallL with H1.
+    specialize (Hp h'' u); specialize (Hq h h''').
+    rewrite Hp, Hq; reflexivity.
+  Qed.
+
+  Context {C : Type} {ILC : ILogicOps C} {HCOp: EmbedOp C B} {HC: Embed C B}.
+
+  Local Existing Instance EmbedILPreDropOp.
+  Local Existing Instance EmbedILPreOp.
+
+  Transparent EmbedILPreDropOp.
+  Transparent EmbedILPreOp.
+
+
+  Instance pure_ibi_embed_drop (p : C) : pure (@embed C (ILPreFrm subheap B) _ p).
+  Proof.
+    intros h h'; simpl; reflexivity.
+  Qed.
+
+  Instance pure_ibi_embed (p : ILPreFrm subheap C) (H : pure p) : 
+    pure (@embed (ILPreFrm subheap C) (ILPreFrm subheap B) _ p).
+  Proof.
+    intros h h'; simpl. 
+    specialize (H h h'). rewrite H. reflexivity.
+  Qed.
+
+End PureIBIInsts.
 
 Section PureEmbedFun.
   Context (T: Type).
@@ -146,8 +242,8 @@ Section PureEmbedPre.
   Existing Instance ILPre_ILogic.
   Existing Instance BILPre_Ops.
   Existing Instance BILPreLogic.
-  Existing Instance EmbedILPreDropOpNeq.
-  Existing Instance EmbedILPreDropNeq.
+  Existing Instance EmbedILPreDropOp.
+  Existing Instance EmbedILPreDrop.
   Existing Instance EmbedILPreOp.
   Existing Instance EmbedILPre.
 

@@ -1,3 +1,4 @@
+Add Rec LoadPath "/Users/jebe/git/Charge/Charge!/bin".
 
 Require Import Maps.
 Require Import String Ascii.
@@ -171,6 +172,14 @@ Section SepAlgMap.
     rewrite in_find_iff. rewrite <- Heqo. congruence.
   Qed.
 
+  Lemma subheap_add {A : Type} k v (a b : Map [K, A]) (Hsub : subheap a b) 
+        (Hin : In k a) :
+    subheap (add k v a) (add k v b). 
+  Proof.
+    destruct Hsub as [c Hsub]; destruct (sa_mul_inL Hsub Hin).
+    exists c. apply sa_mul_add; assumption.
+  Qed.        
+
   Lemma sa_mul_inR {A : Type} {a b c : Map [K, A]} {k : K}
         (Habc : sa_mul a b c) (Hin: In k c) :
     (In k a /\ ~ In k b) \/ (In k b /\ ~ In k a).
@@ -265,6 +274,7 @@ Section SepAlgMap.
    remember (a [x]) as o.
    destruct o; simpl in *; intuition congruence.
  Qed.
+
  
 
  Ltac SepOpSolve :=

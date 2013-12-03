@@ -118,12 +118,12 @@ Section IBISepAlg.
     + simpl; intros _. apply ltrueR.
   Qed.
 
-(*
-  Instance pureop_pure_bi_sepalg : PureOp := { 
+
+  Instance pureop_pure_ibi_sepalg : PureOp := { 
     pure := fun (P : ILPreFrm subheap B) => forall h h', P h |-- P h'
   }.
 
-  Instance pure_bi_sepalg : Pure pureop_pure_bi_sepalg.
+  Instance pure_ibi_sepalg : Pure pureop_pure_ibi_sepalg.
   Proof.
     constructor.
     { intros.
@@ -163,7 +163,6 @@ Section IBISepAlg.
       intros. destruct H.
       rewrite H. rewrite H0. rewrite H1. reflexivity. }
   Qed.
-*)
 
 End IBISepAlg.
 

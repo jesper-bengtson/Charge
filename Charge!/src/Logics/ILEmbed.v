@@ -328,14 +328,18 @@ Section EmbedProp'.
   	apply lexistsL; intro Hp. rewrite embedltrue.
   	apply H; apply Hp.
   Qed.
-  
+
+End EmbedProp'.
+
+Section EmbedPropProp.
+
 Instance EmbedOpPropProp : EmbedOp Prop Prop := { embed := fun P => P }.
 Instance EmbedPropProp : Embed Prop Prop.
 Proof.
   split; firstorder.
 Qed.
 
-End EmbedProp'.
+End EmbedPropProp.
 
 Section EmbedPropInj.
 	Context {A : Type} `{ILA : ILogic A}.

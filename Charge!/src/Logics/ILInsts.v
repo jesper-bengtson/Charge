@@ -131,7 +131,7 @@ Section Embed_ILogic_Pre.
   Context {HEmbOp : EmbedOp A B} {HEmb : Embed A B}.
 
   Local Existing Instance ILPre_Ops.
-
+(*
   Program Instance EmbedILPreDropOpEq : EmbedOp A (ILPreFrm ord A) := {
      embed := fun a => mkILPreFrm (fun x => a) _
   }.
@@ -146,12 +146,12 @@ Section Embed_ILogic_Pre.
       * lforallL t. apply lforallL; reflexivity.
       * lforallR x H; reflexivity.
   Qed.
- 
-   Program Instance EmbedILPreDropOpNeq : EmbedOp A (ILPreFrm ord B) := {
+ *)
+   Program Instance EmbedILPreDropOp : EmbedOp A (ILPreFrm ord B) := {
      embed := fun a => mkILPreFrm (fun x => embed a) _
   }.
  
-  Instance EmbedILPreDropNeq : Embed A (ILPreFrm ord B).
+  Instance EmbedILPreDrop : Embed A (ILPreFrm ord B).
   Proof.
     split; intros.
     + simpl; intros. apply embed_sound; assumption.
@@ -231,8 +231,6 @@ Section ILogic_Fun.
 
 End ILogic_Fun.
 
-
-
 Section Embed_ILogic_Fun.
   Context {A : Type} `{ILA: ILogic A}.
   Context {B : Type} `{ILB: ILogic B}.
@@ -298,9 +296,8 @@ Ltac lintros x :=
 	end.
 	
 Global Opaque ILPre_Ops.
-Global Opaque EmbedILPreDropOpEq.
+Global Opaque EmbedILPreDropOp.
 Global Opaque EmbedILPreOp.
-Global Opaque EmbedILPreDropOpNeq.
 
 Global Opaque ILFun_Ops.
 Global Opaque EmbedILFunDropOp.
