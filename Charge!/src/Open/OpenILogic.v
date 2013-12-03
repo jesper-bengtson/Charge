@@ -4,17 +4,17 @@ Require Import Open Stack.
 Local Existing Instance ILFun_Ops.
 Local Existing Instance ILFun_ILogic.
 
-Section Pure.
+Section VLogic.
   Context {A : Type} {Heq : DecidableEq A}.
   Context {V : ValNull}.
 
-  Definition pure := @open A V Prop.
+  Definition vlogic := @open A V Prop.
 
-  Definition open_eq {T} (a b : open T) : pure :=
+  Definition open_eq {T} (a b : open T) : vlogic :=
     fun s => a s = b s.
     
-  Global Instance ILOpsPure : ILogicOps pure := _.
-  Global Instance ILogicPure : ILogic pure := _.
+  Global Instance ILOpsVLogic : ILogicOps vlogic := _.
+  Global Instance ILogicVLogic : ILogic vlogic := _.
   
   Local Transparent ILFun_Ops.
  
@@ -24,7 +24,7 @@ Section Pure.
   	intros s _; apply H.
   Qed.
 
-End Pure.
+End VLogic.
 
 Section Existentialise.
   Context {A : Type} {Heq : DecidableEq A}.
@@ -38,7 +38,7 @@ Section Existentialise.
   Local Existing Instance EmbedILFun.
 
   Lemma existentialise_var (x : A) (P : open B) : 
-  	P |-- @lexists (open B) _ _ (fun v : val => @lembedand pure (open B) _ _ (open_eq (x/V) `v) P).
+  	P |-- @lexists (open B) _ _ (fun v : val => @lembedand vlogic (open B) _ _ (open_eq (x/V) `v) P).
   Proof.
   	intro s; unfold liftn, lift, var_expr, open_eq; simpl. lexistsR (s x). 	
   	apply landR; [apply embedPropR|]; reflexivity.

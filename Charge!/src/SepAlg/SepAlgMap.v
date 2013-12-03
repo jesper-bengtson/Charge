@@ -1,3 +1,6 @@
+
+Add Rec LoadPath "/Users/jebe/git/Charge/Charge!/bin".
+
 Require Import Maps.
 Require Import String Ascii.
 Require Import Compare_dec.
@@ -182,6 +185,19 @@ Section SepAlgMap.
     rewrite find_mapsto_iff in H2; rewrite H2; intuition.
   Qed.
 
+  Lemma sa_mul_mapstoL {A : Type} {a b c : Map [K, A]} {k : K} {y : A}
+        (Habc: sa_mul a b c) (Hc: MapsTo k y a) : MapsTo k y c /\ ~ In k b.
+  Proof.
+    simpl in Habc; specialize (Habc k).
+    rewrite find_mapsto_iff in Hc. remember (find k c) as o; destruct o.
+    + destruct Habc as [[H2 H3] | [H2 H3]].
+      * rewrite find_mapsto_iff in H2; rewrite H2 in Hc. inversion Hc; subst.
+        rewrite find_mapsto_iff; split; auto.
+      * rewrite not_find_in_iff in H3. congruence.
+    + destruct Habc as [H2 _].
+      rewrite not_find_in_iff in H2; congruence.
+  Qed.
+    
   Lemma sa_mul_mapstoR {A : Type} {a b c : Map [K, A]} {k : K} {y : A}
         (Habc: sa_mul a b c) (Hc: MapsTo k y c) :
     (MapsTo k y a /\ ~ In k b) \/ (MapsTo k y b /\ ~ In k a).
@@ -198,9 +214,8 @@ Section SepAlgMap.
   Proof.
     simpl in Habc.
     specialize (Habc k).
-    rewrite in_find_iff in Hc. assert (find k c = None) by admit.
-    destruct (find k c); inversion H2; subst.
-    assumption.
+    rewrite not_find_in_iff in Hc.
+    rewrite Hc in Habc; apply Habc.
   Qed.
         
   Lemma find_fold_none A x (a b : dict K A) :
