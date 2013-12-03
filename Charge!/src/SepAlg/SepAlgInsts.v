@@ -1,3 +1,6 @@
+
+Add Rec LoadPath "/Users/jebe/git/Charge/Charge!/bin".
+
 Require Import UUSepAlg SepAlg Rel.
 
 Set Implicit Arguments.
@@ -43,6 +46,11 @@ Section SAProd.
   	+ exists (c, d); simpl; split.
   	  * apply H1.
   	  * apply H2.
+  Qed.
+
+  Lemma sa_mul_split (a b c : A) (a' b' c' : B) : sa_mul (a, a') (b, b') (c, c') <-> sa_mul a b c /\ sa_mul a' b' c'.
+  Proof.
+    split; intros; simpl in *; auto.
   Qed.
   
 End SAProd.
