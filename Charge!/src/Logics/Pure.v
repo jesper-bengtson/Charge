@@ -1,6 +1,3 @@
-Add Rec LoadPath "/Users/jebe/git/Charge/Charge!/bin".
-Add Rec LoadPath "/Users/jebe/git/mirror-core/src/" as MirrorCore.
-
 Require Import ILogic ILInsts BILogic ILEmbed ILQuantTac.
 Require Import Setoid Morphisms.
 

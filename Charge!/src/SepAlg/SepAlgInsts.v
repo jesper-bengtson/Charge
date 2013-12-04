@@ -1,6 +1,3 @@
-
-Add Rec LoadPath "/Users/jebe/git/Charge/Charge!/bin".
-
 Require Import UUSepAlg SepAlg Rel.
 
 Set Implicit Arguments.

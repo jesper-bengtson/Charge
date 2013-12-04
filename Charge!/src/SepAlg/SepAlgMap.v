@@ -1,5 +1,3 @@
-Add Rec LoadPath "/Users/jebe/git/Charge/Charge!/bin".
-
 Require Import Maps.
 Require Import String Ascii.
 Require Import Compare_dec.

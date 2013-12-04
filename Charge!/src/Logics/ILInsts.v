@@ -1,5 +1,3 @@
-Add Rec LoadPath "/Users/jebe/git/Charge/Charge!/bin".
-
 Require Import RelationClasses Setoid Morphisms.
 Require Import ILogic ILEmbed ILQuantTac.
 
