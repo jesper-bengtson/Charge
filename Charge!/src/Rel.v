@@ -57,3 +57,34 @@ Section EquivProducts.
 
 End EquivProducts.
 
+Section EquivSum.
+  Context {A B : Type} `{eA : Rel A} `{eB : Rel B}.
+  Context {HA: Equivalence (@rel _ eA)}.
+  Context {HB: Equivalence (@rel _ eB)}.
+
+  Global Instance Rel_sum : Rel (A + B) :=
+    fun s1 s2 =>
+      match s1 , s2 with
+      | inl a1 , inl a2 => a1 === a2
+      | inr b1 , inr b2 => b1 === b2
+      | _ , _ => False
+      end.
+
+  Global Instance inl_equiv : Proper (rel ==> rel) (@inl A B).
+  Proof. intros a a' Ha. apply Ha. Qed.
+
+  Global Instance inr_equiv : Proper (rel ==> rel) (@inr A B).
+  Proof. intros b b' Hb. apply Hb. Qed.
+
+  Global Instance rel_sum : Equivalence rel.
+  Proof.
+    split.
+    - intros [?|?]; unfold rel, Rel_sum; reflexivity.
+    - intros [?|?] [?|?]; unfold rel, Rel_sum;
+        now try symmetry.
+    - intros [?|?] [?|?] [?|?]; unfold rel, Rel_sum; try tauto;
+        intros; etransitivity; eassumption.
+  Qed.
+End EquivSum.
+
+
