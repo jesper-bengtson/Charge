@@ -424,6 +424,29 @@ Section SepAlgMap.
     auto.
   Qed.
 
+  Lemma Disjoint_sa_mul {A : Type} {a b : Map [K, A]}
+        (Hdisjoint: Disjoint a b) : sa_mul a b (update a b).
+  Proof.
+    unfold Disjoint.
+    simpl.
+    intro k.
+    remember (find k (update a b)).
+    unfold Disjoint in Hdisjoint; specialize (Hdisjoint k).
+    destruct o.
+    * symmetry in Heqo; apply find_mapsto_iff in Heqo.
+      apply update_mapsto_iff in Heqo.
+      destruct Heqo as [Hmapsto | [Hmapsto Hnotin]].
+      + right. split; [ assumption |].
+        intro Hcounter; apply Hdisjoint.
+        split; [assumption |].
+        unfold In; exists a0; assumption.
+      + left; auto.
+    * symmetry in Heqo; apply not_find_in_iff in Heqo.
+      split; intro Hcounter; apply Heqo; clear Heqo.
+      + apply update_in_iff; auto.
+      + apply update_in_iff; auto.
+  Qed.
+
   Lemma sa_mul_Partition {A : Type} {a b c : Map [K, A]} :
         sa_mul a b c <-> Partition c a b.
   Proof.
