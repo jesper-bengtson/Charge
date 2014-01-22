@@ -190,6 +190,73 @@ Section SepAlgMap.
     rewrite find_mapsto_iff in H2; rewrite H2; intuition.
   Qed.
 
+  Lemma sa_mul_swapL {A : Type} {a b c : Map [K, A]} {k : K} {v: A}
+        (Habc : sa_mul a b c) (Hmapsto: MapsTo k v c) :
+        sa_mul (add k v a) (remove k b) c.
+  Proof.
+    simpl. intro k'.
+    simpl in Habc. specialize (Habc k').
+	destruct (eq_dec k k') as [Heq | Hneq].
+	+ eapply MapsTo_iff in Hmapsto; [| symmetry in Heq; apply Heq].
+	  apply find_mapsto_iff in Hmapsto. rewrite Hmapsto in Habc.
+      rewrite Hmapsto.
+      left. split.
+      apply add_1; apply Heq.
+      apply remove_1; apply Heq.
+    + destruct (find k' c).
+      * destruct Habc as [Habc | Habc]; destruct Habc as [Habc_mapsto Habc_notin].
+        - left. split.
+          eapply add_neq_mapsto_iff; assumption.
+          intro Hcounter. apply Habc_notin.
+          eapply remove_neq_in_iff; [apply Hneq | apply Hcounter].
+        - right. split.
+          apply remove_neq_mapsto_iff; assumption.
+          intro Hcounter. apply Habc_notin.
+          eapply add_neq_in_iff; [apply Hneq | apply Hcounter].
+       * destruct Habc as [Habc_a Habc_b].
+         split.
+         intro Hcounter. apply Habc_a.
+         eapply add_neq_in_iff; [apply Hneq | apply Hcounter].
+         intro Hcounter. apply Habc_b.
+         eapply remove_neq_in_iff; [apply Hneq | apply Hcounter].
+  Qed.
+
+  Lemma subheap_addL {A: Type} {h h': Map [K, A]} {k: K} {v: A}
+    (Hmapsto: MapsTo k v h) (Hsubheap: subheap h' h) :
+    subheap (add k v h') h.
+  Proof.
+    unfold subheap in *. destruct Hsubheap as [h'' Hsubheap].
+    assert (sa_mul h' h'' h) as Hsubheap' by assumption.
+    eapply sa_mul_inR in Hsubheap'; [| unfold In; exists v; apply Hmapsto].
+    destruct Hsubheap' as [Hsubheap' | Hsubheap']; destruct Hsubheap' as [Hin Hnotin].
+    + exists h''.
+      simpl. intro k'. simpl in Hsubheap. specialize (Hsubheap k').
+      destruct (eq_dec k k') as [Heq | Hneq].
+      * eapply MapsTo_iff in Hmapsto; [| symmetry in Heq; apply Heq].
+        apply find_mapsto_iff in Hmapsto. rewrite Hmapsto in Hsubheap.
+        rewrite Hmapsto.
+        left. split.
+        apply add_1; (apply Heq).
+        intro Hcounter. apply Hnotin.
+        eapply In_iff; [apply Heq | apply Hcounter ].
+      * destruct (find k' h).
+        - destruct Hsubheap as [Hsubheap | Hsubheap]; destruct Hsubheap as [Hsh_mapsto Hsh_notin].
+          left. split.
+          eapply add_neq_mapsto_iff; assumption.
+          apply Hsh_notin.
+          right. split.
+          apply Hsh_mapsto.
+          intro Hcounter. apply Hsh_notin.
+          apply -> add_neq_in_iff; [apply Hcounter | apply Hneq].
+        - destruct Hsubheap as [Hnotin_h' Hnotin_h''].
+          split.
+          intro Hcounter. apply Hnotin_h'.
+          eapply add_neq_in_iff; [apply Hneq | apply Hcounter].
+          apply Hnotin_h''.
+    + exists (remove k h'').
+      apply sa_mul_swapL; assumption.
+  Qed.
+
   Lemma sa_mul_mapstoL {A : Type} {a b c : Map [K, A]} {k : K} {y : A}
         (Habc: sa_mul a b c) (Hc: MapsTo k y a) : MapsTo k y c /\ ~ In k b.
   Proof.
@@ -333,6 +400,8 @@ Section SepAlgMap.
 	+ intros * H2 H3 k. simpl in *. SepOpSolve.
   Qed.
   
+  Local Existing Instance MapSepAlg.
+
   Definition UUMapSepAlg A : @UUSepAlg (Map [K, A]) _ _.
   Proof.
   	split.
@@ -343,6 +412,60 @@ Section SepAlgMap.
   	  * rewrite in_find_iff. split. intros H2. congruence.
   	    rewrite in_find_iff. intros H2. apply H2.
   	    apply elements_Empty in Hu. rewrite elements_o, Hu. reflexivity.
+  Qed.
+
+  Lemma sa_mul_Disjoint {A : Type} {a b c : Map [K, A]}
+        (Habc: sa_mul a b c) : Disjoint a b.
+  Proof.
+    unfold Disjoint.
+    intros k Hcounter.
+    destruct Hcounter as [Hina Hinb].
+    eapply sa_mul_inL in Habc; [| apply Hina]; destruct Habc as [Hnotinb Hinc].
+    auto.
+  Qed.
+
+  Lemma sa_mul_Partition {A : Type} {a b c : Map [K, A]} :
+        sa_mul a b c <-> Partition c a b.
+  Proof.
+    split.
+    * intro Habc. unfold Partition.
+      split; [eapply sa_mul_Disjoint; apply Habc |].
+      intros k v.
+      split; intro.
+      + eapply sa_mul_mapstoR in H2; [| apply Habc].
+        destruct H2 as [[Hmapsto Hnotin] | [Hmapsto Hnotin]]; auto.
+      + destruct H2 as [Hina | Hinb].
+        - eapply sa_mul_mapstoL in Hina; [| apply Habc]; destruct Hina as [Hina _].
+          assumption.
+        - apply sa_mulC2 in Habc.
+          eapply sa_mul_mapstoL in Hinb; [| eapply Habc]; destruct Hinb as [Hinb _].
+          assumption.
+    * intro Hpartition.
+      unfold Partition in Hpartition; destruct Hpartition as [Hdisjoint Hmapsto].
+      unfold Disjoint in Hdisjoint.
+      simpl; intro k.
+      remember (find k c); destruct o.
+      + symmetry in Heqo; apply find_mapsto_iff in Heqo.
+        specialize (Hmapsto k a0).
+        specialize (Hdisjoint k).
+        apply Hmapsto in Heqo.
+        destruct Heqo.
+        - left. split; [ assumption |].
+          intro Hcounter. apply Hdisjoint.
+          split; [| assumption].
+          unfold In. exists a0. assumption.
+        - right. split; [ assumption |].
+          intro Hcounter. apply Hdisjoint.
+          split; [assumption |].
+          unfold In. exists a0. assumption.
+      + symmetry in Heqo; apply not_find_in_iff in Heqo.
+        split; intro Hcounter; apply Heqo; clear Heqo.
+        - unfold In in Hcounter; destruct Hcounter as [e Hcounter].
+          unfold In. exists e.
+          apply Hmapsto. left; apply Hcounter.
+        - unfold In in Hcounter; destruct Hcounter as [e Hcounter].
+          unfold In. exists e.
+          apply Hmapsto. right; assumption.
   Qed.
 
 End SepAlgMap.
