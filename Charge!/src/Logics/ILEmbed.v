@@ -1,4 +1,4 @@
-Require Import ILogic.
+Require Import IPredLogic IPropLogic.
 Require Import Setoid Morphisms RelationClasses Program.Basics Omega. 
 
 Set Implicit Arguments.
@@ -6,8 +6,8 @@ Unset Strict Implicit.
 Set Maximal Implicit Insertion.
 
 Section ILogicEmbed.
-  Context {A} `{ILOpsA: ILogicOps A}.
-  Context {B} `{ILOpsB: ILogicOps B}.
+  Context {A} {PropOpsA : IPropLogicOps A} {PredOpsA: IPredLogicOps A}.
+  Context {B} {PropOpsB : IPropLogicOps B} {PredOpsB: IPredLogicOps B}.
 
   Class EmbedOp := { embed : A -> B }.
 
@@ -21,10 +21,10 @@ Section ILogicEmbed.
 End ILogicEmbed.
 
 Implicit Arguments EmbedOp [].
-Implicit Arguments Embed [[ILOpsA] [ILOpsB] [EmbOp]].
+Implicit Arguments Embed [[PropOpsA] [PropOpsB] [PredOpsA] [PredOpsB] [EmbOp]].
 
 Section ILogicEmbedOps.
-  Context {A B} `{HAB: Embed A B} {ILA: ILogic A} {ILB: ILogic B}.
+  Context {A B} `{HAB: Embed A B} {ILA: IPredLogic A} {ILB: IPredLogic B}.
 
   Definition lembedand (a : A) (b : B) := (embed a) //\\ b.
   Definition lembedimpl (a : A) (b : B) := (embed a) -->> b.
@@ -34,7 +34,7 @@ End ILogicEmbedOps.
 
 Section ILEmbedId.
 
-	Context {A : Type} `{ILA : ILogic A}.
+	Context {A : Type} `{ILA : IPredLogic A}.
 
 	Instance EmbedOpId : EmbedOp A A := { embed := id }.
 	Instance EmbedId : Embed A A.
@@ -45,8 +45,8 @@ Section ILEmbedId.
 End ILEmbedId.
 
 Section ILogicEmbedCompose.
-  Context {A B} `{HAB: Embed A B} {ILA: ILogic A} {ILB: ILogic B}.
-  Context {C} {HC: ILogicOps C} {HE: EmbedOp B C} {HBC : Embed B C} {ILC: ILogic C}.
+  Context {A B} `{HAB: Embed A B} {ILA: IPredLogic A} {ILB: IPredLogic B}.
+  Context {C} {HC: IPredLogicOps C} {HC' : IPropLogicOps C} {HE: EmbedOp B C} {HBC : Embed B C} {ILC: IPredLogic C}.
 	
   Instance embedOpCompose : EmbedOp A C := { embed := fun x => embed (embed x) }.
   
@@ -73,7 +73,7 @@ Infix "/\\" := lembedand (at level 75, right associativity).
 Infix "->>" := lembedimpl (at level 77, right associativity).
 
 Section ILogicEmbedFacts.
-  Context {A B} `{HAB: Embed A B} {ILA: ILogic A} {ILB: ILogic B}.
+  Context {A B} `{HAB: Embed A B} {ILA: IPredLogic A} {ILB: IPredLogic B}.
 
   Global Instance embed_lentails_m :
     Proper (lentails ==> lentails) embed.
@@ -168,7 +168,7 @@ Section ILogicEmbedFacts.
 End ILogicEmbedFacts.
 
 Section EmbedProp.
-  Context {A : Type} `{HIL: ILogic A} {HPropOp: EmbedOp Prop A} {HProp: Embed Prop A}.
+  Context {A : Type} `{HIL: IPredLogic A} {HPropOp: EmbedOp Prop A} {HProp: Embed Prop A}.
 
   Lemma embedPropExists (p : Prop) : embed p |-- Exists x : p, ltrue.
   Proof.
@@ -265,10 +265,9 @@ Section EmbedProp.
 
 End EmbedProp.
 
-
 Section EmbedProp'.
-  Context {A : Type} `{HILA: ILogic A} {HPropOpA: EmbedOp Prop A} {HPropA: Embed Prop A}.
-  Context {B : Type} `{HILB: ILogic B} {HPropOpB: EmbedOp Prop B} {HPropB: Embed Prop B}.
+  Context {A : Type} `{HILA: IPredLogic A} {HPropOpA: EmbedOp Prop A} {HPropA: Embed Prop A}.
+  Context {B : Type} `{HILB: IPredLogic B} {HPropOpB: EmbedOp Prop B} {HPropB: Embed Prop B}.
   Context {HEmbOp : EmbedOp B A} {Hemb: Embed B A}.
   
   Lemma lpropandAL (p : B) (q : A) (P : Prop) : P /\\ p /\\ q |-- (P /\\ p) /\\ q.
@@ -342,7 +341,7 @@ Qed.
 End EmbedPropProp.
 
 Section EmbedPropInj.
-	Context {A : Type} `{ILA : ILogic A}.
+	Context {A : Type} `{ILA : IPredLogic A}.
 	Context {EmbOp1 : EmbedOp Prop A} {Emb1 : Embed Prop A}.
 	Context {EmbOp2 : EmbedOp Prop A} {Emb2 : Embed Prop A}.
 	

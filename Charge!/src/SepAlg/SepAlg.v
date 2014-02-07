@@ -22,9 +22,9 @@ Section SepAlgSect.
     sa_mul_mon a b c d : a === b -> sa_mul a c d -> sa_mul b c d 
   }.
 
-End SepAlgSect.
- 
 Implicit Arguments SepAlg [[e] [SAOps]].
+
+End SepAlgSect.
 
 Section SepAlgCompat.
   Context A `{SA: SepAlg A}.
