@@ -35,6 +35,10 @@ Section Subst.
   Definition subst1 e x : subst :=
     fun x' => if dec_eq x' x then e else x'/V.
 
+  (* Truncating substitution of one variable *)
+  Definition subst1_trunc e x : subst :=
+    fun x' => if dec_eq x' x then e else empty_open.
+
   (* Simultaneous substitution of a finite list of variables *)
   Fixpoint substl_aux (subs: substlist) : subst :=
     match subs with
@@ -62,6 +66,9 @@ End Subst.
 
 Notation "g [{ e // x }]" := (apply_subst g (subst1 e x)) (at level 9, e at level 39,
   format "g [{ e // x }]") : open_scope.
+
+Notation "g [{ e //! x }]" := (apply_subst g (subst1_trunc e x)) (at level 9, e at level 39,
+  format "g [{ e //! x }]") : open_scope.
 
 Notation " g '//' es " := (apply_subst g (substl es)) (at level 40) : open_scope.
 
@@ -94,6 +101,13 @@ Section Properties.
   Proof. 
     reflexivity.
   Qed.
+
+  Lemma substl_subst1_trunc x e :
+    substl_trunc ((x,e)::nil) = subst1_trunc e x.
+  Proof. 
+    reflexivity.
+  Qed.
+
   Local Open Scope open_scope.
   Lemma subst1_stack_add {B} (p : open B) (e : expr) (x : A) (v : val) (s : @stack A R) : 
     p[{e//x}] (stack_add x v s) = p[{e[{`v//x}]//x}] s.
@@ -149,6 +163,20 @@ Section Properties.
     + destruct es as [|e]; [reflexivity|]. simpl. destruct (dec_eq x' x) as [|_].
       - subst. contradiction HnotIn. simpl. auto.
       - apply IHxs. auto with datatypes.
+  Qed.
+
+  Lemma subst1_trunc_singleton_stack {B} (p : open B) (s : @stack A R) x y :
+    p[{y/V //! x}] s = p (stack_add x (s y) (stack_empty A)).
+  Proof.
+    unfold apply_subst, subst1_trunc, stack_subst; simpl.
+    apply f_equal.
+    apply functional_extensionality.
+    intro x'.
+    destruct (dec_eq x' x); subst.
+    * rewrite stack_lookup_add.
+      reflexivity.
+    * rewrite stack_lookup_add2; [| auto].
+      reflexivity.
   Qed.
 
 End Properties.
