@@ -161,6 +161,35 @@ Section SepAlgMap.
     rewrite add_neq_in_iff; assumption.
   Qed.
 
+  Lemma sa_mul_remove {A : Type} {a b c : Map [K, A]} {k : K}
+    (Habc : sa_mul a b c) (Hnotin : ~ In k b) :
+      sa_mul (remove k a) b (remove k c).
+  Proof.
+    simpl in *; intros l.
+    destruct (eqb_dec k l) as [e | e].
+    * rewrite remove_eq_o; [| assumption].
+      split; [| rewrite <- e; assumption ].
+      intro Hfail; destruct Hfail as [? Hfail].
+      rewrite e in Hfail. apply find_mapsto_iff in Hfail.
+      rewrite remove_eq_o in Hfail; [| reflexivity ].
+      inversion Hfail.
+    * rewrite remove_neq_o; [| assumption ].
+      specialize (Habc l).
+      destruct (find l c).
+      + destruct Habc.
+        - left. split; [ | apply H2 ].
+          apply remove_mapsto_iff; split; [ assumption | apply H2].
+        - right. split; [ apply H2 |].
+          intro Hfail.
+          destruct H2 as [_ H2]; apply H2.
+          destruct Hfail as [? Hfail].
+          exists x. apply remove_mapsto_iff in Hfail. apply Hfail. 
+      + split; [ | apply Habc].
+        intro Hfail. destruct Habc as [Habc _]; apply Habc.
+        destruct Hfail as [? Hfail].
+        exists x; apply remove_mapsto_iff in Hfail. apply Hfail.
+  Qed.
+   
   Lemma sa_mul_inL {A : Type} {a b c : Map [K, A]} {k : K} 
         (Habc : sa_mul a b c) (Hin: In k a) : ~ In k b /\ In k c.
   Proof.        
@@ -489,6 +518,42 @@ Section SepAlgMap.
         - unfold In in Hcounter; destruct Hcounter as [e Hcounter].
           unfold In. exists e.
           apply Hmapsto. right; assumption.
+  Qed.
+
+  Lemma sa_mul_MapResEq {A : Type} {a b c c' : Map [K, A] }
+    (Habc : sa_mul a b c) (Habc' : sa_mul a b c') :
+    c === c'.
+  Proof.
+    simpl in *.
+    unfold "===". unfold Equal.
+    intro k.
+    specialize (Habc k); specialize (Habc' k).
+    remember (find k c) as fc.
+    remember (find k c') as fc'.
+    destruct fc; destruct fc'.
+    * destruct Habc as [[Habc_a Habc_b] | [Habc_a Habc_b]];
+      destruct Habc' as [[Habc'_a Habc'_b] |[Habc'_a Habc'_b]].
+      - apply find_mapsto_iff in Habc_a; apply find_mapsto_iff in Habc'_a.
+        rewrite Habc_a in Habc'_a. assumption.
+      - exfalso; apply Habc'_b.
+        unfold In; exists a0; assumption.
+      - exfalso; apply Habc'_b.
+        unfold In; exists a0; assumption.
+      - apply find_mapsto_iff in Habc_a; apply find_mapsto_iff in Habc'_a.
+        rewrite Habc_a in Habc'_a. assumption.
+    * destruct Habc as [[Habc_a Habc_b]|[Habc_a Habc_b]];
+      destruct Habc' as [Habc'_a Habc'_b].
+      + exfalso; apply Habc'_a.
+        unfold In; exists a0; assumption.
+      + exfalso; apply Habc'_b.
+        unfold In; exists a0; assumption.
+    * destruct Habc' as [[Habc'_a Habc'_b]|[Habc'_a Habc'_b]];
+      destruct Habc as [Habc_a Habc_b].
+      + exfalso; apply Habc_a.
+        unfold In; exists a0; assumption.
+      + exfalso; apply Habc_b.
+        unfold In; exists a0; assumption.
+    * reflexivity.
   Qed.
 
 End SepAlgMap.
