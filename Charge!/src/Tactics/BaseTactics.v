@@ -170,7 +170,7 @@ Definition env_add_unop {A : Type} (e : env A) (n : nat) (f : A -> A) : env A :=
 Definition env_add_binop {A : Type} (e : env A) (n : nat) (f : A -> A -> A) : env A := 
 	(fst e, (snd e) [n <- f]).
 	
-Fixpoint deep_op_eval (A : Type) {ILA : ILogicOps A} (env : env A) (e : deep_op) : option A := 
+Polymorphic Fixpoint deep_op_eval (A : Type) {ILA : ILogicOps A} (env : env A) (e : deep_op) : option A := 
   match e with
     | t_atom p => Some p
     | t_true => Some ltrue

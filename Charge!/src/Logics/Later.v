@@ -9,11 +9,11 @@ Section LaterSect.
   Context {A : Type}.
   Context `{ILOps: ILogicOps A}.
           
-Class ILLOperators (A : Type) := {
+Polymorphic Class ILLOperators (A : Type) := {
   illater : A -> A
 }.
 
-Class ILLater {ILLOps: ILLOperators A} := {
+Polymorphic Class ILLater {ILLOps: ILLOperators A} := {
   illogic :> ILogic A;                                           
   spec_lob P : illater P |-- P -> |-- P;
   spec_later_weaken P : P |-- illater P;
@@ -98,7 +98,7 @@ Local Existing Instance ILPre_ILogic.
     split.
     + apply _.
     + intros P H x; induction x. 
-      - rewrite <- H; simpl; lforallR y;
+      - rewrite <- H; simpl; lforallR x.
         lforallR Hy; omega.
       - rewrite <- H; simpl; lforallR y Hy.
         assert (x >= y) by omega.

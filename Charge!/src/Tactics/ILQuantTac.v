@@ -1,3 +1,6 @@
+Add Rec LoadPath "/Users/jebe/coq/user-contrib".
+Add Rec LoadPath "/Users/jebe/git/Charge/Charge!/bin".
+
 Require Import Maps MapInterface MapFacts.
 Require Import BaseTactics ILogic ILEmbed.
 
@@ -41,10 +44,10 @@ Set Maximal Implicit Insertion.
 		  | Tcons T Ts => fun p => Exists x : T, find_res_eval_exists_aux (p x)
 	    end.
 	
-	Definition find_res_eval_exists {A : Type} {ILA : ILogicOps A} (p : find_res A) :=
+	Polymorphic Definition find_res_eval_exists {A : Type} {ILA : ILogicOps A} (p : find_res A) :=
 		find_res_eval_exists_aux (find_closure p).
  
-Fixpoint pull_exists_r {A : Type} {ILA : ILogicOps A}
+Polymorphic Fixpoint pull_exists_r {A : Type} {ILA : ILogicOps A}
 (t : @deep_op A ILA) (de_env : env A) (tac_env : env (find_res A)) : option (find_res A) :=
 match t with
 	| t_and t1 t2   => find_res_binop land (pull_exists_r t1 de_env tac_env) (pull_exists_r t2 de_env tac_env)
@@ -106,14 +109,14 @@ Qed.
                        {H : Proper (lentails ==> lentails ==> lentails) op} 
       (Hp : match deep_op_eval de_env1 p, pull_exists_r p de_env1 tac_env1 with
 	    | None, None => True
-	    | Some p, Some q => find_res_eval_exists q |-- p
+	    | Some p, Some q => @lentails A ILA (find_res_eval_exists q) p
 	    | _, _ => True
-	  end)
-      (Hq : match deep_op_eval de_env2 q, pull_exists_r q de_env2 tac_env2 with
+	  end) 
+(*      (Hq : match deep_op_eval de_env2 q, pull_exists_r q de_env2 tac_env2 with
 	    | None, None => True
 	    | Some p, Some q => find_res_eval_exists q |-- p
 	    | _, _ => True
-	  end) 
+	  end) *)
         (Hop1 : forall T (f : T -> A) g, Exists x, op (f x) g |-- op (Exists x, f x) g)
         (Hop2 : forall T f (g : T -> B), Exists x, op f (g x) |-- op f (Exists x, g x)) :
 match binop_option op (deep_op_eval de_env1 p) (deep_op_eval de_env2 q), 

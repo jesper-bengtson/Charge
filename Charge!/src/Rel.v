@@ -1,7 +1,7 @@
 Require Import Setoid Morphisms RelationClasses OrderedType.
 Require Import String.
 
-Class DecidableEq (A : Type) := { dec_eq (a b : A) : {a = b} + {a <> b} }.
+Polymorphic Class DecidableEq (A : Type) := { dec_eq (a b : A) : {a = b} + {a <> b} }.
 
 Instance DecNat : DecidableEq nat. Proof. split. decide equality. Qed.
 Instance DecString : DecidableEq string. Proof. split. repeat (decide equality). Qed.
@@ -16,7 +16,7 @@ Proof.
   firstorder.
 Qed.
 
-Class Rel (A : Type) := rel : relation A.
+Polymorphic Class Rel (A : Type) := rel : relation A.
 (*
 Infix "===" := equiv (at level 70, no associativity).
 

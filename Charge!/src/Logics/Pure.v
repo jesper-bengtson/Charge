@@ -9,7 +9,7 @@ Section Pure.
 
   Context {A : Type} {ILOPs : ILogicOps A} {BILOps : BILOperators A}.
 
-  Class PureOp := {
+  Polymorphic Class PureOp := {
     pure : A -> Prop
   }.
 
@@ -21,7 +21,7 @@ Section Pure.
     (forall Q, pure Q -> P -->> Q |-- P -* Q).
 
 
-  Class Pure {HP : PureOp} :=
+  Polymorphic Class Pure {HP : PureOp} :=
   { pure_axiom : forall p, pure p -> parameter_pure pure p
   ; pure_proper : Proper (lequiv ==> iff) pure
   }.

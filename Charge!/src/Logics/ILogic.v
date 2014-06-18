@@ -5,6 +5,7 @@
     assertion logic and specification logic of a separation logic framework
     have in common.
   ---------------------------------------------------------------------------*)
+
 Require Import Setoid Morphisms RelationClasses Program.Basics Omega. 
 
 Set Implicit Arguments. 
@@ -30,7 +31,7 @@ Ltac cancel3 :=
   apply (proper_prf (Proper := _: Proper (_ ==> _ ==> _ ==> _) _));
   postcancel.
 
-Class Inhabited A := { cinhabited : inhabited A}.
+Polymorphic Class Inhabited A := { cinhabited : inhabited A}.
 
 Instance inhabitedNat: Inhabited nat. Proof. split; split; apply 0. Qed.
 Instance inhabitedBool: Inhabited bool. Proof. split; split; apply true. Qed.
@@ -38,7 +39,7 @@ Instance inhabitedBool: Inhabited bool. Proof. split; split; apply true. Qed.
 Generalizable Variables Frm.
 
 (* Logical connectives *)
-Class ILogicOps Frm := {
+Polymorphic Class ILogicOps Frm := {
   lentails: relation Frm;
   ltrue: Frm;
   lfalse: Frm;
@@ -84,7 +85,7 @@ Infix "-|-"  := lequiv (at level 85, no associativity).
    of the left, respectively right, side of a turnstile. The notable exception
    to this pattern is implication, which is required to be the right adjoint of
    conjunction. This makes singleton contexts work. *)
-Class ILogic Frm {ILOps: ILogicOps Frm} := {
+Polymorphic Class ILogic Frm {ILOps: ILogicOps Frm} := {
   lentailsPre:> PreOrder lentails;
   ltrueR: forall C, C |-- ltrue;
   lfalseL: forall C, lfalse |-- C;
@@ -174,7 +175,7 @@ Section ILogicMorphisms.
   
   Global Instance lequiv_lentails : subrelation lequiv lentails.
   Proof. firstorder. Qed.
-  Global Instance lequiv_inverse_lentails: subrelation lequiv (inverse lentails).
+  Global Instance lequiv_inverse_lentails: subrelation lequiv (flip lentails).
   Proof. firstorder. Qed.
 
   Global Instance lforall_lentails_m T:
@@ -273,7 +274,7 @@ Lemma lforwardL {Frm} `{IL: ILogic Frm} {Q R}:
     P |-- Q ->
     (P |-- R -> G) ->
     G.
-Proof. intros HQR ** HPQ HG. apply HG. etransitivity; eassumption. Qed.
+Proof. intros HQR ? ? ? HG. apply HG. etransitivity; eassumption. Qed.
 
 Tactic Notation "lforwardL" hyp(H) := 
   eapply (lforwardL H); clear H; [|intros H].
@@ -503,7 +504,7 @@ End ILogicFacts.
 
 (* Prop is an intuitionistic logic *)
 Global Instance ILogicOps_Prop : ILogicOps Prop := {|
-  lentails P Q := P -> Q;
+  lentails P Q := impl P Q;
   ltrue        := True;
   lfalse       := False;
   limpl    P Q := P -> Q;

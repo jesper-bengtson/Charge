@@ -10,7 +10,7 @@ Section IBILogicSect.
   Context {A : Type} {ILOps : ILogicOps A} {BIOps: BILOperators A}.
   Context {BIL : BILogic A}.
  
-  Class IBILogic := {
+  Polymorphic Class IBILogic := {
     ibil_bil :> BILogic A;
     emp_trueE : |-- empSP
   }.

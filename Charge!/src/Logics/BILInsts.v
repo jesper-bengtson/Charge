@@ -1,4 +1,5 @@
 Require Import Setoid Morphisms RelationClasses Program.Basics. 
+Add Rec LoadPath "/Users/jebe/git/Charge/Charge!/bin".
 Require Import ILogic BILogic ILQuantTac ILInsts Pure.
 Require Import Rel SepAlg.
 

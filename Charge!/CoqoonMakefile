@@ -48,7 +48,7 @@ all: $(OBJECTS)
 clean:
 	rm -f $(OBJECTS)
 
-bin/Logics/BILInsts.vo: src/Logics/BILInsts.v bin/Logics/ILogic.vo bin/Logics/BILogic.vo bin/Tactics/ILQuantTac.vo bin/Logics/ILInsts.vo bin/Logics/Pure.vo bin/Rel.vo bin/SepAlg/SepAlg.vo
+bin/Logics/BILInsts.vo: src/Logics/BILInsts.v bin/Logics/ILogic.vo bin/Logics/BILogic.vo bin/Tactics/ILQuantTac.vo bin/Logics/ILInsts.vo bin/Logics/Pure.vo bin/Rel.vo bin/SepAlg/SepAlg.vo bin/Logics/ILEmbed.vo
 bin/Logics/BILogic.vo: src/Logics/BILogic.v bin/Logics/ILogic.vo bin/Logics/ILEmbed.vo bin/Tactics/ILQuantTac.vo
 bin/Logics/IBILogic.vo: src/Logics/IBILogic.v bin/Logics/ILogic.vo bin/Logics/ILInsts.vo bin/Logics/BILInsts.vo bin/Tactics/ILQuantTac.vo bin/Logics/BILogic.vo bin/SepAlg/SepAlg.vo bin/Logics/Pure.vo
 bin/Logics/ILEmbed.vo: src/Logics/ILEmbed.v bin/Logics/ILogic.vo
