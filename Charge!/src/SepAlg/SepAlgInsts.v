@@ -147,7 +147,7 @@ Section SAFin.
    *)
   Hypothesis indefinite_description : forall (P : A->Prop),
    ex P -> sig P.
-
+(*
   Global Instance SepAlg_fin: SepAlg finfun.
   Proof.
     esplit.
@@ -156,10 +156,10 @@ Section SAFin.
       set (f := (fun t => proj1_sig (indefinite_description (
                                          sa_mulA (Hab t) (Habc t))))).
       refine (ex_intro _ (@Build_finfun f _) _).
-      split; intros t; simpl; unfold f; clear f.
+      esplit; intros t; simpl; unfold f; clear f.
       + set (rec := (sa_mulA (Hab t) (Habc t))).
         destruct (indefinite_description rec) as [a' [Hbc Htmp]].
-        simpl. assumption.
+        simpl. eassumption.
       + set (rec := (sa_mulA (Hab t) (Habc t))).
         destruct (indefinite_description rec) as [a' [Htmp Habc']].
         simpl. assumption.
@@ -200,5 +200,6 @@ Section SAFin.
     destruct (indefinite_description rec) as [a' [Hbc Habc']].
     simpl. now rewrite (sa_unit_eq Hlc Hbc).
   Qed.
+*)
 End SAFin.
 End SAFin.

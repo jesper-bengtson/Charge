@@ -5,96 +5,96 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Set Maximal Implicit Insertion.
 
-Inductive Tlist : Type := 
+Polymorphic Inductive Tlist : Type := 
 | Tnil  : Tlist 
 | Tcons : Type -> Tlist -> Tlist.
 
-Fixpoint Tappend (Ts Us : Tlist) :=
+Polymorphic Fixpoint Tappend (Ts Us : Tlist) :=
   match Ts with
     | Tnil       => Us
     | Tcons T Ts => Tcons T (Tappend Ts Us)
   end.
 
-Fixpoint Tappend_assoc (Ts Us Rs : Tlist) :
+Polymorphic Fixpoint Tappend_assoc (Ts Us Rs : Tlist) :
   Tappend (Tappend Ts Us) Rs = Tappend Ts (Tappend Us Rs) :=
   match Ts with
     | Tnil => eq_refl
     | Tcons T Ts => f_equal (Tcons T) (Tappend_assoc Ts Us Rs)
   end.
 
-Fixpoint arrows (Ts : Tlist) (R : Type) :=
+Polymorphic Fixpoint arrows (Ts : Tlist) (R : Type) :=
   match Ts with
     | Tnil => R
     | Tcons T Ts => T -> (arrows Ts R)
   end.
 
-Definition arrows_assoc {Ts Us Rs : Tlist} {R : Type} :
+Polymorphic Definition arrows_assoc {Ts Us Rs : Tlist} {R : Type} :
            arrows (Tappend (Tappend Ts Us) Rs) R = arrows (Tappend Ts (Tappend Us Rs)) R :=
   eq_ind_r
     (fun t : Tlist => arrows t R = arrows (Tappend Ts (Tappend Us Rs)) R)
   eq_refl (Tappend_assoc Ts Us Rs).
 
-Fixpoint arrows_const {R : Type} (Ts : Tlist) (r : R) : arrows Ts R :=
+Polymorphic Fixpoint arrows_const {R : Type} (Ts : Tlist) (r : R) : arrows Ts R :=
   match Ts with
     | Tnil       => r
     | Tcons T Ts => fun x => arrows_const Ts r
   end.
  
-Fixpoint arrows_append_r {Ts R} (Us : Tlist) : arrows Ts R -> arrows (Tappend Ts Us) R :=
+Polymorphic Fixpoint arrows_append_r {Ts R} (Us : Tlist) : arrows Ts R -> arrows (Tappend Ts Us) R :=
   match Ts with
     | Tnil       => fun f   => arrows_const Us f
     | Tcons T Ts => fun f x => arrows_append_r Us (f x)
   end.
 
-Fixpoint arrows_append_l {Us R} (Ts : Tlist) (a : arrows Us R) : arrows (Tappend Ts Us) R :=
+Polymorphic Fixpoint arrows_append_l {Us R} (Ts : Tlist) (a : arrows Us R) : arrows (Tappend Ts Us) R :=
   match Ts with
     | Tnil       => a
     | Tcons T Ts => fun _ => arrows_append_l Ts a
   end.
 
-Fixpoint arrows_splice_r {Ts Rs C} Us :
+Polymorphic Fixpoint arrows_splice_r {Ts Rs C} Us :
   arrows (Tappend Ts Rs) C -> arrows (Tappend (Tappend Ts Us) Rs) C :=
   match Ts with
     | Tnil       => fun f => arrows_append_l Us f
     | Tcons T Ts => fun f x => arrows_splice_r Us (f x)
   end. 
 
-Fixpoint arrows_cons_splice {Ts Rs C} R :
+Polymorphic Fixpoint arrows_cons_splice {Ts Rs C} R :
   arrows (Tappend Ts Rs) C -> arrows (Tappend Ts (Tcons R Rs)) C :=
   match Ts with
     | Tnil       => fun f x => f
     | Tcons T Ts => fun f x => arrows_cons_splice R (f x)
   end.
 
-Fixpoint arrows_splice_l {Us Rs C} Ts :
+Polymorphic Fixpoint arrows_splice_l {Us Rs C} Ts :
   arrows (Tappend Us Rs) C -> arrows (Tappend (Tappend Ts Us) Rs) C :=
   match Ts with
     | Tnil       => fun h => h
     | Tcons T Ts => fun h x => arrows_splice_l Ts h
   end.
 
-Fixpoint arrows_unop {A B} {Ts : Tlist} (op : A -> B) :
+Polymorphic Fixpoint arrows_unop {A B} {Ts : Tlist} (op : A -> B) :
   arrows Ts A -> arrows Ts B :=
   match Ts with
     | Tnil       => fun f => op f
     | Tcons T Ts => fun f x => arrows_unop op (f x)
   end.
 
-Fixpoint arrows_binop {A B C} (op : A -> B -> C) (Ts : Tlist) :
+Polymorphic Fixpoint arrows_binop {A B C} (op : A -> B -> C) (Ts : Tlist) :
   arrows Ts A -> arrows Ts B -> arrows Ts C :=
   match Ts with
     | Tnil       => fun f g => op f g
     | Tcons T Ts => fun f g x => arrows_binop op (f x) (g x)
   end.
   
-Fixpoint arrows_unop_merge {A B} {Ts Us : Tlist} (op : arrows Us A -> arrows Us B) :
+Polymorphic Fixpoint arrows_unop_merge {A B} {Ts Us : Tlist} (op : arrows Us A -> arrows Us B) :
   arrows (Tappend Ts Us) A -> arrows (Tappend Ts Us) B :=
   match Ts with
     | Tnil       => fun f => op f
     | Tcons T Ts => fun f x => arrows_unop_merge op (f x) 
   end.
 
-Fixpoint arrows_binop_merge {A B C} (op : A -> B -> C) (Ts Us : Tlist) :
+Polymorphic Fixpoint arrows_binop_merge {A B C} (op : A -> B -> C) (Ts Us : Tlist) :
 	arrows Ts A -> arrows Us B -> arrows (Tappend Ts Us) C :=
 	match Ts with
 		| Tnil       => fun f g => arrows_unop (op f) g
@@ -103,13 +103,13 @@ Fixpoint arrows_binop_merge {A B C} (op : A -> B -> C) (Ts Us : Tlist) :
 
 Implicit Arguments arrows_binop [[A] [B] [C]].
 
-Fixpoint arrows_rel_close {A Ts} (R : relation A) : relation (arrows Ts A) :=
+Polymorphic Fixpoint arrows_rel_close {A Ts} (R : relation A) : relation (arrows Ts A) :=
   match Ts with
     | Tnil       => fun a b => R a b
     | Tcons T Ts => fun a b => forall t, arrows_rel_close R (a t) (b t)
   end.
 
-Fixpoint arrows_quant {T : Type} {f : nat -> Type} {x : nat} (Ts : Tlist) 
+Polymorphic Fixpoint arrows_quant {T : Type} {f : nat -> Type} {x : nat} (Ts : Tlist) 
            (quant : (T -> f x) -> f x) : 
   arrows (Tcons T Ts) (f x) -> arrows Ts (f x) :=
   match Ts with
@@ -117,13 +117,13 @@ Fixpoint arrows_quant {T : Type} {f : nat -> Type} {x : nat} (Ts : Tlist)
     | Tcons U Ts => fun f u => arrows_quant quant (fun t => f t u)
   end.
 
-Fixpoint Tcast {T : Type} (f : T -> Type) (Ts : list T) :=
+Polymorphic Fixpoint Tcast {T : Type} (f : T -> Type) (Ts : list T) :=
   match Ts with
     | nil     => Tnil
     | T :: Ts => Tcons (f T) (Tcast f Ts)
   end.
 
-Inductive deep_op {A : Type} {ILA : ILogicOps A} :=
+Polymorphic Inductive deep_op {A : Type} {ILA : ILogicOps A} :=
 | t_atom     : A -> deep_op
 | t_true     : deep_op
 | t_false    : deep_op
@@ -145,29 +145,29 @@ Inductive deep_op {A : Type} {ILA : ILogicOps A} :=
 | t_impl_prop (EmbOp : EmbedOp Prop A) (Emb : Embed Prop A) : 
 	@deep_op Prop _ -> deep_op -> deep_op.
 
-Definition unop_option {A B} (f : A -> B) (a : option A) :=
+Polymorphic Definition unop_option {A B} (f : A -> B) (a : option A) :=
 	match a with	
 		| Some p => Some (f p)
 		| None => None
 	end.
 
-Definition binop_option {A B C} (f : A -> B -> C) (a : option A) (b : option B) :=
+Polymorphic Definition binop_option {A B C} (f : A -> B -> C) (a : option A) (b : option B) :=
   match a, b with
     | Some p, Some q => Some (f p q)
     | _, _ => None
   end.
 
-Definition env_unops (A : Type)   := Map [nat, A -> A]. 
-Definition env_binops  (A : Type) := Map [nat, A -> A -> A].
-Definition env (A : Type) := ((env_unops A) * (env_binops A))%type.
+Polymorphic Definition env_unops (A : Type)   := Map [nat, A -> A]. 
+Polymorphic Definition env_binops  (A : Type) := Map [nat, A -> A -> A].
+Polymorphic Definition env (A : Type) := ((env_unops A) * (env_binops A))%type.
 
-Definition env_empty (A : Type) : env A := 
+Polymorphic Definition env_empty (A : Type) : env A := 
 	(@empty nat _ _ (A -> A), @empty nat _ _ (A -> A -> A)).
 	
-Definition env_add_unop {A : Type} (e : env A) (n : nat) (f : A -> A) : env A := 
+Polymorphic Definition env_add_unop {A : Type} (e : env A) (n : nat) (f : A -> A) : env A := 
 	((fst e) [n <- f], snd e).
 	
-Definition env_add_binop {A : Type} (e : env A) (n : nat) (f : A -> A -> A) : env A := 
+Polymorphic Definition env_add_binop {A : Type} (e : env A) (n : nat) (f : A -> A -> A) : env A := 
 	(fst e, (snd e) [n <- f]).
 	
 Polymorphic Fixpoint deep_op_eval (A : Type) {ILA : ILogicOps A} (env : env A) (e : deep_op) : option A := 
@@ -234,17 +234,17 @@ Ltac quote_term_aux f P :=
   Ltac quote_term P := quote_term_aux quote_term P.
 
 
-Definition unop_sound_lr (A B : Type) {ILA : ILogicOps A} (de_env : env A) (tac_env : env B) 
+Polymorphic Definition unop_sound_lr (A B : Type) {ILA : ILogicOps A} (de_env : env A) (tac_env : env B) 
        (tac_eval : B -> A) := forall f n, (fst tac_env) [n] = Some f ->
        exists g, (fst de_env) [n] = Some g /\ Proper (lentails ==> lentails) g /\
 	             forall a, tac_eval (f a) |-- g (tac_eval a).
   
-Definition binop_sound_lr (A B : Type) {ILA : ILogicOps A} (de_env : env A) (tac_env : env B) 
+Polymorphic Definition binop_sound_lr (A B : Type) {ILA : ILogicOps A} (de_env : env A) (tac_env : env B) 
        (tac_eval : B -> A) := forall f n, (snd tac_env) [n] = Some f -> 
        exists g, (snd de_env) [n] = Some g /\ Proper (lentails ==> lentails ==> lentails) g /\
 	             forall a b, tac_eval (f a b) |-- g (tac_eval a) (tac_eval b).
 	             
-Definition env_sound_lr (A B : Type) {ILA : ILogicOps A} (de_env : env A) (tac_env : env B)
+Polymorphic Definition env_sound_lr (A B : Type) {ILA : ILogicOps A} (de_env : env A) (tac_env : env B)
                         (tac_eval : B -> A) :=
 	(unop_sound_lr de_env tac_env tac_eval) /\
 	(binop_sound_lr de_env tac_env tac_eval).
@@ -312,17 +312,17 @@ Qed.
 		
 
 		
-Definition unop_sound_rl (A B : Type) {ILA : ILogicOps A} (de_env : env A) (tac_env : env B) 
+Polymorphic Definition unop_sound_rl (A B : Type) {ILA : ILogicOps A} (de_env : env A) (tac_env : env B) 
        (tac_eval : B -> A) := forall f n, (fst tac_env) [n] = Some f ->
        exists g, (fst de_env) [n] = Some g /\ Proper (lentails ==> lentails) g /\ 
 	             forall a, g (tac_eval a) |-- tac_eval (f a).
   
-Definition binop_sound_rl (A B : Type) {ILA : ILogicOps A} (de_env : env A) (tac_env : env B) 
+Polymorphic Definition binop_sound_rl (A B : Type) {ILA : ILogicOps A} (de_env : env A) (tac_env : env B) 
        (tac_eval : B -> A) := forall f n, (snd tac_env) [n] = Some f -> 
        exists g, (snd de_env) [n] = Some g /\ Proper (lentails ==> lentails ==> lentails) g /\
 	             forall a b, g (tac_eval a) (tac_eval b) |-- tac_eval (f a b).
 	             
-Definition env_sound_rl (A B : Type) {ILA : ILogicOps A} (de_env : env A) (tac_env : env B)
+Polymorphic Definition env_sound_rl (A B : Type) {ILA : ILogicOps A} (de_env : env A) (tac_env : env B)
                         (tac_eval : B -> A) :=
 	(unop_sound_rl de_env tac_env tac_eval) /\
 	(binop_sound_rl de_env tac_env tac_eval).

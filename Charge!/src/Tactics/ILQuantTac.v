@@ -8,36 +8,36 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Set Maximal Implicit Insertion.
   
-  Record find_res (A : Type) := mkf {
+  Polymorphic Record find_res (A : Type) := mkf {
     find_types : Tlist;
     find_closure : arrows find_types A
   }.
 		
-	Definition find_res_unop {A B : Type} (op : A -> B) (a : option (find_res A)) :
+	Polymorphic Definition find_res_unop {A B : Type} (op : A -> B) (a : option (find_res A)) :
   	option (find_res B) :=
   	match a with
   		| Some a => Some (mkf (arrows_unop op (find_closure a)))
   		| None => None
   	end.
   
-  Definition find_res_binop {A B C : Type} (op : A -> B -> C) (a : option (find_res A)) 
+  Polymorphic Definition find_res_binop {A B C : Type} (op : A -> B -> C) (a : option (find_res A)) 
   	(b: option (find_res B)) : option (find_res C) :=
   	match a, b with
   	  | Some a, Some b => Some (mkf (arrows_binop_merge op (find_closure a) (find_closure b)))
   	  | _,      _      => None
   	end.
   	
-  	Definition find_res_create {A : Type} (a : option A) : option (find_res A) :=
+  	Polymorphic Definition find_res_create {A : Type} (a : option A) : option (find_res A) :=
   	match a with
   		| Some a => Some (@mkf A Tnil a)
   		| None   => None
   	end.
   	
-	Definition find_res_bind {A T : Type} {H : Inhabited T} (f : T -> A) :=
+	Polymorphic Definition find_res_bind {A T : Type} {H : Inhabited T} (f : T -> A) :=
 	@mkf A (Tcons T Tnil) f.
  
  
- 	Fixpoint find_res_eval_exists_aux {A : Type} {ILA : ILogicOps A} (Ts : Tlist) 
+ 	Polymorphic Fixpoint find_res_eval_exists_aux {A : Type} {ILA : ILogicOps A} (Ts : Tlist) 
 		: arrows Ts A -> A :=
 		match Ts with
 		  | Tnil => fun p => p
@@ -109,7 +109,9 @@ Qed.
                        {H : Proper (lentails ==> lentails ==> lentails) op} 
       (Hp : match deep_op_eval de_env1 p, pull_exists_r p de_env1 tac_env1 with
 	    | None, None => True
-	    | Some p, Some q => @lentails A ILA (find_res_eval_exists q) p
+	    | Some p, Some q => (find_res_eval_exists q) |-- (find_res_eval_exists q)
+
+(*@lentails A ILA (find_res_eval_exists q) p*)
 	    | _, _ => True
 	  end) 
 (*      (Hq : match deep_op_eval de_env2 q, pull_exists_r q de_env2 tac_env2 with

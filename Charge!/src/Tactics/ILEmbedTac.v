@@ -7,23 +7,23 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Set Maximal Implicit Insertion.
  
-Definition find_prop (A : Type) := (list Prop * A)%type.
+Polymorphic Definition find_prop (A : Type) := (list Prop * A)%type.
 		
-Definition find_prop_unop {A B : Type} (op : A -> B) (a : option (find_prop A)) :
+Polymorphic Definition find_prop_unop {A B : Type} (op : A -> B) (a : option (find_prop A)) :
 option (find_prop B) :=
 match a with
 	| Some a => Some (fst a, op (snd a))
 	| None => None
 end.
   
-  Definition find_prop_binop {A B C : Type} (op : A -> B -> C) (a : option (find_prop A)) 
+  Polymorphic Definition find_prop_binop {A B C : Type} (op : A -> B -> C) (a : option (find_prop A)) 
   	(b: option (find_prop B)) : option (find_prop C) :=
   	match a, b with
   	  | Some a, Some b => Some (fst a ++ fst b, op (snd a) (snd b))
   	  | _,      _      => None
   	end.
   	
-  	Definition find_prop_create {A : Type} (a : option A) : option (find_prop A) :=
+  	Polymorphic Definition find_prop_create {A : Type} (a : option A) : option (find_prop A) :=
   	match a with
   		| Some a => Some (nil, a)
   		| None   => None
@@ -35,7 +35,7 @@ end.
  			| P :: Ps => P /\\ (find_prop_eval_and_aux Ps a)
  		end.
 	
-	Definition find_prop_eval_and {A : Type} {ILA : ILogicOps A} {H: EmbedOp Prop A} (p : find_prop A) :=
+	Polymorphic Definition find_prop_eval_and {A : Type} {ILA : ILogicOps A} {H: EmbedOp Prop A} (p : find_prop A) :=
 		find_prop_eval_and_aux (fst p) (snd p).
  
 Fixpoint pull_and {A : Type} {ILA : ILogicOps A}
@@ -402,7 +402,7 @@ Qed.
  			| P :: Ps => P ->> (find_prop_eval_impl_aux Ps a)
  		end.
 	
-	Definition find_prop_eval_impl {A : Type} {ILA : ILogicOps A} {H: EmbedOp Prop A} (p : find_prop A) :=
+	Polymorphic Definition find_prop_eval_impl {A : Type} {ILA : ILogicOps A} {H: EmbedOp Prop A} (p : find_prop A) :=
 		find_prop_eval_impl_aux (fst p) (snd p).
  
 Fixpoint pull_impl {A : Type} {ILA : ILogicOps A} {EmbOp : EmbedOp Prop A} {Emb : Embed Prop A}

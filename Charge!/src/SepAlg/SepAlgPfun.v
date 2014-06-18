@@ -26,7 +26,9 @@ Section PartialFun.
   Definition pfun_eq (f1 f2 : pfun) := forall s, f1 s = f2 s.
   Global Instance pfunEquiv : Rel pfun | 0 := {rel := pfun_eq}.
   Global Instance EquivalencePfun : Equivalence rel.
-  Proof. intuition congruence. Qed.
+  Proof.
+    intuition.
+  Qed.
 
   Definition emptyFun : pfun := fun _ => Undefined.
   

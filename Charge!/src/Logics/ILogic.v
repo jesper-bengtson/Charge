@@ -31,7 +31,7 @@ Ltac cancel3 :=
   apply (proper_prf (Proper := _: Proper (_ ==> _ ==> _ ==> _) _));
   postcancel.
 
-Polymorphic Class Inhabited A := { cinhabited : inhabited A}.
+Class Inhabited A := { cinhabited : inhabited A}.
 
 Instance inhabitedNat: Inhabited nat. Proof. split; split; apply 0. Qed.
 Instance inhabitedBool: Inhabited bool. Proof. split; split; apply true. Qed.
@@ -39,7 +39,7 @@ Instance inhabitedBool: Inhabited bool. Proof. split; split; apply true. Qed.
 Generalizable Variables Frm.
 
 (* Logical connectives *)
-Polymorphic Class ILogicOps Frm := {
+Class ILogicOps Frm := {
   lentails: relation Frm;
   ltrue: Frm;
   lfalse: Frm;
@@ -85,7 +85,7 @@ Infix "-|-"  := lequiv (at level 85, no associativity).
    of the left, respectively right, side of a turnstile. The notable exception
    to this pattern is implication, which is required to be the right adjoint of
    conjunction. This makes singleton contexts work. *)
-Polymorphic Class ILogic Frm {ILOps: ILogicOps Frm} := {
+Class ILogic Frm {ILOps: ILogicOps Frm} := {
   lentailsPre:> PreOrder lentails;
   ltrueR: forall C, C |-- ltrue;
   lfalseL: forall C, lfalse |-- C;

@@ -1,4 +1,4 @@
-Require Import Stack Rel.
+Require Import Stack Rel String.
 Require Import List OrderedType FunctionalExtensionality.
 
 Set Implicit Arguments.
@@ -6,10 +6,9 @@ Unset Strict Implicit.
 Set Maximal Implicit Insertion.
 
 Section Expr.
-  Context {A : Type} {Hdec : DecidableEq A}.
   Context {V : ValNull}.
 
-  Definition open B := stack A -> B.
+  Polymorphic Definition open B := stack -> B.
 
   Program Definition lift {A B} (f : A -> B) (a : open A) : open B := 
     fun x => f (a x).
@@ -25,7 +24,7 @@ Section Expr.
   Definition open_const {B : Type} (b : B) : open B := fun s => b.
   
   Definition V_expr (v : val) : expr := fun s => v.
-  Definition var_expr (x : A) : expr := fun s => s x.
+  Definition var_expr (x : string) : expr := fun s => s x.
   Definition empty_open : expr := fun x => null.
 
   Definition uncurry {A B C} (f : A -> B -> C) : (A * B) -> C := 
@@ -90,8 +89,8 @@ Notation "x '/V'" := (var_expr x) (at level 9, format "x /V").
 Section SimultAdd.
   Context {A} {H: DecidableEq A}.
 
-  Definition simult_add_pair_list_stack {V: ValNull} lst (s s' : stack A) :=
-    fold_right (fun v:A * expr => fun s' => stack_add (fst v) (snd v s) s') s' lst.
+  Definition simult_add_pair_list_stack {V: ValNull} lst (s s' : stack) :=
+    fold_right (fun v:string * expr => fun s' => stack_add (fst v) (snd v s) s') s' lst.
 
 End SimultAdd.
 

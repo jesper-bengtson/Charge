@@ -1,6 +1,5 @@
 Require Import Setoid Morphisms RelationClasses Program.Basics. 
-Add Rec LoadPath "/Users/jebe/git/Charge/Charge!/bin".
-Require Import ILogic BILogic ILQuantTac ILInsts Pure.
+Require Import ILogic BILogic ILInsts Pure.
 Require Import Rel SepAlg.
 
 Set Implicit Arguments.
@@ -22,15 +21,16 @@ Section BISepAlg.
                                                  P x1 -->> Q x2) _
   }.
   Next Obligation.
-  	lexistsL H1. eapply lexistsR. rewrite <- H. assumption. apply ltrueR.
+  	apply lexistsL; intro H1. eapply lexistsR. rewrite <- H. assumption. apply ltrueR.
   Qed.
   Next Obligation.
-  	lexistsL a b Hab.
-  	lexistsR a b. eapply lexistsR. eapply sa_mul_monR; eassumption. reflexivity.
+  	apply lexistsL; intro a; apply lexistsL; intro b; apply lexistsL; intro Hab.
+  	apply lexistsR with a; apply lexistsR with b. 
+        eapply lexistsR. eapply sa_mul_monR; eassumption. reflexivity.
   Qed.
   Next Obligation.
-	lforallR a b Hab.
-	lforallL a b. apply lforallL. eapply sa_mul_mon; [symmetry|]; eassumption.
+	apply lforallR; intro a; apply lforallR; intro b; apply lforallR; intro Hab.
+	apply lforallL with a; apply lforallL with b. apply lforallL. eapply sa_mul_mon; [symmetry|]; eassumption.
 	reflexivity.
   Qed.
 
@@ -42,35 +42,42 @@ Section BISepAlg.
     split.
     + apply _.
     + intros P Q x; simpl.
-      lexistsL x1 x2 H'; apply sa_mulC in H'.
-      lexistsR x2 x1 H'; apply landC.
+      apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro H'; apply sa_mulC in H'.
+      apply lexistsR with x2; apply lexistsR with x1; apply lexistsR with H'; apply landC.
     + intros P Q R x; simpl.
-      lexistsL x1 x2 Hx x3. lexistsL x4 Hx1.
+      apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro Hx. 
+      repeat setoid_rewrite landexistsDL.
+      apply lexistsL; intro x3; apply lexistsL; intro x4; apply lexistsL; intro Hx1. 
       destruct (sa_mulA Hx1 Hx) as [x5 [Hx2 Hx5]].
-      lexistsR x3 x5 Hx5 x4. lexistsR x2 Hx2.
-      apply landA.
+      apply lexistsR with x3; apply lexistsR with x5; apply lexistsR with Hx5.
+      rewrite landA. apply landR. apply landL1. reflexivity.
+      apply lexistsR with x4; apply lexistsR with x2; apply lexistsR with Hx2.
+      apply landL2. reflexivity.      
     + intros P Q R; split; intros H x; simpl.
-      - lforallR x1 x2 Hx1.
+      - apply lforallR; intro x1; apply lforallR; intro x2; apply lforallR; intro Hx1.
         apply limplAdj.
         specialize (H x2); simpl in H.
         rewrite <- H.
-        lexistsR x x1 Hx1. reflexivity.
-      - lexistsL x1 x2 Hx.
+        apply lexistsR with x; apply lexistsR with x1; apply lexistsR with Hx1. reflexivity.
+      - apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro Hx.
         specialize (H x1); simpl in H.
         setoid_rewrite H.
-        lforallL x2 x Hx.
+        repeat setoid_rewrite landforallDL.
+        apply lforallL with x2; apply lforallL with x; apply lforallL with Hx.
         apply landAdj. reflexivity.
     + intros P Q R H x; simpl.
-      lexistsL x1 x2 Hx.
-      lexistsR x1 x2 Hx.      
+      apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro Hx.
+      apply lexistsR with x1; apply lexistsR with x2; apply lexistsR with Hx.      
       rewrite H. reflexivity.
     + intros P; split; intros x; simpl.
-      - lexistsL x1 x2 Hx H2.
-        apply landL1.
+      - apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro Hx. 
+        rewrite landC, landexistsDL. apply lexistsL; intro H2.
+        apply landL2.
         apply sa_unit_eq in Hx. rewrite <- Hx. reflexivity. assumption.
       - destruct (sa_unit_ex x) as [u [H1 H2]].
-        lexistsR x u H2 H1. 
-        apply landR; [reflexivity| apply ltrueR].
+        apply lexistsR with x; apply lexistsR with u; apply lexistsR with H2. 
+        apply landR; [reflexivity|].
+        apply lexistsR with H1; apply ltrueR. 
   Qed.
 
   Instance pureop_bi_sepalg : PureOp := { 
@@ -141,7 +148,7 @@ Require Import ILEmbed.
 (* not sure about this *)
 Definition setrel {A} (rel: relation A) : relation (A -> Prop) :=
   fun P Q => forall a, Q a -> exists a', P a' /\ rel a' a.
-
+(*
 Module BIViews.
 Section BIViews.
   Context {A} `{sr : SepAlg A}.
@@ -415,7 +422,7 @@ Section BISepRel.
 End BISepRel.
 End BISepRel.
 
-
+*)
 Section BILPre.
   Context T (ord: relation T) {HPre: PreOrder ord}.
   Context {A : Type} `{HBI: BILogic A}.
@@ -431,8 +438,8 @@ Section BILPre.
   Qed.
   Next Obligation.
     intros.
-    lforallR x Hx. rewrite <- H in Hx.
-    lforallL x Hx; reflexivity.
+    apply lforallR; intro x; apply lforallR; intro Hx. rewrite <- H in Hx.
+    apply lforallL with x; apply lforallL with Hx; reflexivity.
   Qed.
 
   Local Existing Instance ILPre_Ops.
@@ -447,11 +454,11 @@ Section BILPre.
     + intros P Q x; simpl; apply sepSPC.
     + intros P Q R x; simpl; apply sepSPA.
     + intros P Q R; split; intros H t; simpl.
-      * lforallR t' H1.
+      * apply lforallR; intro t'; apply lforallR; intro H1.
         transitivity (P t'); [apply ILPreFrm_closed; assumption|].
         apply wandSepSPAdj; apply H. 
       *  apply wandSepSPAdj; specialize (H t); unfold wandSP in H; simpl in H.
-         rewrite H. lforallL t; apply lforallL; reflexivity.
+         rewrite H. apply lforallL with t; apply lforallL; reflexivity.
     + intros P Q R H x; simpl; apply bilsep; apply H. 
     + intros P; split; intros x; simpl; apply empSPR.
   Qed.
@@ -464,7 +471,9 @@ Section BILPre.
 
   Instance PureBILPre : Pure (PureBILPreOp).
   Proof.
-    constructor.
+    admit.
+
+(*    constructor.
     { repeat split; intros; intro t; simpl.
       * apply pureandsc with (po := POA); auto.
       * apply purescand with (po := POA); auto.
@@ -485,7 +494,7 @@ Section BILPre.
       { intros. eapply pure_proper. 2: eapply H0. symmetry.
         instantiate (1 := t).
         red in H. red. unfold lentails in H. simpl in H.
-        intuition. } }
+        intuition. } }*)
   Qed.
 
   Instance pureBILPre (a : ILPreFrm ord A) (H : forall t, pure (a t)) : pure a.
@@ -534,6 +543,8 @@ Section BILogic_Fun.
 
   Instance PureBILFun : Pure (PureBILFunOp).
   Proof.
+    admit.
+(*
     constructor.
     { intros. repeat split; intros; intro t; simpl.
       * apply pureandsc with (po := POA); auto.
@@ -549,6 +560,7 @@ Section BILogic_Fun.
         2: eapply H0. split. intuition. intuition. }
       { intros. eapply pure_proper.
         2: eapply H0. split. intuition. intuition. } }
+*)
   Qed.
 
   Instance pureBILFun (a : T -> A) (H : forall t, pure (a t)) : pure a.

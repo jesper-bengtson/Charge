@@ -1,4 +1,4 @@
-Require Import ILogic ILInsts BILogic ILEmbed ILQuantTac.
+Require Import ILogic ILInsts BILogic ILEmbed.
 Require Import Setoid Morphisms.
 
 Set Implicit Arguments.
@@ -9,7 +9,7 @@ Section Pure.
 
   Context {A : Type} {ILOPs : ILogicOps A} {BILOps : BILOperators A}.
 
-  Polymorphic Class PureOp := {
+  Class PureOp := {
     pure : A -> Prop
   }.
 
@@ -21,7 +21,7 @@ Section Pure.
     (forall Q, pure Q -> P -->> Q |-- P -* Q).
 
 
-  Polymorphic Class Pure {HP : PureOp} :=
+  Class Pure {HP : PureOp} :=
   { pure_axiom : forall p, pure p -> parameter_pure pure p
   ; pure_proper : Proper (lequiv ==> iff) pure
   }.

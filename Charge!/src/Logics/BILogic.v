@@ -1,5 +1,5 @@
 Require Import Setoid Morphisms RelationClasses Program.Basics. 
-Require Import ILogic ILEmbed ILQuantTac.
+Require Import ILogic ILEmbed.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -9,13 +9,13 @@ Section BILogic.
   Context {A : Type}.
   Context {HILOp: ILogicOps A}.
 
-  Polymorphic Class BILOperators (A : Type) := {
+  Class BILOperators (A : Type) := {
     empSP  : A;
     sepSP  : A -> A -> A;
     wandSP : A -> A -> A
   }.
 
-  Polymorphic Class BILogic {BILOp: BILOperators A} := {
+  Class BILogic {BILOp: BILOperators A} := {
     bilil :> ILogic A;
     sepSPC1 P Q : sepSP P Q |-- sepSP Q P;
     sepSPA1 P Q R : sepSP (sepSP P Q) R |-- sepSP P (sepSP Q R);
@@ -96,7 +96,7 @@ Section CoreInferenceRules.
   Lemma bilexistsscL {T} (P : A) (Q : T -> A):
     Exists x : T, P ** Q x |-- P ** Exists x : T, Q x.
   Proof.
-  	lexistsL x.
+    apply lexistsL; intro x.
     rewrite sepSPC. etransitivity; [|rewrite <- sepSPC; reflexivity].
     apply bilsep. eapply lexistsR; reflexivity.
   Qed.
@@ -105,7 +105,7 @@ Section CoreInferenceRules.
     P ** (Exists x : T, Q x) |-- Exists x : T, P ** Q x.
   Proof.
     rewrite sepSPC; rewrite wandSepSPAdj.
-    lexistsL x; erewrite <- wandSPAdj. reflexivity.
+    apply lexistsL; intro x; erewrite <- wandSPAdj. reflexivity.
     eapply lexistsR; rewrite sepSPC; reflexivity.
   Qed.
 
@@ -118,9 +118,9 @@ Section CoreInferenceRules.
   Lemma bilforallscR {T} (P : A) (Q : T -> A) :
     P ** (Forall x : T, Q x) |-- Forall x : T, P ** Q x.
   Proof.
-    lforallR x.
+    apply lforallR; intro x.
     rewrite sepSPC; etransitivity; [|rewrite <- sepSPC; reflexivity].
-    apply bilsep. lforallL x; reflexivity.
+    apply bilsep. apply lforallL with x; reflexivity.
   Qed.
   
   Lemma bilandscDL (P Q R : A) : (P //\\ Q) ** R |-- (P ** R) //\\ (Q ** R).
@@ -202,17 +202,16 @@ Section DerivedInferenceRules.
     (P -* Q) ** CL |-- CR.
   Proof.
     rewrite <-HR, <-HP. apply sepSPAdj. reflexivity.
-  Qed.
-  
+  Qed.  
    
   Lemma siexistsE {T : Type} (P : T -> A) (Q : A) :
     (Exists x, P x) -* Q -|- Forall x, (P x -* Q).
   Proof.
     split.
 	+ apply lforallR; intro x. apply wandSepSPAdj; eapply wandSPL; [|reflexivity].
-	  lexistsR x. reflexivity.
-	+ apply wandSepSPAdj. rewrite bilexistsscR. lexistsL.
-	  rewrite sepSPC, bilforallscR. lforallL x. rewrite sepSPC. 
+	  apply lexistsR with x. reflexivity.
+	+ apply wandSepSPAdj. rewrite bilexistsscR. apply lexistsL; intro x.
+	  rewrite sepSPC, bilforallscR. apply lforallL with x. rewrite sepSPC. 
 	  apply wandSPL; reflexivity.
   Qed.
   
