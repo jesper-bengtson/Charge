@@ -319,6 +319,8 @@ Section SepAlgMap.
     rewrite Hc in Habc; apply Habc.
   Qed.
         
+  
+        
   Lemma find_fold_none A x (a b : dict K A) :
     find x (fold add a b) = None <->
     find x a = None /\ find x b = None.
@@ -554,6 +556,31 @@ Section SepAlgMap.
       + exfalso; apply Habc_b.
         unfold In; exists a0; assumption.
     * reflexivity.
-  Qed.
+Qed.
+
+Lemma map_sa_mul_combined_subheap {A : Type} {a a1 a2 b : Map [K, A]}
+    (Hamul: sa_mul a1 a2 a) (Ha1sub: subheap a1 b) (Ha2sub: subheap a2 b) :
+    subheap a b.
+  Proof.
+    destruct Ha1sub as [a1' Ha1sub].
+    destruct Ha2sub as [a2' Ha2sub].
+    exists (restrict a1' a2').
+    intro k. specialize (Ha1sub k); specialize (Ha2sub k).
+    remember (find k b); destruct o.
+    destruct Ha1sub as [[Ha1subMT Ha1subNin] | [Ha1subMT Ha1subNin]].
+    eapply sa_mul_mapstoL in Hamul; [| apply Ha1subMT]; destruct Hamul as [HaMT HaNin].
+    destruct Ha2sub as [[Ha2subMT _] | [Ha2subMT _]]; [exfalso; apply HaNin; exists a0; apply Ha2subMT |]. 
+    left; split; [assumption |].
+    intro Hfail; apply Ha1subNin; apply restrict_in_iff in Hfail; apply Hfail.
+    destruct Ha2sub as [[Ha2subMT Ha2subNin] | [Ha2subMT Ha2subNin]].
+    apply sa_mulC in Hamul; eapply sa_mul_mapstoL in Hamul; [| apply Ha2subMT]; destruct Hamul as [Hamul _].
+    left; split; [assumption | ].
+    intro Hfail; apply Ha2subNin; apply restrict_in_iff in Hfail; apply Hfail.
+    right; split; [apply restrict_mapsto_iff; split; [assumption | exists a0; assumption] |].
+    intro Hfail; eapply sa_mul_inR in Hamul; [| apply Hfail]; destruct Hamul; intuition.
+    split; intro Hfail;
+      [  eapply sa_mul_inR in Hamul; [| apply Hfail]; destruct Hamul; intuition
+      | apply restrict_in_iff in Hfail; intuition].
+Qed.
 
 End SepAlgMap.
