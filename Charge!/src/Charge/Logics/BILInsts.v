@@ -135,6 +135,155 @@ End BISepAlg.
 
 Global Opaque SABIOps.
 
+Section BISepAlg2.
+  Context {A} `{sa : SepAlg A}.
+  Context {B} `{BIL: BILogic B}.
+  Context {HPre : PreOrder (@rel A _)}.
+  Context {HIL : ILogic B
+  }.
+
+  Open Scope sa_scope.
+
+  Program Instance SABIOps2: BILOperators (ILPreFrm rel B) := {
+    empSP := mkILPreFrm (fun x => Exists a : (sa_unit x), empSP) _;
+    sepSP P Q :=  mkILPreFrm (fun x => Exists x1, Exists x2, Exists H : sa_mul x1 x2 x,
+                                                P x1 ** Q x2) _;
+    wandSP P Q := mkILPreFrm (fun x => Forall x1, Forall x2, Forall H : sa_mul x x1 x2,  
+                                                 P x1 -* Q x2) _
+  }.
+  Next Obligation.
+  	lexistsL H1. eapply lexistsR. rewrite <- H. assumption. reflexivity.
+  Qed.
+  Next Obligation.
+  	lexistsL a b Hab.
+  	lexistsR a b. eapply lexistsR. eapply sa_mul_monR; eassumption. reflexivity.
+  Qed.
+  Next Obligation.
+	lforallR a b Hab.
+	lforallL a b. apply lforallL. eapply sa_mul_mon; [symmetry|]; eassumption.
+	reflexivity.
+  Qed.
+
+  Local Existing Instance ILPre_Ops.
+  Local Existing Instance ILPre_ILogic.
+  Local Transparent ILPre_Ops.
+
+  Instance SABILogic2 : BILogic (ILPreFrm rel B). 
+    split.
+    + apply _.
+    + intros P Q x; simpl.
+      lexistsL x1 x2 H'; apply sa_mulC in H'.
+      lexistsR x2 x1 H'. apply sepSPC.
+    + intros P Q R x; simpl.
+      lexistsL x1 x2 Hx. 
+      rewrite sepSPC. do 3 setoid_rewrite <- bilexistssc.
+      lexistsL x3 x4 Hx1.
+      destruct (sa_mulA Hx1 Hx) as [x5 [Hx2 Hx5]].
+      lexistsR x3 x5 Hx5 x4. lexistsR x2 Hx2.
+      rewrite sepSPC, sepSPA. reflexivity.
+    + intros P Q R; split; intros H x; simpl.
+      - lforallR x1 x2 Hx1.
+        apply wandSepSPAdj. 
+        specialize (H x2); simpl in H.
+        rewrite <- H.
+        lexistsR x x1 Hx1. reflexivity.
+      - lexistsL x1 x2 Hx.
+        specialize (H x1); simpl in H.
+        setoid_rewrite H.
+        rewrite sepSPC. do 3 setoid_rewrite bilforallscR.
+        lforallL x2 x Hx.
+        rewrite sepSPC.
+        apply wandSepSPAdj. reflexivity.
+    + intros P Q R H x; simpl.
+      lexistsL x1 x2 Hx.
+      lexistsR x1 x2 Hx.      
+      rewrite H. reflexivity.
+    + intros P; split; intros x; simpl.
+      - setoid_rewrite <- bilexistssc. lexistsL x1 x2 Hx H2.
+        rewrite empSPR. 
+        apply sa_unit_eq in Hx. rewrite <- Hx. reflexivity. assumption.
+      - destruct (sa_unit_ex x) as [u [H1 H2]].
+        setoid_rewrite <- bilexistssc.
+        lexistsR x u H2 H1. 
+        rewrite empSPR. reflexivity.
+  Qed.
+
+  Context {POB : @PureOp B}.
+  Context {PureB : Pure POB}.
+
+  Instance pureop_bi_sepalg2 : PureOp := { 
+    pure := fun (P : ILPreFrm rel B) => (forall h, pure (P h)) /\ (forall h h', P h |-- P h')
+  }.
+
+  Instance pure_bi_sepalg2 : Pure pureop_bi_sepalg2.
+  Proof.
+    admit.
+    (*
+    constructor.
+    { unfold pure; simpl; constructor.
+      { unfold sepSP; simpl; intros.
+        destruct H as [H1 H2].
+        specialize (H1 t).
+        pose proof (@pure_axiom B _ _ _ PureB _ H1).
+        destruct H as [H _]; rewrite H.
+        destruct (sa_unit_ex t) as [x [Hx Htx]].
+        apply lexistsR with x.
+        apply lexistsR with t.
+        apply sa_mulC in Htx.
+        eapply lexistsR with Htx.
+        specialize (H2 t x). rewrite H2. reflexivity. }
+      constructor.
+      { unfold sepSP; simpl; intros.
+        repeat (eapply lexistsL; intros).
+        destruct H as [H1 H2]; destruct H0 as [H3 H4].
+        rewrite (H2 x t), (H4 x0 t).
+        specialize (H1 t). specialize (H3 t).
+        pose proof (@pure_axiom B _ _ _ PureB _ H1).
+        destruct H as [_ [H _]].
+        rewrite H. reflexivity. assumption. }
+      constructor.
+      { split; intros; unfold sepSP; simpl; intros.
+        { repeat (eapply lexistsL; intros).
+          apply landR. do 2 apply landL1. auto.
+          eapply lexistsR.
+          eapply lexistsR.
+          eapply lexistsR. eassumption.
+          eapply landR. apply landL1. apply landL2. reflexivity.
+          apply landL2. reflexivity. }
+        { rewrite landC.
+          rewrite landexistsDL.
+          repeat (eapply lexistsL; intros).
+          rewrite landexistsDL.
+          repeat (eapply lexistsL; intros).
+          rewrite landexistsDL.
+          repeat (eapply lexistsL; intros).
+          do 3 eapply lexistsR.
+          eassumption.
+          rewrite H.
+          rewrite landC. rewrite landA. reflexivity. } }
+      constructor.
+      { unfold wandSP; simpl; intros.
+        repeat (eapply lforallR; intros).
+        destruct (sa_unit_ex x).
+        destruct H0.
+        eapply lforallL with x1.
+        apply lforallL with x.
+        eapply lforallL.
+        rewrite x0. auto.
+        apply limplAdj. apply limplL. apply H. apply landL1. reflexivity. }
+      { unfold wandSP; simpl; intros.
+        repeat (eapply lforallR; intros).
+        eapply lforallL. eapply lforallL. reflexivity.
+        apply limplAdj. apply limplL; auto. apply landL1. auto. } }
+    { red. red. unfold pure; simpl.
+      intros. setoid_rewrite H.
+      reflexivity. }
+*)
+  Qed.
+
+End BISepAlg2.
+
+
 Require Import ILEmbed.
 
 (* not sure about this *)

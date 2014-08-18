@@ -309,6 +309,13 @@ Section SepAlgMap.
     assumption.
   Qed.
     
+  Lemma sa_mul_mapstoRT {A : Type} {a b c : Map [K, A]} {k : K} {y : A}
+        (Habc: sa_mul a b c) (Hc: MapsTo k y c) :
+    (MapsTo k y a /\ ~ In k b) + (MapsTo k y b /\ ~ In k a).
+  Proof.
+	admit. (* THIS IS NOT CORRECT!!! *)
+  Qed.
+    
   Lemma map_sa_mul_notinR {A : Type} {a b c : Map [K, A]} {k : K}
         (Habc: sa_mul a b c) (Hc: ~ In k c) :
     ~ In k a /\ ~ In k b.
