@@ -80,7 +80,7 @@ Section ILogic_nat.
 
   Program Definition ILLaterNatOps : ILLOperators (ILPreFrm ge A)  := 
     {|
-      illater P := mkILPreFrm (fun x => Forall y : nat, Forall H : y < x, P y) _
+      illater P := mkILPreFrm (fun x => Forall y : nat, Forall H : y < x, (ILPreFrm_pred P) y) _
     |}.
   Next Obligation.
     intros.
@@ -156,7 +156,7 @@ Section IBILPre.
   Local Transparent ILPre_Ops.
 
   Program Instance ILLaterPreOps : ILLOperators (ILPreFrm ord A) := {|
-    illater P := mkILPreFrm (fun t => |>(P t)) _
+    illater P := mkILPreFrm (fun t => |>((ILPreFrm_pred P) t)) _
   |}.
   Next Obligation.
     rewrite H. reflexivity.

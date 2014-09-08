@@ -16,9 +16,9 @@ Section BISepAlg.
   Program Instance SABIOps: BILOperators (ILPreFrm rel B) := {
     empSP := mkILPreFrm (fun x => Exists a : (sa_unit x), ltrue) _;
     sepSP P Q :=  mkILPreFrm (fun x => Exists x1, Exists x2, Exists H : sa_mul x1 x2 x,
-                                                P x1 //\\ Q x2) _;
+                                                (ILPreFrm_pred P) x1 //\\ (ILPreFrm_pred Q) x2) _;
     wandSP P Q := mkILPreFrm (fun x => Forall x1, Forall x2, Forall H : sa_mul x x1 x2,  
-                                                 P x1 -->> Q x2) _
+                                                 (ILPreFrm_pred P) x1 -->> (ILPreFrm_pred Q) x2) _
   }.
   Next Obligation.
   	lexistsL H1. eapply lexistsR. rewrite <- H. assumption. apply ltrueR.
@@ -73,7 +73,7 @@ Section BISepAlg.
   Qed.
 
   Instance pureop_bi_sepalg : PureOp := { 
-    pure := fun (P : ILPreFrm rel B) => forall h h', P h |-- P h'
+    pure := fun (P : ILPreFrm rel B) => forall h h', (ILPreFrm_pred P) h |-- (ILPreFrm_pred P) h'
   }.
 
   Instance pure_bi_sepalg : Pure pureop_bi_sepalg.
@@ -147,9 +147,9 @@ Section BISepAlg2.
   Program Instance SABIOps2: BILOperators (ILPreFrm rel B) := {
     empSP := mkILPreFrm (fun x => Exists a : (sa_unit x), empSP) _;
     sepSP P Q :=  mkILPreFrm (fun x => Exists x1, Exists x2, Exists H : sa_mul x1 x2 x,
-                                                P x1 ** Q x2) _;
+                                                (ILPreFrm_pred P) x1 ** (ILPreFrm_pred Q) x2) _;
     wandSP P Q := mkILPreFrm (fun x => Forall x1, Forall x2, Forall H : sa_mul x x1 x2,  
-                                                 P x1 -* Q x2) _
+                                                 (ILPreFrm_pred P) x1 -* (ILPreFrm_pred Q) x2) _
   }.
   Next Obligation.
   	lexistsL H1. eapply lexistsR. rewrite <- H. assumption. reflexivity.
@@ -212,7 +212,8 @@ Section BISepAlg2.
   Context {PureB : Pure POB}.
 
   Instance pureop_bi_sepalg2 : PureOp := { 
-    pure := fun (P : ILPreFrm rel B) => (forall h, pure (P h)) /\ (forall h h', P h |-- P h')
+    pure := fun (P : ILPreFrm rel B) => (forall h, pure ((ILPreFrm_pred P) h)) /\ 
+    	(forall h h', (ILPreFrm_pred P) h |-- (ILPreFrm_pred P) h')
   }.
 
   Instance pure_bi_sepalg2 : Pure pureop_bi_sepalg2.
@@ -317,10 +318,10 @@ Section BIViews.
     empSP := mkILPreFrm (fun x => embed (sa_unit x)) _;
     sepSP P Q := mkILPreFrm (fun x =>
         Exists x1, Exists x2,
-        sa_mul x1 x2 x /\\ P x1 //\\ Q x2) _;
+        sa_mul x1 x2 x /\\ (ILPreFrm_pred P) x1 //\\ (ILPreFrm_pred Q) x2) _;
     wandSP P Q := mkILPreFrm (fun x2 =>
         Forall x2', Forall x1, Forall x,
-        rel x2 x2' ->> sa_mul x1 x2' x ->> P x1 -->> Q x) _
+        rel x2 x2' ->> sa_mul x1 x2' x ->> (ILPreFrm_pred P) x1 -->> (ILPreFrm_pred Q) x) _
   }.
   Next Obligation.
     intros. setoid_rewrite H. reflexivity.
@@ -444,9 +445,9 @@ Section BISepRel.
     empSP := mkILPreFrm (fun x => embed (exists e, sa_unit e /\ rel e x)) _;
     sepSP P Q := mkILPreFrm (fun x =>
         Exists x1, Exists x2, Exists x12,
-        sa_mul x1 x2 x12 /\\ rel x12 x /\\ P x1 //\\ Q x2) _;
+        sa_mul x1 x2 x12 /\\ rel x12 x /\\ (ILPreFrm_pred P) x1 //\\ (ILPreFrm_pred Q) x2) _;
     wandSP P Q := mkILPreFrm (fun x2 =>
-        Forall x1, Forall x, sa_mul x1 x2 x ->> P x1 -->> Q x) _
+        Forall x1, Forall x, sa_mul x1 x2 x ->> (ILPreFrm_pred P) x1 -->> (ILPreFrm_pred Q) x) _
   }.
   Next Obligation.
     intros. setoid_rewrite H. reflexivity.
@@ -571,8 +572,8 @@ Section BILPre.
 
   Program Instance BILPre_Ops : BILOperators (ILPreFrm ord A) := {|
     empSP      := mkILPreFrm (fun t => empSP) _;
-    sepSP  P Q := mkILPreFrm (fun t => P t ** Q t) _;
-    wandSP P Q := mkILPreFrm (fun t => Forall t', Forall H : ord t t', P t' -* Q t') _
+    sepSP  P Q := mkILPreFrm (fun t => (ILPreFrm_pred P) t ** (ILPreFrm_pred Q) t) _;
+    wandSP P Q := mkILPreFrm (fun t => Forall t', Forall H : ord t t', (ILPreFrm_pred P) t' -* (ILPreFrm_pred Q) t') _
   |}.
   Next Obligation.
     intros; rewrite H; reflexivity.
@@ -596,7 +597,7 @@ Section BILPre.
     + intros P Q R x; simpl; apply sepSPA.
     + intros P Q R; split; intros H t; simpl.
       * lforallR t' H1.
-        transitivity (P t'); [apply ILPreFrm_closed; assumption|].
+        transitivity ((ILPreFrm_pred P) t'); [apply ILPreFrm_closed; assumption|].
         apply wandSepSPAdj; apply H. 
       *  apply wandSepSPAdj; specialize (H t); unfold wandSP in H; simpl in H.
          rewrite H. lforallL t; apply lforallL; reflexivity.
@@ -607,7 +608,7 @@ Section BILPre.
   Context {POA : @PureOp A} {PA : Pure POA}.
 
   Instance PureBILPreOp : @PureOp (ILPreFrm ord A) := {
-    pure := fun a => forall t, pure (a t)
+    pure := fun a => forall t, pure ((ILPreFrm_pred a) t)
   }.
 
   Instance PureBILPre : Pure (PureBILPreOp).
@@ -636,7 +637,7 @@ Section BILPre.
         intuition. } }
   Qed.
 
-  Instance pureBILPre (a : ILPreFrm ord A) (H : forall t, pure (a t)) : pure a.
+  Instance pureBILPre (a : ILPreFrm ord A) (H : forall t, pure ((ILPreFrm_pred a) t)) : pure a.
   Proof.
     simpl; apply H.
   Qed.
@@ -652,7 +653,7 @@ Section BILogic_Fun.
 
   Local Transparent ILFun_Ops.
 
-  Program Definition BILFun_Ops : BILOperators (T -> A) := {|
+  Program Definition BILFun_Ops : BILOperators (Fun T A) := {|
     empSP         := fun t => empSP;
     sepSP     P Q := fun t => P t ** Q t;
     wandSP    P Q := fun t => P t -* Q t
@@ -662,7 +663,7 @@ Section BILogic_Fun.
   Local Existing Instance ILFun_ILogic.
   Local Existing Instance BILFun_Ops.
 
-  Program Definition BILFunLogic : BILogic (T -> A). 
+  Program Definition BILFunLogic : BILogic (Fun T A). 
   Proof.
     split.
     + apply _.
@@ -676,7 +677,7 @@ Section BILogic_Fun.
 
   Context {POA : @PureOp A} {PA : Pure POA}.
 
-  Instance PureBILFunOp : @PureOp (T -> A) := {
+  Instance PureBILFunOp : @PureOp (Fun T A) := {
     pure := fun a => forall t, pure (a t)
   }.
 
@@ -699,7 +700,7 @@ Section BILogic_Fun.
         2: eapply H0. split. intuition. intuition. } }
   Qed.
 
-  Instance pureBILFun (a : T -> A) (H : forall t, pure (a t)) : pure a.
+  Instance pureBILFun (a : Fun T A) (H : forall t, pure (a t)) : pure a.
   Proof.
     simpl; apply H.
   Qed.

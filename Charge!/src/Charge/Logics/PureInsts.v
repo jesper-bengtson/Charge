@@ -251,7 +251,7 @@ Section PureEmbedPre.
     intros t; simpl; apply H.
   Qed.
   
-  Instance pure_embed_pre (p : ILPreFrm ord B) (H : forall t, pure (@embed B A _ (p t))) : 
+  Instance pure_embed_pre (p : ILPreFrm ord B) (H : forall t, pure (@embed B A _ (ILPreFrm_pred p t))) : 
     pure (@embed (ILPreFrm ord B) (ILPreFrm ord A) _ p).
   Proof.
     intros t; simpl; apply H.

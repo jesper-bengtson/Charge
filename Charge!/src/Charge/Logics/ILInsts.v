@@ -5,6 +5,8 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Set Maximal Implicit Insertion.
 
+Definition Fun (A B : Type) := A -> B.
+
 Section ILogic_Pre.
   Context T (ord: relation T) {HPre : PreOrder ord}.
   Context {A : Type} `{IL: ILogic A}.
@@ -17,7 +19,7 @@ Section ILogic_Pre.
 
   Notation "'mk'" := @mkILPreFrm.
 
-  Global Instance ILPreFrm_m (P: ILPreFrm): Proper (ord ++> lentails) P.
+  Global Instance ILPreFrm_m (P: ILPreFrm): Proper (ord ++> lentails) (ILPreFrm_pred P).
   Proof.
     intros t t' Ht. apply ILPreFrm_closed; assumption.
   Qed.
@@ -31,16 +33,16 @@ Section ILogic_Pre.
     end.
 
   Program Definition ILPre_Ops : ILogicOps ILPreFrm := {|
-    lentails P Q := forall t:T, P t |-- Q t;
+    lentails P Q := forall t:T, (ILPreFrm_pred P) t |-- (ILPreFrm_pred Q) t;
     ltrue        := mk (fun t => ltrue) _;
     lfalse       := mk (fun t => lfalse) _;
-    limpl    P Q := mk (fun t => Forall t', Forall Ht' : ord t t', P t' -->> Q t') _;
-    land     P Q := mk (fun t => P t //\\ Q t) _;
-    lor      P Q := mk (fun t => P t \\// Q t) _;
-    lforall  A P := mk (fun t => Forall a, P a t) _;
-    lexists  A P := mk (fun t => Exists a, P a t) _
+    limpl    P Q := mk (fun t => Forall t', Forall Ht' : ord t t', (ILPreFrm_pred P) t' -->> (ILPreFrm_pred Q) t') _;
+    land     P Q := mk (fun t => (ILPreFrm_pred P) t //\\ (ILPreFrm_pred Q) t) _;
+    lor      P Q := mk (fun t => (ILPreFrm_pred P) t \\// (ILPreFrm_pred Q) t) _;
+    lforall  A P := mk (fun t => Forall a, (ILPreFrm_pred (P a)) t) _;
+    lexists  A P := mk (fun t => Exists a, (ILPreFrm_pred (P a)) t) _
   |}. 
-  Next Obligation.
+  Next Obligation. 
     lforallR t'' Ht'. lforallL t''.
     assert (ord t t'') as Ht'' by (transitivity t'; assumption).
     lforallL Ht''; reflexivity.
@@ -53,7 +55,7 @@ Section ILogic_Pre.
     split; unfold lentails; simpl; intros.
     - split; red; [reflexivity|].
       intros P Q R HPQ HQR t. 
-      transitivity (Q t); [apply HPQ | apply HQR].
+      transitivity ((ILPreFrm_pred Q) t); [apply HPQ | apply HQR].
     - apply ltrueR.
     - apply lfalseL.
     - lforallL x; apply H. 
@@ -107,21 +109,12 @@ Section ILogic_Pre.
     apply lexistsR; [transitivity t0; assumption | apply ltrueR].
   Qed.
 
-  Lemma ILPreFrm_fold_entails x y P Q (Hord : ord x y) (H : P |-- Q) :
-    P x |-- Q y.
-  Proof.
-    etransitivity.
-    apply ILPreFrm_closed.
-    eassumption.
-    apply H.
-  Qed.
-                                  
 End ILogic_Pre.
 
 Implicit Arguments ILPreFrm [[T] [ILOps]].
 Implicit Arguments mkILPreFrm [[T] [ord] [A] [ILOps]].
 
-
+Check @ILPre_Ops.
 Section Embed_ILogic_Pre.
   Context T (ord: relation T) {HPre : PreOrder ord}.
   Context {A : Type} `{ILA: ILogic A}.
@@ -161,7 +154,7 @@ Section Embed_ILogic_Pre.
   Qed.
         
   Program Instance EmbedILPreOp : EmbedOp (ILPreFrm ord A) (ILPreFrm ord B) := {
-     embed := fun a => mkILPreFrm (fun x => embed (a x)) _
+     embed := fun a => mkILPreFrm (fun x => embed ((ILPreFrm_pred a) x)) _
   }.
   Next Obligation.
   	rewrite H. reflexivity.
@@ -187,7 +180,7 @@ Section ILogic_Fun.
   Context (T: Type).
   Context {A : Type} `{IL: ILogic A}.
 
-  Program Definition ILFun_Ops : ILogicOps (T -> A) := {|
+  Program Definition ILFun_Ops : ILogicOps (Fun T A) := {|
     lentails P Q := forall t:T, P t |-- Q t;
     ltrue        := fun t => ltrue;
     lfalse       := fun t => lfalse;
@@ -219,12 +212,6 @@ Section ILogic_Fun.
     - apply lorL; intuition.
     - apply landAdj; intuition.
     - apply limplAdj; intuition.
-  Qed.
-
-  Lemma ILFun_fold_entails x y P Q (Hxy : x = y) (HPQ : P |-- Q) :
-    P x |-- Q y.
-  Proof.
-    rewrite Hxy; apply HPQ.
   Qed.
 
 End ILogic_Fun.
@@ -288,11 +275,6 @@ End ILogicFunInv.
    connectives opaque. If a module wants to unfold those definitions, it should
    do [Transparent IL?_Ops], where ? is Pre or Fun. *)
 
-Ltac lintros x := 
-	match goal with 
-		| |- ?p |-- ?q => intros x
-	end.
-	
 Global Opaque ILPre_Ops.
 Global Opaque EmbedILPreDropOp.
 Global Opaque EmbedILPreOp.

@@ -42,7 +42,8 @@ OBJECTS = \
 	bin/Charge/Tactics/ILQuantTac.vo \
 	bin/Charge/Tactics/LaterBaseTactics.vo \
 	bin/Charge/Tactics/LaterEmbedTac.vo \
-	bin/Charge/Tactics/LaterQuantTac.vo
+	bin/Charge/Tactics/LaterQuantTac.vo \
+	bin/Charge/Tactics/Model.vo
 
 all: $(OBJECTS)
 clean:
@@ -76,3 +77,4 @@ bin/Charge/Tactics/ILQuantTac.vo: src/Charge/Tactics/ILQuantTac.v bin/Charge/Tac
 bin/Charge/Tactics/LaterBaseTactics.vo: src/Charge/Tactics/LaterBaseTactics.v bin/Charge/Logics/Later.vo bin/Charge/Tactics/BaseTactics.vo
 bin/Charge/Tactics/LaterEmbedTac.vo: src/Charge/Tactics/LaterEmbedTac.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILEmbed.vo bin/Charge/Tactics/BaseTactics.vo bin/Charge/Tactics/ILEmbedTac.vo bin/Charge/Logics/Later.vo bin/Charge/Tactics/LaterBaseTactics.vo
 bin/Charge/Tactics/LaterQuantTac.vo: src/Charge/Tactics/LaterQuantTac.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILEmbed.vo bin/Charge/Tactics/BaseTactics.vo bin/Charge/Tactics/ILQuantTac.vo bin/Charge/Logics/Later.vo bin/Charge/Tactics/LaterBaseTactics.vo
+bin/Charge/Tactics/Model.vo: src/Charge/Tactics/Model.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILInsts.vo bin/Charge/Logics/BILInsts.vo bin/Charge/Logics/Later.vo bin/Charge/Rel.vo
