@@ -259,3 +259,5 @@ Section IBILogic_Fun.
   Qed.
 
 End IBILogic_Fun.
+
+Opaque SAIBIOps.

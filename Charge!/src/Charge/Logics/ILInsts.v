@@ -32,7 +32,7 @@ Section ILogic_Pre.
     | |- _ => intro
     end.
 
-  Program Definition ILPre_Ops : ILogicOps ILPreFrm := {|
+  Global Program Instance ILPre_Ops : ILogicOps ILPreFrm := {|
     lentails P Q := forall t:T, (ILPreFrm_pred P) t |-- (ILPreFrm_pred Q) t;
     ltrue        := mk (fun t => ltrue) _;
     lfalse       := mk (fun t => lfalse) _;
@@ -48,11 +48,9 @@ Section ILogic_Pre.
     lforallL Ht''; reflexivity.
   Defined.
 
-  Local Existing Instance ILPre_Ops.
-
   Program Definition ILPre_ILogic : ILogic ILPreFrm.
   Proof.
-    split; unfold lentails; simpl; intros.
+   split; unfold lentails; simpl; intros.
     - split; red; [reflexivity|].
       intros P Q R HPQ HQR t. 
       transitivity ((ILPreFrm_pred Q) t); [apply HPQ | apply HQR].
@@ -74,6 +72,8 @@ Section ILogic_Pre.
     - lforallR t' Hord. apply limplAdj.
       rewrite ->Hord; eapply H; assumption.
   Qed.
+
+  Global Existing Instance ILPre_ILogic.
 
   Global Instance ILPreFrm_pred_m {H : PreOrder ord}:
     Proper (lentails ++> ord ++> lentails) ILPreFrm_pred.
@@ -121,7 +121,6 @@ Section Embed_ILogic_Pre.
   Context {B : Type} `{ILB: ILogic B}.
   Context {HEmbOp : EmbedOp A B} {HEmb : Embed A B}.
 
-  Local Existing Instance ILPre_Ops.
 (*
   Program Instance EmbedILPreDropOpEq : EmbedOp A (ILPreFrm ord A) := {
      embed := fun a => mkILPreFrm (fun x => a) _
@@ -138,11 +137,11 @@ Section Embed_ILogic_Pre.
       * lforallR x H; reflexivity.
   Qed.
  *)
-   Program Instance EmbedILPreDropOp : EmbedOp A (ILPreFrm ord B) := {
+   Global Program Instance EmbedILPreDropOp : EmbedOp A (ILPreFrm ord B) := {
      embed := fun a => mkILPreFrm (fun x => embed a) _
   }.
  
-  Instance EmbedILPreDrop : Embed A (ILPreFrm ord B).
+  Global Instance EmbedILPreDrop : Embed A (ILPreFrm ord B).
   Proof.
     split; intros.
     + simpl; intros. apply embed_sound; assumption.
@@ -153,14 +152,14 @@ Section Embed_ILogic_Pre.
       * lforallR x H. apply embedImpl.
   Qed.
         
-  Program Instance EmbedILPreOp : EmbedOp (ILPreFrm ord A) (ILPreFrm ord B) := {
+  Global Program Instance EmbedILPreOp : EmbedOp (ILPreFrm ord A) (ILPreFrm ord B) := {
      embed := fun a => mkILPreFrm (fun x => embed ((ILPreFrm_pred a) x)) _
   }.
   Next Obligation.
   	rewrite H. reflexivity.
   Defined.
 
-  Instance EmbedILPre : Embed (ILPreFrm ord A) (ILPreFrm ord B).
+  Global Instance EmbedILPre : Embed (ILPreFrm ord A) (ILPreFrm ord B).
   Proof.
     split; intros.
     + simpl; intros. apply embed_sound; apply H.
@@ -180,7 +179,7 @@ Section ILogic_Fun.
   Context (T: Type).
   Context {A : Type} `{IL: ILogic A}.
 
-  Program Definition ILFun_Ops : ILogicOps (Fun T A) := {|
+  Global Program Instance ILFun_Ops : ILogicOps (Fun T A) := {|
     lentails P Q := forall t:T, P t |-- Q t;
     ltrue        := fun t => ltrue;
     lfalse       := fun t => lfalse;
@@ -190,10 +189,8 @@ Section ILogic_Fun.
     lforall  A P := fun t => Forall a, P a t;
     lexists  A P := fun t => Exists a, P a t
   |}.
-  
-  Local Existing Instance ILFun_Ops.
 
-  Program Definition ILFun_ILogic : ILogic (T -> A). 
+  Program Definition ILFun_ILogic : ILogic (Fun T A). 
   Proof.
     split; unfold lentails; simpl; intros.
     - split; red; [reflexivity|].
@@ -214,6 +211,8 @@ Section ILogic_Fun.
     - apply limplAdj; intuition.
   Qed.
 
+  Global Existing Instance ILFun_ILogic.
+  
 End ILogic_Fun.
 
 Section Embed_ILogic_Fun.
@@ -269,16 +268,6 @@ Section ILogicFunInv.
 
 End ILogicFunInv.
 *)
-(* Coq tends to unfold lentails on [simpl], which triggers unfolding of
-   several other connectives. When that happens, the goal can become quite
-   unreadable. The workaround is to make the definition of entailment and
-   connectives opaque. If a module wants to unfold those definitions, it should
-   do [Transparent IL?_Ops], where ? is Pre or Fun. *)
-
-Global Opaque ILPre_Ops.
-Global Opaque EmbedILPreDropOp.
-Global Opaque EmbedILPreOp.
 
 Global Opaque ILFun_Ops.
-Global Opaque EmbedILFunDropOp.
-Global Opaque EmbedILFunOp.
+Global Opaque ILPre_Ops.

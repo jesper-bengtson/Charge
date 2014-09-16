@@ -37,7 +37,7 @@ Section ILEmbedId.
 	Context {A : Type} `{ILA : ILogic A}.
 
 	Instance EmbedOpId : EmbedOp A A := { embed := id }.
-	Instance EmbedId : Embed A A.
+	Global Instance EmbedId : Embed A A.
 	Proof.
 		split; firstorder.
 	Qed.
