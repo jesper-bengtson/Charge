@@ -51,7 +51,7 @@ Class ILogicOps Frm := {
 
 (* These notations have to sit strictly between level 80 (precendence of /\)
    and level 70 (precedence of =). *)
-Infix "|--"  := lentails (at level 79, no associativity).
+Infix "|--"  := lentails (at level 80, no associativity).
 Infix "//\\"   := land (at level 75, right associativity).
 Infix "\\//"   := lor (at level 76, right associativity).
 Infix "-->>"   := limpl (at level 77, right associativity).

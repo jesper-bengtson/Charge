@@ -29,9 +29,9 @@ End BILogic.
 Implicit Arguments BILogic [[BILOp] [HILOp]].
 
 Notation "a '**' b"  := (sepSP a b)
-  (at level 75, right associativity).
+  (at level 58, right associativity).
 Notation "a '-*' b"  := (wandSP a b)
-  (at level 77, right associativity).
+  (at level 60, right associativity).
 
 Section CoreInferenceRules.
 
