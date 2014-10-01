@@ -1,15 +1,17 @@
 Require Import Stack Rel.
 Require Import List OrderedType FunctionalExtensionality.
 
+Require Import ExtLib.Core.RelDec.
+
 Set Implicit Arguments.
 Unset Strict Implicit.
 Set Maximal Implicit Insertion.
 
 Section Expr.
-  Context {A : Type} {Hdec : DecidableEq A}.
-  Context {V : ValNull}.
+  Context {A val : Type} {HR : RelDec (@eq A)} {HROk : RelDec_Correct HR}.
+  Context {V : ValNull val}.
 
-  Definition open B := stack A -> B.
+  Definition open B := stack A val -> B.
 
   Program Definition lift {A B} (f : A -> B) (a : open A) : open B := 
     fun x => f (a x).
@@ -88,9 +90,9 @@ Notation "'`(' x ')'" := (liftn x) (only parsing).
 Notation "x '/V'" := (var_expr x) (at level 9, format "x /V").
 
 Section SimultAdd.
-  Context {A} {H: DecidableEq A}.
+  Context {A val} {HR : RelDec (@eq A)} {V: ValNull val}.
 
-  Definition simult_add_pair_list_stack {V: ValNull} lst (s s' : stack A) :=
+  Definition simult_add_pair_list_stack lst (s s' : stack A val) :=
     fold_right (fun v:A * expr => fun s' => stack_add (fst v) (snd v s) s') s' lst.
 
 End SimultAdd.
