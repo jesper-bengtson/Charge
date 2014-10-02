@@ -1,5 +1,5 @@
-Require Import Maps.
-Require Import String Ascii.
+Require Import Containers.Maps.
+Require Import Coq.Strings.String Ascii.
 Require Import Compare_dec.
 Require Import OrderedType.
 Require Import SepAlg UUSepAlg.

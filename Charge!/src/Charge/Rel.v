@@ -5,7 +5,7 @@ Require Import String.
 Class DecidableEq (A : Type) := { dec_eq (a b : A) : {a = b} + {a <> b} }.
 
 Instance DecNat : DecidableEq nat. Proof. split. decide equality. Qed.
-Instance DecString : DecidableEq string. Proof. split. repeat (decide equality). Qed.
+Instance DecString : DecidableEq String.string. Proof. split. repeat (decide equality). Qed.
 Instance DecEqPair (X Y : Type) {HX : DecidableEq X} {HY : DecidableEq Y} :
   DecidableEq (X * Y).
 Proof. 

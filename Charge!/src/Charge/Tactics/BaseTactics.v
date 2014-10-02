@@ -1,5 +1,5 @@
 Require Import ILogic ILEmbed.
-Require Import Maps MapInterface MapFacts.
+Require Import Containers.Maps MapInterface MapFacts.
 	 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -157,7 +157,7 @@ Definition binop_option {A B C} (f : A -> B -> C) (a : option A) (b : option B) 
     | _, _ => None
   end.
 
-Definition env_unops (A : Type)   := Map [nat, A -> A]. 
+Definition env_unops (A : Type)   :=  Map [nat, A -> A]. 
 Definition env_binops  (A : Type) := Map [nat, A -> A -> A].
 Definition env (A : Type) := ((env_unops A) * (env_binops A))%type.
 
