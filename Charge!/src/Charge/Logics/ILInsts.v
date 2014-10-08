@@ -215,6 +215,49 @@ Section ILogic_Fun.
   
 End ILogic_Fun.
 
+Section ILogic_Option.
+  Context {A : Type} `{IL: ILogic A}.
+
+  Definition toProp (P : option A) :=
+  	match P with
+	  | Some P => P
+	  | None => lfalse
+	end.
+
+  Global Program Instance ILOption_Ops : ILogicOps (option A) := {|
+    lentails P Q := toProp P |-- toProp Q;
+    ltrue        := Some ltrue;
+    lfalse       := Some lfalse;
+    limpl    P Q := Some (toProp P -->> toProp Q);
+    land     P Q := Some (toProp P //\\ toProp Q);
+    lor      P Q := Some (toProp P \\// toProp Q);
+    lforall  A P := Some (Forall a, toProp (P a));
+    lexists  A P := Some (Exists a, toProp (P a))
+  |}.
+
+  Program Definition ILOption_ILogic : ILogic (option A). 
+  Proof.
+    split; unfold lentails; simpl; intros.
+    - split; red; [reflexivity|].
+      intros P Q R HPQ HQR. transitivity (toProp Q); [apply HPQ | apply HQR].
+    - apply ltrueR.
+    - apply lfalseL.
+    - apply lforallL with x; apply H.
+    - apply lforallR; intros; apply H.
+    - apply lexistsL; intros; apply H.
+    - apply lexistsR with x; apply H.
+    - apply landL1; intuition.
+    - apply landL2; intuition.
+    - apply lorR1; intuition.
+    - apply lorR2; intuition.
+    - apply landR; intuition.
+    - apply lorL; intuition.
+    - apply landAdj; intuition.
+    - apply limplAdj; intuition.
+  Qed.
+  
+End ILogic_Option.
+
 Section Embed_ILogic_Fun.
   Context {A : Type} `{ILA: ILogic A}.
   Context {B : Type} `{ILB: ILogic B}.
@@ -268,6 +311,6 @@ Section ILogicFunInv.
 
 End ILogicFunInv.
 *)
-
+Global Opaque ILOption_Ops.
 Global Opaque ILFun_Ops.
 Global Opaque ILPre_Ops.

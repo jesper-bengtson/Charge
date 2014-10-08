@@ -16,6 +16,8 @@ override COQFLAGS += -R bin ""
 override COQFLAGS += $(DK_ITU_SDG_KOPITIAM_LP_COQ_8_4_FLAGS)
 override COQFLAGS += -R $(EXTLIB_PATH) ExtLib
 OBJECTS = \
+	bin/Charge/Containers/MapAVL.vo \
+	bin/Charge/Containers/MapAVLInstance.vo \
 	bin/Charge/Logics/BILInsts.vo \
 	bin/Charge/Logics/BILogic.vo \
 	bin/Charge/Logics/IBILogic.vo \
@@ -28,6 +30,7 @@ OBJECTS = \
 	bin/Charge/Logics/PureInsts.vo \
 	bin/Charge/Open/Open.vo \
 	bin/Charge/Open/OpenILogic.vo \
+	bin/Charge/Open/OptionILogic.vo \
 	bin/Charge/Open/Stack.vo \
 	bin/Charge/Open/Subst.vo \
 	bin/Charge/Rel.vo \
@@ -50,6 +53,8 @@ all: $(OBJECTS)
 clean:
 	rm -f $(OBJECTS)
 
+bin/Charge/Containers/MapAVL.vo: src/Charge/Containers/MapAVL.v
+bin/Charge/Containers/MapAVLInstance.vo: src/Charge/Containers/MapAVLInstance.v bin/Charge/Containers/MapAVL.vo
 bin/Charge/Logics/BILInsts.vo: src/Charge/Logics/BILInsts.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/BILogic.vo bin/Charge/Tactics/ILQuantTac.vo bin/Charge/Logics/ILInsts.vo bin/Charge/Logics/Pure.vo bin/Charge/Rel.vo bin/Charge/SepAlg/SepAlg.vo bin/Charge/Logics/ILEmbed.vo
 bin/Charge/Logics/BILogic.vo: src/Charge/Logics/BILogic.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILEmbed.vo bin/Charge/Tactics/ILQuantTac.vo
 bin/Charge/Logics/IBILogic.vo: src/Charge/Logics/IBILogic.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILInsts.vo bin/Charge/Logics/BILInsts.vo bin/Charge/Tactics/ILQuantTac.vo bin/Charge/Logics/BILogic.vo bin/Charge/SepAlg/SepAlg.vo bin/Charge/Logics/Pure.vo
@@ -62,6 +67,7 @@ bin/Charge/Logics/Pure.vo: src/Charge/Logics/Pure.v bin/Charge/Logics/ILogic.vo 
 bin/Charge/Logics/PureInsts.vo: src/Charge/Logics/PureInsts.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/IBILogic.vo bin/Charge/Logics/BILogic.vo bin/Charge/Logics/BILInsts.vo bin/Charge/Tactics/ILQuantTac.vo bin/Charge/Logics/ILInsts.vo bin/Charge/Logics/Pure.vo bin/Charge/Logics/ILEmbed.vo bin/Charge/Rel.vo bin/Charge/SepAlg/SepAlg.vo
 bin/Charge/Open/Open.vo: src/Charge/Open/Open.v bin/Charge/Open/Stack.vo bin/Charge/Rel.vo
 bin/Charge/Open/OpenILogic.vo: src/Charge/Open/OpenILogic.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILEmbed.vo bin/Charge/Logics/ILInsts.vo bin/Charge/Tactics/ILQuantTac.vo bin/Charge/Rel.vo bin/Charge/Open/Open.vo bin/Charge/Open/Stack.vo
+bin/Charge/Open/OptionILogic.vo: src/Charge/Open/OptionILogic.v
 bin/Charge/Open/Stack.vo: src/Charge/Open/Stack.v bin/Charge/Rel.vo
 bin/Charge/Open/Subst.vo: src/Charge/Open/Subst.v bin/Charge/Open/Stack.vo bin/Charge/Open/Open.vo bin/Charge/Rel.vo
 bin/Charge/Rel.vo: src/Charge/Rel.v
