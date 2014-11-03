@@ -16,8 +16,6 @@ override COQFLAGS += -R bin ""
 override COQFLAGS += $(DK_ITU_SDG_KOPITIAM_LP_COQ_8_4_FLAGS)
 override COQFLAGS += -R $(EXTLIB_PATH) ExtLib
 OBJECTS = \
-	bin/Charge/Containers/MapAVL.vo \
-	bin/Charge/Containers/MapAVLInstance.vo \
 	bin/Charge/Logics/BILInsts.vo \
 	bin/Charge/Logics/BILogic.vo \
 	bin/Charge/Logics/IBILogic.vo \
@@ -53,8 +51,6 @@ all: $(OBJECTS)
 clean:
 	rm -f $(OBJECTS)
 
-bin/Charge/Containers/MapAVL.vo: src/Charge/Containers/MapAVL.v
-bin/Charge/Containers/MapAVLInstance.vo: src/Charge/Containers/MapAVLInstance.v bin/Charge/Containers/MapAVL.vo
 bin/Charge/Logics/BILInsts.vo: src/Charge/Logics/BILInsts.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/BILogic.vo bin/Charge/Tactics/ILQuantTac.vo bin/Charge/Logics/ILInsts.vo bin/Charge/Logics/Pure.vo bin/Charge/Rel.vo bin/Charge/SepAlg/SepAlg.vo bin/Charge/Logics/ILEmbed.vo
 bin/Charge/Logics/BILogic.vo: src/Charge/Logics/BILogic.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILEmbed.vo bin/Charge/Tactics/ILQuantTac.vo
 bin/Charge/Logics/IBILogic.vo: src/Charge/Logics/IBILogic.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILInsts.vo bin/Charge/Logics/BILInsts.vo bin/Charge/Tactics/ILQuantTac.vo bin/Charge/Logics/BILogic.vo bin/Charge/SepAlg/SepAlg.vo bin/Charge/Logics/Pure.vo

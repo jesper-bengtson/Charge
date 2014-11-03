@@ -6,10 +6,12 @@ Unset Strict Implicit.
 Set Maximal Implicit Insertion.
 
 Section BILogic.
-  Context {A : Type}.
+  Definition BILogicType := Type.
+
+  Context {A : BILogicType}.
   Context {HILOp: ILogicOps A}.
 
-  Class BILOperators (A : Type) := {
+  Class BILOperators (A : BILogicType) := {
     empSP  : A;
     sepSP  : A -> A -> A;
     wandSP : A -> A -> A
@@ -141,7 +143,7 @@ Section CoreInferenceRules.
 End CoreInferenceRules.
 
 Section BILogicMorphisms.
-  Context {A : Type} `{BIL: BILogic A}.
+  Context {A : BILogicType} `{BIL: BILogic A}.
 
   Global Instance sepSP_lentails_m:
     Proper (lentails ++> lentails ++> lentails) sepSP.
@@ -179,7 +181,7 @@ End BILogicMorphisms.
 
 Section DerivedInferenceRules.
 
-  Context {A} `{BILogic A}.
+  Context {A : BILogicType} `{BILogic A}.
 
   Lemma sepSP_falseR P : P ** lfalse -|- lfalse.
   Proof.
