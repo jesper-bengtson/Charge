@@ -1,5 +1,10 @@
-Require Import ILogic ILEmbed ILInsts ILQuantTac Rel.
-Require Import Open Stack.
+Require Import Charge.Rel.
+Require Import Charge.Logics.ILogic. 
+Require Import Charge.Logics.ILEmbed.
+Require Import Charge.Logics.ILInsts.
+Require Import Charge.Tactics.ILQuantTac.
+Require Import Charge.Open.Open.
+Require Import Charge.Open.Stack.
 
 Local Existing Instance ILFun_Ops.
 Local Existing Instance ILFun_ILogic.

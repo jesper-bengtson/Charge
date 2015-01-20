@@ -1,6 +1,6 @@
-Require Import Setoid Morphisms RelationClasses.
+Require Import Setoid Morphisms  RelationClasses.
 Require Import Containers.OrderedType.
-Require Import String.
+Require Import Coq.Strings.String.
 
 Class DecidableEq (A : Type) := { dec_eq (a b : A) : {a = b} + {a <> b} }.
 

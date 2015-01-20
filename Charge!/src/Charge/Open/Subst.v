@@ -1,4 +1,7 @@
-Require Import Stack Open Rel.
+Require Import Charge.Rel.
+Require Import Charge.Open.Stack.
+Require Import Charge.Open.Open.
+
 Require Import List FunctionalExtensionality.
 
 Require Import ExtLib.Core.RelDec.
@@ -21,13 +24,13 @@ Section Subst.
   Context {A val : Type} {Heq : RelDec (@eq A)}.
   Context {R : ValNull val}.
 
-  Definition subst := A -> @open A val val.
+  Definition subst := A -> (A -> val) -> val.
 
   Definition stack_subst (s: stack A val) (sub: subst) : stack A val :=
     fun x => sub x s.
 
   Definition apply_subst {B}
-          (e : @open A val B) (sub : subst) : @open A val B :=
+          (e : (A -> val) -> B) (sub : subst) : (A -> val) -> B :=
     fun s => e (stack_subst s sub).
 
   Definition substlist := list (A * @expr A val).

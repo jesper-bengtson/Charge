@@ -179,7 +179,7 @@ Section ILogic_Fun.
   Context (T: Type).
   Context {A : Type} `{IL: ILogic A}.
 
-  Global Program Instance ILFun_Ops : ILogicOps (Fun T A) := {|
+  Global Program Instance ILFun_Ops : ILogicOps ((fun x y => x -> y) T A) := {|
     lentails P Q := forall t:T, P t |-- Q t;
     ltrue        := fun t => ltrue;
     lfalse       := fun t => lfalse;
@@ -190,7 +190,7 @@ Section ILogic_Fun.
     lexists  A P := fun t => Exists a, P a t
   |}.
 
-  Program Definition ILFun_ILogic : ILogic (Fun T A). 
+  Program Definition ILFun_ILogic : @ILogic _ ILFun_Ops. 
   Proof.
     split; unfold lentails; simpl; intros.
     - split; red; [reflexivity|].

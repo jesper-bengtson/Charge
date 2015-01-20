@@ -656,7 +656,7 @@ Section BILogic_Fun.
 
   Local Transparent ILFun_Ops.
 
-  Program Definition BILFun_Ops : BILOperators (Fun T A) := {|
+  Program Definition BILFun_Ops : BILOperators ((fun x y => x -> y) T A) := {|
     empSP         := fun t => empSP;
     sepSP     P Q := fun t => P t ** Q t;
     wandSP    P Q := fun t => P t -* Q t
@@ -666,7 +666,7 @@ Section BILogic_Fun.
   Local Existing Instance ILFun_ILogic.
   Local Existing Instance BILFun_Ops.
 
-  Program Definition BILFunLogic : BILogic (Fun T A). 
+  Program Definition BILFunLogic : @BILogic ((fun x y => x -> y) T A) (@ILFun_Ops T A _) BILFun_Ops. 
   Proof.
     split.
     + apply _.
@@ -680,7 +680,7 @@ Section BILogic_Fun.
 
   Context {POA : @PureOp A} {PA : Pure POA}.
 
-  Instance PureBILFunOp : @PureOp (Fun T A) := {
+  Instance PureBILFunOp : @PureOp ((fun x y => x -> y) T A) := {
     pure := fun a => forall t, pure (a t)
   }.
 
@@ -703,7 +703,7 @@ Section BILogic_Fun.
         2: eapply H0. split. intuition. intuition. } }
   Qed.
 
-  Instance pureBILFun (a : Fun T A) (H : forall t, pure (a t)) : pure a.
+  Instance pureBILFun (a : (fun x y => x -> y) T A) (H : forall t, pure (a t)) : @pure _ PureBILFunOp a.
   Proof.
     simpl; apply H.
   Qed.

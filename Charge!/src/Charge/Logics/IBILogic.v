@@ -251,7 +251,7 @@ Section IBILogic_Fun.
 
   Local Transparent ILFun_Ops.
 
-  Definition IBILFunLogic : IBILogic (Fun T A).
+  Definition IBILFunLogic : @IBILogic ((fun x y => x -> y) T A) (@ILFun_Ops T A _) (@BILFun_Ops T A _).
   Proof.
     split.
     apply BILFunLogic. apply BIL.

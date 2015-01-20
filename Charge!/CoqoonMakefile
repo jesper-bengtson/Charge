@@ -15,6 +15,8 @@ override COQFLAGS += -R src ""
 override COQFLAGS += -R bin ""
 override COQFLAGS += $(DK_ITU_SDG_KOPITIAM_LP_COQ_8_4_FLAGS)
 override COQFLAGS += -R $(EXTLIB_PATH) ExtLib
+override COQFLAGS += -R $(MIRRORCORE_PATH) MirrorCore
+override COQFLAGS += -R $(EXTERNAL_PATH) ""
 OBJECTS = \
 	bin/Charge/Logics/BILInsts.vo \
 	bin/Charge/Logics/BILogic.vo \
@@ -26,6 +28,17 @@ OBJECTS = \
 	bin/Charge/Logics/Later.vo \
 	bin/Charge/Logics/Pure.vo \
 	bin/Charge/Logics/PureInsts.vo \
+	bin/Charge/ModularFunc/BILogicFunc.vo \
+	bin/Charge/ModularFunc/BaseFunc.vo \
+	bin/Charge/ModularFunc/BaseType.vo \
+	bin/Charge/ModularFunc/EmbedFunc.vo \
+	bin/Charge/ModularFunc/ILogicFunc.vo \
+	bin/Charge/ModularFunc/LaterFunc.vo \
+	bin/Charge/ModularFunc/ListFunc.vo \
+	bin/Charge/ModularFunc/ListType.vo \
+	bin/Charge/ModularFunc/OpenFunc.vo \
+	bin/Charge/ModularFunc/SubstType.vo \
+	bin/Charge/ModularFunc/Sum.vo \
 	bin/Charge/Open/Open.vo \
 	bin/Charge/Open/OpenILogic.vo \
 	bin/Charge/Open/OptionILogic.vo \
@@ -37,15 +50,41 @@ OBJECTS = \
 	bin/Charge/SepAlg/SepAlgMap.vo \
 	bin/Charge/SepAlg/SepAlgPfun.vo \
 	bin/Charge/SepAlg/UUSepAlg.vo \
+	bin/Charge/SetoidRewrite/AutoSetoidRewrite.vo \
+	bin/Charge/SetoidRewrite/BILSetoidRewrite.vo \
+	bin/Charge/SetoidRewrite/Base.vo \
+	bin/Charge/SetoidRewrite/EmbedSetoidRewrite.vo \
+	bin/Charge/SetoidRewrite/ILSetoidRewrite.vo \
 	bin/Charge/Tactics/BIBaseTactics.vo \
+	bin/Charge/Tactics/BILNormalize.vo \
 	bin/Charge/Tactics/BIQuantTac.vo \
 	bin/Charge/Tactics/BaseTactics.vo \
 	bin/Charge/Tactics/ILEmbedTac.vo \
 	bin/Charge/Tactics/ILQuantTac.vo \
+	bin/Charge/Tactics/Iterated.vo \
 	bin/Charge/Tactics/LaterBaseTactics.vo \
 	bin/Charge/Tactics/LaterEmbedTac.vo \
 	bin/Charge/Tactics/LaterQuantTac.vo \
-	bin/Charge/Tactics/Model.vo
+	bin/Charge/Tactics/Model.vo \
+	bin/Charge/Tactics/OrderedCanceller.vo \
+	bin/Charge/Tactics/PullConjunct/ILPullConjunct.vo \
+	bin/Charge/Tactics/PullQuant/BILPullQuant.vo \
+	bin/Charge/Tactics/PullQuant/EmbedPullQuant.vo \
+	bin/Charge/Tactics/PullQuant/ILPullQuant.vo \
+	bin/Charge/Tactics/Rtac/Apply.vo \
+	bin/Charge/Tactics/Rtac/Cancellation.vo \
+	bin/Charge/Tactics/Rtac/EApply.vo \
+	bin/Charge/Tactics/Rtac/Instantiate.vo \
+	bin/Charge/Tactics/Rtac/Intro.vo \
+	bin/Charge/Tactics/Rtac/Minify.vo \
+	bin/Charge/Tactics/Rtac/PullConjunct.vo \
+	bin/Charge/Tactics/Rtac/PullQuant.vo \
+	bin/Charge/Tactics/Rtac/RTac.vo \
+	bin/Charge/Tactics/Rtac/ReifyLemma.vo \
+	bin/Charge/Tactics/Rtac/Subst.vo \
+	bin/Charge/Tactics/SepLogFold.vo \
+	bin/Charge/Tactics/SepLogFoldWithAnd.vo \
+	bin/Charge/Tactics/SynSepLog.vo
 
 all: $(OBJECTS)
 clean:
@@ -61,23 +100,60 @@ bin/Charge/Logics/ISC.vo: src/Charge/Logics/ISC.v bin/Charge/Logics/ILogic.vo bi
 bin/Charge/Logics/Later.vo: src/Charge/Logics/Later.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILInsts.vo bin/Charge/Logics/ILEmbed.vo bin/Charge/Tactics/ILQuantTac.vo
 bin/Charge/Logics/Pure.vo: src/Charge/Logics/Pure.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILInsts.vo bin/Charge/Logics/BILogic.vo bin/Charge/Logics/ILEmbed.vo bin/Charge/Tactics/ILQuantTac.vo
 bin/Charge/Logics/PureInsts.vo: src/Charge/Logics/PureInsts.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/IBILogic.vo bin/Charge/Logics/BILogic.vo bin/Charge/Logics/BILInsts.vo bin/Charge/Tactics/ILQuantTac.vo bin/Charge/Logics/ILInsts.vo bin/Charge/Logics/Pure.vo bin/Charge/Logics/ILEmbed.vo bin/Charge/Rel.vo bin/Charge/SepAlg/SepAlg.vo
+bin/Charge/ModularFunc/BILogicFunc.vo: src/Charge/ModularFunc/BILogicFunc.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/BILogic.vo bin/Charge/ModularFunc/ILogicFunc.vo
+bin/Charge/ModularFunc/BaseFunc.vo: src/Charge/ModularFunc/BaseFunc.v bin/Charge/Logics/ILogic.vo bin/Charge/ModularFunc/BaseType.vo
+bin/Charge/ModularFunc/BaseType.vo: src/Charge/ModularFunc/BaseType.v bin/Charge/Logics/ILogic.vo
+bin/Charge/ModularFunc/EmbedFunc.vo: src/Charge/ModularFunc/EmbedFunc.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILEmbed.vo bin/Charge/ModularFunc/ILogicFunc.vo
+bin/Charge/ModularFunc/ILogicFunc.vo: src/Charge/ModularFunc/ILogicFunc.v bin/Charge/Logics/ILogic.vo
+bin/Charge/ModularFunc/LaterFunc.vo: src/Charge/ModularFunc/LaterFunc.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/Later.vo bin/Charge/ModularFunc/ILogicFunc.vo
+bin/Charge/ModularFunc/ListFunc.vo: src/Charge/ModularFunc/ListFunc.v bin/Charge/Logics/ILogic.vo bin/Charge/ModularFunc/ListType.vo bin/Charge/ModularFunc/BaseType.vo
+bin/Charge/ModularFunc/ListType.vo: src/Charge/ModularFunc/ListType.v
+bin/Charge/ModularFunc/OpenFunc.vo: src/Charge/ModularFunc/OpenFunc.v bin/Charge/Open/Stack.vo bin/Charge/Open/Subst.vo bin/Charge/ModularFunc/BaseType.vo bin/Charge/ModularFunc/ListType.vo bin/Charge/ModularFunc/SubstType.vo bin/Charge/ModularFunc/ListFunc.vo bin/Charge/ModularFunc/ILogicFunc.vo bin/Charge/ModularFunc/BILogicFunc.vo bin/Charge/ModularFunc/BaseFunc.vo bin/Charge/ModularFunc/EmbedFunc.vo bin/Charge/Rel.vo
+bin/Charge/ModularFunc/SubstType.vo: src/Charge/ModularFunc/SubstType.v bin/Charge/Open/Subst.vo bin/Charge/Open/Stack.vo bin/Charge/ModularFunc/BaseType.vo
+bin/Charge/ModularFunc/Sum.vo: src/Charge/ModularFunc/Sum.v bin/Charge/Logics/ILogic.vo
 bin/Charge/Open/Open.vo: src/Charge/Open/Open.v bin/Charge/Open/Stack.vo bin/Charge/Rel.vo
-bin/Charge/Open/OpenILogic.vo: src/Charge/Open/OpenILogic.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILEmbed.vo bin/Charge/Logics/ILInsts.vo bin/Charge/Tactics/ILQuantTac.vo bin/Charge/Rel.vo bin/Charge/Open/Open.vo bin/Charge/Open/Stack.vo
+bin/Charge/Open/OpenILogic.vo: src/Charge/Open/OpenILogic.v bin/Charge/Rel.vo bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILEmbed.vo bin/Charge/Logics/ILInsts.vo bin/Charge/Tactics/ILQuantTac.vo bin/Charge/Open/Open.vo bin/Charge/Open/Stack.vo
 bin/Charge/Open/OptionILogic.vo: src/Charge/Open/OptionILogic.v
 bin/Charge/Open/Stack.vo: src/Charge/Open/Stack.v bin/Charge/Rel.vo
-bin/Charge/Open/Subst.vo: src/Charge/Open/Subst.v bin/Charge/Open/Stack.vo bin/Charge/Open/Open.vo bin/Charge/Rel.vo
+bin/Charge/Open/Subst.vo: src/Charge/Open/Subst.v bin/Charge/Rel.vo bin/Charge/Open/Stack.vo bin/Charge/Open/Open.vo
 bin/Charge/Rel.vo: src/Charge/Rel.v
 bin/Charge/SepAlg/SepAlg.vo: src/Charge/SepAlg/SepAlg.v bin/Charge/Rel.vo
 bin/Charge/SepAlg/SepAlgInsts.vo: src/Charge/SepAlg/SepAlgInsts.v bin/Charge/SepAlg/UUSepAlg.vo bin/Charge/SepAlg/SepAlg.vo bin/Charge/Rel.vo
 bin/Charge/SepAlg/SepAlgMap.vo: src/Charge/SepAlg/SepAlgMap.v bin/Charge/SepAlg/SepAlg.vo bin/Charge/SepAlg/UUSepAlg.vo bin/Charge/Logics/BILInsts.vo bin/Charge/SepAlg/SepAlg.vo bin/Charge/Rel.vo
 bin/Charge/SepAlg/SepAlgPfun.vo: src/Charge/SepAlg/SepAlgPfun.v bin/Charge/Rel.vo bin/Charge/SepAlg/SepAlg.vo bin/Charge/SepAlg/UUSepAlg.vo
 bin/Charge/SepAlg/UUSepAlg.vo: src/Charge/SepAlg/UUSepAlg.v bin/Charge/SepAlg/SepAlg.vo bin/Charge/Rel.vo
+bin/Charge/SetoidRewrite/AutoSetoidRewrite.vo: src/Charge/SetoidRewrite/AutoSetoidRewrite.v
+bin/Charge/SetoidRewrite/BILSetoidRewrite.vo: src/Charge/SetoidRewrite/BILSetoidRewrite.v bin/Charge/SetoidRewrite/AutoSetoidRewrite.vo bin/Charge/SetoidRewrite/Base.vo bin/Charge/ModularFunc/ILogicFunc.vo bin/Charge/ModularFunc/BILogicFunc.vo
+bin/Charge/SetoidRewrite/Base.vo: src/Charge/SetoidRewrite/Base.v bin/Charge/SetoidRewrite/AutoSetoidRewrite.vo bin/Charge/ModularFunc/BaseFunc.vo
+bin/Charge/SetoidRewrite/EmbedSetoidRewrite.vo: src/Charge/SetoidRewrite/EmbedSetoidRewrite.v bin/Charge/SetoidRewrite/AutoSetoidRewrite.vo bin/Charge/SetoidRewrite/Base.vo bin/Charge/ModularFunc/BaseFunc.vo bin/Charge/ModularFunc/ILogicFunc.vo bin/Charge/ModularFunc/EmbedFunc.vo
+bin/Charge/SetoidRewrite/ILSetoidRewrite.vo: src/Charge/SetoidRewrite/ILSetoidRewrite.v bin/Charge/SetoidRewrite/AutoSetoidRewrite.vo bin/Charge/SetoidRewrite/Base.vo bin/Charge/ModularFunc/BaseFunc.vo bin/Charge/ModularFunc/ILogicFunc.vo bin/Charge/Logics/ILogic.vo
 bin/Charge/Tactics/BIBaseTactics.vo: src/Charge/Tactics/BIBaseTactics.v bin/Charge/Logics/BILogic.vo bin/Charge/Tactics/BaseTactics.vo
+bin/Charge/Tactics/BILNormalize.vo: src/Charge/Tactics/BILNormalize.v bin/Charge/Logics/BILogic.vo bin/Charge/Logics/ILogic.vo bin/Charge/Logics/Pure.vo bin/Charge/Tactics/Iterated.vo bin/Charge/Tactics/SepLogFold.vo bin/Charge/Tactics/SepLogFoldWithAnd.vo bin/Charge/Tactics/SynSepLog.vo
 bin/Charge/Tactics/BIQuantTac.vo: src/Charge/Tactics/BIQuantTac.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILEmbed.vo bin/Charge/Tactics/BaseTactics.vo bin/Charge/Tactics/ILQuantTac.vo bin/Charge/Logics/BILogic.vo bin/Charge/Tactics/BIBaseTactics.vo
 bin/Charge/Tactics/BaseTactics.vo: src/Charge/Tactics/BaseTactics.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILEmbed.vo
 bin/Charge/Tactics/ILEmbedTac.vo: src/Charge/Tactics/ILEmbedTac.v bin/Charge/Tactics/BaseTactics.vo bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILEmbed.vo
 bin/Charge/Tactics/ILQuantTac.vo: src/Charge/Tactics/ILQuantTac.v bin/Charge/Tactics/BaseTactics.vo bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILEmbed.vo
+bin/Charge/Tactics/Iterated.vo: src/Charge/Tactics/Iterated.v
 bin/Charge/Tactics/LaterBaseTactics.vo: src/Charge/Tactics/LaterBaseTactics.v bin/Charge/Logics/Later.vo bin/Charge/Tactics/BaseTactics.vo
 bin/Charge/Tactics/LaterEmbedTac.vo: src/Charge/Tactics/LaterEmbedTac.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILEmbed.vo bin/Charge/Tactics/BaseTactics.vo bin/Charge/Tactics/ILEmbedTac.vo bin/Charge/Logics/Later.vo bin/Charge/Tactics/LaterBaseTactics.vo
 bin/Charge/Tactics/LaterQuantTac.vo: src/Charge/Tactics/LaterQuantTac.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILEmbed.vo bin/Charge/Tactics/BaseTactics.vo bin/Charge/Tactics/ILQuantTac.vo bin/Charge/Logics/Later.vo bin/Charge/Tactics/LaterBaseTactics.vo
 bin/Charge/Tactics/Model.vo: src/Charge/Tactics/Model.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/ILInsts.vo bin/Charge/Logics/BILInsts.vo bin/Charge/Logics/Later.vo bin/Charge/Rel.vo
+bin/Charge/Tactics/OrderedCanceller.vo: src/Charge/Tactics/OrderedCanceller.v bin/Charge/Logics/ILogic.vo bin/Charge/Logics/BILogic.vo bin/Charge/Logics/Pure.vo bin/Charge/Tactics/BILNormalize.vo bin/Charge/Tactics/Iterated.vo bin/Charge/Tactics/SynSepLog.vo
+bin/Charge/Tactics/PullConjunct/ILPullConjunct.vo: src/Charge/Tactics/PullConjunct/ILPullConjunct.v bin/Charge/SetoidRewrite/Base.vo bin/Charge/SetoidRewrite/AutoSetoidRewrite.vo bin/Charge/ModularFunc/ILogicFunc.vo bin/Charge/Logics/ILogic.vo
+bin/Charge/Tactics/PullQuant/BILPullQuant.vo: src/Charge/Tactics/PullQuant/BILPullQuant.v bin/Charge/SetoidRewrite/Base.vo bin/Charge/SetoidRewrite/AutoSetoidRewrite.vo bin/Charge/ModularFunc/ILogicFunc.vo bin/Charge/ModularFunc/BILogicFunc.vo bin/Charge/Logics/BILogic.vo bin/Charge/Logics/ILogic.vo
+bin/Charge/Tactics/PullQuant/EmbedPullQuant.vo: src/Charge/Tactics/PullQuant/EmbedPullQuant.v bin/Charge/SetoidRewrite/Base.vo bin/Charge/SetoidRewrite/AutoSetoidRewrite.vo bin/Charge/ModularFunc/ILogicFunc.vo bin/Charge/ModularFunc/EmbedFunc.vo bin/Charge/Logics/ILogic.vo
+bin/Charge/Tactics/PullQuant/ILPullQuant.vo: src/Charge/Tactics/PullQuant/ILPullQuant.v bin/Charge/SetoidRewrite/Base.vo bin/Charge/SetoidRewrite/AutoSetoidRewrite.vo bin/Charge/ModularFunc/ILogicFunc.vo bin/Charge/Logics/ILogic.vo
+bin/Charge/Tactics/Rtac/Apply.vo: src/Charge/Tactics/Rtac/Apply.v
+bin/Charge/Tactics/Rtac/Cancellation.vo: src/Charge/Tactics/Rtac/Cancellation.v bin/Charge/Tactics/OrderedCanceller.vo bin/Charge/Tactics/BILNormalize.vo bin/Charge/Tactics/SynSepLog.vo bin/Charge/Tactics/SepLogFoldWithAnd.vo bin/Charge/ModularFunc/ILogicFunc.vo bin/Charge/ModularFunc/BILogicFunc.vo
+bin/Charge/Tactics/Rtac/EApply.vo: src/Charge/Tactics/Rtac/EApply.v
+bin/Charge/Tactics/Rtac/Instantiate.vo: src/Charge/Tactics/Rtac/Instantiate.v
+bin/Charge/Tactics/Rtac/Intro.vo: src/Charge/Tactics/Rtac/Intro.v bin/Charge/ModularFunc/ILogicFunc.vo
+bin/Charge/Tactics/Rtac/Minify.vo: src/Charge/Tactics/Rtac/Minify.v
+bin/Charge/Tactics/Rtac/PullConjunct.vo: src/Charge/Tactics/Rtac/PullConjunct.v bin/Charge/ModularFunc/BaseFunc.vo bin/Charge/ModularFunc/ILogicFunc.vo bin/Charge/SetoidRewrite/Base.vo bin/Charge/SetoidRewrite/ILSetoidRewrite.vo bin/Charge/Tactics/PullConjunct/ILPullConjunct.vo bin/Charge/Logics/ILogic.vo
+bin/Charge/Tactics/Rtac/PullQuant.vo: src/Charge/Tactics/Rtac/PullQuant.v bin/Charge/ModularFunc/BaseFunc.vo bin/Charge/ModularFunc/ILogicFunc.vo bin/Charge/ModularFunc/BILogicFunc.vo bin/Charge/ModularFunc/EmbedFunc.vo bin/Charge/SetoidRewrite/AutoSetoidRewrite.vo bin/Charge/SetoidRewrite/Base.vo bin/Charge/SetoidRewrite/ILSetoidRewrite.vo bin/Charge/SetoidRewrite/BILSetoidRewrite.vo bin/Charge/SetoidRewrite/EmbedSetoidRewrite.vo bin/Charge/Tactics/PullQuant/ILPullQuant.vo bin/Charge/Tactics/PullQuant/BILPullQuant.vo bin/Charge/Tactics/PullQuant/EmbedPullQuant.vo bin/Charge/Logics/ILogic.vo
+bin/Charge/Tactics/Rtac/RTac.vo: src/Charge/Tactics/Rtac/RTac.v bin/Charge/Tactics/Rtac/Apply.vo bin/Charge/Tactics/Rtac/Cancellation.vo bin/Charge/Tactics/Rtac/EApply.vo bin/Charge/Tactics/Rtac/Instantiate.vo bin/Charge/Tactics/Rtac/Intro.vo bin/Charge/Tactics/Rtac/Minify.vo bin/Charge/Tactics/Rtac/PullConjunct.vo bin/Charge/Tactics/Rtac/ReifyLemma.vo bin/Charge/Tactics/Rtac/Subst.vo
+bin/Charge/Tactics/Rtac/ReifyLemma.vo: src/Charge/Tactics/Rtac/ReifyLemma.v bin/Charge/ModularFunc/ILogicFunc.vo
+bin/Charge/Tactics/Rtac/Subst.vo: src/Charge/Tactics/Rtac/Subst.v bin/Charge/ModularFunc/BaseFunc.vo bin/Charge/ModularFunc/OpenFunc.vo bin/Charge/ModularFunc/ILogicFunc.vo bin/Charge/ModularFunc/BILogicFunc.vo bin/Charge/ModularFunc/LaterFunc.vo bin/Charge/ModularFunc/EmbedFunc.vo bin/Charge/ModularFunc/ListFunc.vo bin/Charge/ModularFunc/SubstType.vo bin/Charge/ModularFunc/BaseType.vo bin/Charge/ModularFunc/ListType.vo bin/Charge/Open/Stack.vo bin/Charge/Open/Subst.vo
+bin/Charge/Tactics/SepLogFold.vo: src/Charge/Tactics/SepLogFold.v bin/Charge/Logics/BILogic.vo bin/Charge/Logics/Pure.vo
+bin/Charge/Tactics/SepLogFoldWithAnd.vo: src/Charge/Tactics/SepLogFoldWithAnd.v bin/Charge/Logics/BILogic.vo bin/Charge/Logics/Pure.vo
+bin/Charge/Tactics/SynSepLog.vo: src/Charge/Tactics/SynSepLog.v bin/Charge/Logics/BILogic.vo bin/Charge/Logics/ILogic.vo bin/Charge/Logics/Pure.vo bin/Charge/Tactics/SepLogFold.vo

@@ -66,7 +66,7 @@ Section ILogicEmbedCompose.
   	split;
   	rewrite embedImpl; apply embed_sound; rewrite embedImpl; reflexivity.
   Qed.
- 
+
 End ILogicEmbedCompose.
 
 Infix "/\\" := lembedand (at level 75, right associativity).
