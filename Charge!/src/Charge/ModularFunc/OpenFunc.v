@@ -761,6 +761,67 @@ Section MakeOpenSound.
 
   Local Notation "'tyStack'" := (tyArr tyString tyVal).
 
+  Lemma of_const_type_eq (t u : typ) (f : func) (df : typD u)
+    (Ho : open_funcS f = Some (of_const t))
+    (Hf : funcAs f u = Some df) :
+    u = tyArr t (tyArr tyStack t).
+  Proof.
+    pose proof (of_funcAsOk _ Ho) as H; rewrite H in Hf.
+    unfold funcAs in Hf. simpl in Hf. 
+    forward; inv_all; subst.
+    rewrite <- r. reflexivity.
+  Qed.    
+
+  Lemma of_stack_get_type_eq t (f : func) (df : typD t) 
+    (Ho : open_funcS f = Some of_stack_get) 
+    (Hf : funcAs f t = Some df) :
+    t = tyArr tyString (tyArr (tyArr tyString tyVal) tyVal).
+  Proof.
+    pose proof (of_funcAsOk _ Ho) as H; rewrite H in Hf.
+    unfold funcAs in Hf. simpl in Hf. 
+    forward; inv_all; subst.
+    rewrite <- r. reflexivity.
+  Qed.
+
+  Lemma of_apply_subst_type_eq t u (f : func) (df : typD u) 
+    (Ho : open_funcS f = Some (of_apply_subst t)) 
+    (Hf : funcAs f u = Some df) :
+    u = tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t)).
+  Proof.
+    pose proof (of_funcAsOk _ Ho) as H; rewrite H in Hf.
+    unfold funcAs in Hf. simpl in Hf. 
+    forward; inv_all; subst.
+    rewrite <- r. reflexivity.
+  Qed.
+
+  Lemma mkNull_sound (tus tvs : tenv typ) (f : func)
+    (df : typD tyVal) :
+    exprD' tus tvs tyVal mkNull = Some (fun _ _ => null).
+  Proof.
+    unfold mkNull; simpl.
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    pose proof of_fNullOk as Ho.
+    pose proof (of_funcAsOk _ Ho) as H.
+    rewrite H.
+    unfold funcAs. simpl. rewrite type_cast_refl.
+    reflexivity. apply _.
+  Qed.
+    pose proof (OpenFunc_typeOk _ Ho) as H1. simpl in H1.
+    
+    rewrite (funcAs_Some _ H1). 
+    Check symD.
+    clear - H1 Ho.
+    generalize dependent tyVal.
+    intros. 
+    unfold fNull. simpl.
+    inversion H1.
+    generalize (typD z').
+    unfold symD. simpl.
+    inv_all. subst. reflexivity.
+    rewrite (funcAs_Some _ H3) in Hf.
+    inv_all; subst. reflexivity.
+  Qed.
+  
   Lemma mkNull_sound (tus tvs : tenv typ) (f : func)
     (df : typD tyVal)
     (Ho : open_funcS f = Some of_null)
@@ -775,6 +836,28 @@ Section MakeOpenSound.
     pose proof (OpenFunc_typeOk _ H1) as H3. simpl in H3.
     rewrite (funcAs_Some _ H3).
     rewrite (funcAs_Some _ H3) in Hf.
+    inv_all; subst. reflexivity.
+  Qed.
+  
+  Lemma mkConst_sound (tus tvs : tenv typ) (t u : typ) (f : func) (c : expr typ func)
+    (df : typD (tyArr u (tyArr tyStack t))) (dc : ExprI.exprT tus tvs (typD u))
+    (Ho : open_funcS f = Some (of_const u))
+    (Hf : funcAs f (tyArr u (tyArr tyStack t)) = Some df)
+    (Hc : exprD' tus tvs u c = Some dc) : 
+    exprD' tus tvs (tyArr tyStack t) (mkConst u c) = Some (exprT_App (fun _ _ => df) dc).
+  Proof.
+    assert (u = t) by admit. (* Is true, I am just lazy atm *)
+    unfold mkConst; simpl.
+    pose proof (exprD_typeof_Some _ _ _ _ _ Hc) as Htc.
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    pose proof (of_funcAsOk _ Ho) as H3; rewrite H3 in Hf.
+    pose proof (of_fConstOk t) as H5.
+    pose proof (of_funcAsOk _ H5) as H6. rewrite <- H6 in Hf.
+    pose proof (OpenFunc_typeOk _ H5) as H7. simpl in H7.
+    unfold tyArr in *.
+    rewrite (funcAs_Some _ H7).
+    rewrite (funcAs_Some _ H7) in Hf.
     inv_all; subst. reflexivity.
   Qed.
 

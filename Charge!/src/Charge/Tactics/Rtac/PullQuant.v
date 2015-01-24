@@ -63,9 +63,31 @@ Section PullQuant.
       | _ => More s (GGoal e)
     end.
 
+  Definition PULL_EXISTSL_AUX (pq : list typ -> typ -> expr typ func -> option (expr typ func * rsubst (expr typ func))) : 
+    rtac typ (expr typ func) :=
+    fun tus tvs lus lvs c s e =>
+    match e with
+      | App (App f p) q =>
+        match ilogicS f with
+          | Some (ilf_entails t) => 
+            match pq (getVars c) t p with
+              | Some (p', _) => More s (GGoal (App (App f p') q))
+              | _ => More s (GGoal e)
+            end
+          | _ => More s (GGoal e)
+        end
+      | _ => More s (GGoal e)
+    end.
+
 Definition PULL_EXISTSR := PULL_EXISTSR_AUX pull_quant.
+Definition PULL_EXISTSL := PULL_EXISTSL_AUX pull_quant.
 
 Lemma PULL_EXISTSR_sound : rtac_sound PULL_EXISTSR.
+Proof.
+  admit.
+Qed.
+
+Lemma PULL_EXISTSL_sound : rtac_sound PULL_EXISTSL.
 Proof.
   admit.
 Qed.
@@ -73,3 +95,4 @@ Qed.
 End PullQuant.
 
 Implicit Arguments PULL_EXISTSR [[HIL] [HBIL] [HE] [HB] [RelDec_func] [RType_typ] [Typ2_typ] [Typ0_typ] [RSym_func]].
+Implicit Arguments PULL_EXISTSL [[HIL] [HBIL] [HE] [HB] [RelDec_func] [RType_typ] [Typ2_typ] [Typ0_typ] [RSym_func]].

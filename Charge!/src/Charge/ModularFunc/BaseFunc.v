@@ -4,6 +4,7 @@ Require Import ExtLib.Data.Nat.
 Require Import ExtLib.Data.Bool.
 Require Import ExtLib.Data.String.
 Require Import ExtLib.Tactics.Consider.
+Require Import ExtLib.Tactics.
 
 Require Import MirrorCore.TypesI.
 Require Import MirrorCore.syms.SymEnv.
@@ -192,3 +193,255 @@ Section MakeBase.
 	Definition mkPair t u a b := App (App (fPair t u) a) b.
 
 End MakeBase.
+
+Section BaseFuncOk.
+  Context {typ func : Type} {BF: BaseFunc typ func}.
+  Context {RType_typ : RType typ} {RSym_func : RSym func}.
+  Context {RelDec_eq : RelDec (@eq typ)}.
+  Context {BT : BaseType typ} {BTD : BaseTypeD}.
+
+  Context {Typ2_tyArr : Typ2 _ Fun}.
+  Context {Typ0_Prop : Typ0 _ Prop}.
+
+  Class BaseFuncOk := {
+    bf_funcAsOk (f : func) (e : base_func typ) : baseS f = Some e -> 
+      forall t, funcAs f t = funcAs (RSym_func := RSym_BaseFunc Typ2_tyArr Typ0_Prop) e t;
+    bf_fNatOk n : baseS (fNat n) = Some (pNat typ n);
+    bf_fBoolOk b : baseS (fBool b) = Some (pBool typ b);
+    bf_fStringOk s : baseS (fString s) = Some (pString typ s);
+    bf_fEqOk t : baseS (fEq t) = Some (pEq t);
+    bf_fPairOk t u : baseS (fPair t u) = Some (pPair t u)
+  }.
+
+End BaseFuncOk.
+
+Implicit Arguments BaseFuncOk [[BF] [RType_typ] [RSym_func] [RelDec_eq] [BT] [BTD] [Typ2_tyArr] [Typ0_Prop]].
+
+Section BaseFuncBaseOk.
+  Context {typ func : Type} {BF: BaseFunc typ func}.
+  Context {RType_typ : RType typ} {RSym_func : RSym func}.
+  Context {RelDec_eq : RelDec (@eq typ)}.
+  Context {BT : BaseType typ}.
+  Context {BTD : BaseTypeD}.
+
+  Context {Typ2_tyArr : Typ2 _ Fun}.
+  Context {Typ0_Prop : Typ0 _ Prop}.
+  Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
+  
+  Global Program Instance BaseFuncBaseOk : BaseFuncOk typ (RSym_func := RSym_BaseFunc Typ2_tyArr Typ0_Prop) (base_func typ) := {
+    bf_funcAsOk := fun _ _ _ _ => eq_refl;
+    bf_fNatOk n := eq_refl;
+    bf_fBoolOk b := eq_refl;
+    bf_fStringOk s := eq_refl;
+    bf_fEqOk t := eq_refl;
+    bf_fPairOk t u := eq_refl
+  }.
+
+End BaseFuncBaseOk.
+
+Section BaseFuncExprOk.
+  Context {typ func : Type} `{HOK : BaseFuncOk typ func}.
+  Context {HROk : RTypeOk}.
+  Context {A : Type} {RSymA : RSym A}.
+
+  Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
+  Let tyProp : typ := @typ0 _ _ _ _.
+
+  Lemma BaseFunc_typeOk (f : func) (e : base_func typ) (H : baseS f = Some e) :
+    typeof_sym f = typeof_base_func _ _ e.
+  Proof.
+    destruct HOK as [H1 H2 _ _ _ _ _ _ _].
+    specialize (H1 _ _ H).
+    destruct e; simpl in *;
+    match goal with 
+      | |- typeof_sym ?f = Some ?t => 
+	 	specialize (H1 t);
+	 	simpl in H1;
+	 	unfold funcAs in H1; simpl in H1 ; rewrite type_cast_refl in H1; [|apply _];
+	    generalize dependent (symD f);
+	 	destruct (typeof_sym f); simpl; intros; [forward|]; inversion H1
+ 	end.
+  Qed.
+  
+  Lemma bf_nat_type_eq (f : func) n t df
+    (H1 : baseS f = Some (fNat n)) (H2 : funcAs f t = Some df) :
+    t = tyNat.
+  Proof.
+    rewrite (bf_funcAsOk _ H1) in H2.
+    unfold funcAs in H2; simpl in *.
+    forward.
+  Qed.
+
+  Lemma bf_bool_type_eq (f : func) b t df
+    (H1 : baseS f = Some (fBool b)) (H2 : funcAs f t = Some df) :
+    t = tyBool.
+  Proof.
+    rewrite (bf_funcAsOk _ H1) in H2.
+    unfold funcAs in H2; simpl in *.
+    forward.
+  Qed.
+
+  Lemma bf_string_type_eq (f : func) s t df
+    (H1 : baseS f = Some (fString s)) (H2 : funcAs f t = Some df) :
+    t = tyString.
+  Proof.
+    rewrite (bf_funcAsOk _ H1) in H2.
+    unfold funcAs in H2; simpl in *.
+    forward.
+  Qed.
+
+  Lemma bf_eq_type_eq (f : func) t u df
+    (H1 : baseS f = Some (fEq t)) (H2 : funcAs f u = Some df) :
+    u = tyArr t (tyArr t tyProp).
+  Proof.
+    rewrite (bf_funcAsOk _ H1) in H2.
+    unfold funcAs in H2; simpl in *.
+    forward.
+    rewrite <- r; reflexivity.
+  Qed.
+
+  Lemma bf_pair_type_eq (f : func) t u v df
+    (H1 : baseS f = Some (fPair t u)) (H2 : funcAs f v = Some df) :
+    v = tyArr t (tyArr u (tyPair t u)).
+  Proof.
+    rewrite (bf_funcAsOk _ H1) in H2.
+    unfold funcAs in H2; simpl in *.
+    forward.
+    rewrite <- r; reflexivity.
+  Qed.
+Require Import MirrorCore.syms.SymSum.
+
+  Existing Instance RSym_sum.
+
+  Global Program Instance BaseFuncOkSumR : BaseFuncOk typ ((A + func)%type) := {
+    bf_funcAsOk := 
+      fun a f H t => 
+        match a with
+          | inl b => _
+          | inr b => _
+        end;
+    bf_fNatOk n := bf_fNatOk (func := func) n;
+    bf_fBoolOk b := bf_fBoolOk (func := func) b;
+    bf_fStringOk s := bf_fStringOk (func := func) s;
+    bf_fEqOk t := bf_fEqOk (func := func) t;
+    bf_fPairOk t u := bf_fPairOk (func := func) t u
+  }.
+  Next Obligation.
+    apply (bf_funcAsOk (func := func)).
+    apply H.
+  Qed.
+
+  Global Program Instance BaseFuncOkSumL : BaseFuncOk typ ((func + A)%type) := {
+    bf_funcAsOk := 
+      fun a f H t => 
+        match a with
+          | inl b => _
+          | inr b => _
+        end;
+    bf_fNatOk n := bf_fNatOk (func := func) n;
+    bf_fBoolOk b := bf_fBoolOk (func := func) b;
+    bf_fStringOk s := bf_fStringOk (func := func) s;
+    bf_fEqOk t := bf_fEqOk (func := func) t;
+    bf_fPairOk t u := bf_fPairOk (func := func) t u
+  }.
+  Next Obligation.
+    apply (bf_funcAsOk (func := func)).
+    apply H.
+  Qed.
+
+
+End BaseFuncExprOk.
+
+Section TypeOfFunc.
+  Context {typ func : Type}.
+  Context {RType_typ : RType typ}.
+  Context {RTypeOk_typ : RTypeOk}.
+  Context {RSym_func : RSym func}.
+  
+  Lemma typeof_funcAs f t e (H : funcAs f t = Some e) : typeof_sym f = Some t.
+  Proof.
+    unfold funcAs in H.
+    generalize dependent (symD f).
+    destruct (typeof_sym f); intros; [|congruence].
+    destruct (type_cast t0 t); [|congruence].
+    destruct r; reflexivity.
+  Qed.
+    
+  Lemma funcAs_Some f t (pf : typeof_sym f = Some t) :
+    funcAs f t =
+    Some (match pf in (_ = z)
+      return match z with
+               | Some z' => typD z'
+               | None => unit
+             end
+      with
+      | eq_refl => symD f
+      end).
+  Proof.
+    unfold funcAs.
+    generalize (symD f).
+    rewrite pf. intros.
+    rewrite type_cast_refl. reflexivity. apply _.
+  Qed.
+
+End TypeOfFunc.
+
+Section MakeBaseFuncSound.
+  Context {typ func : Type} `{HOK : BaseFuncOk typ func}.
+  Context {HROk : RTypeOk} {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}
+          {RSym_funcOk : RSymOk RSym_func0}.
+
+  Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
+
+  Lemma mkNat_sound (n : nat) (tus tvs : tenv typ) (f : func)
+    (df : typD tyNat)
+    (Ho : baseS f = Some (pNat typ n))
+    (Hf : funcAs f tyNat = Some df) :
+    exprD' tus tvs tyNat (mkNat n) = Some (fun _ _ => df).
+  Proof.
+    unfold mkNat; simpl.
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    pose proof (bf_funcAsOk _ Ho) as H; rewrite H in Hf.
+    pose proof (bf_fNatOk n) as H1.
+    pose proof (bf_funcAsOk _ H1) as H2. rewrite <- H2 in Hf.
+    pose proof (BaseFunc_typeOk _ H1) as H3. simpl in H3.
+    rewrite (funcAs_Some _ H3).
+    rewrite (funcAs_Some _ H3) in Hf.
+    inv_all; subst. reflexivity.
+  Qed.
+    
+  Lemma mkBool_sound (b : bool) (tus tvs : tenv typ) (f : func)
+    (df : typD tyBool)
+    (Ho : baseS f = Some (pBool typ b))
+    (Hf : funcAs f tyBool = Some df) :
+    exprD' tus tvs tyBool (mkBool b) = Some (fun _ _ => df).
+  Proof.
+    unfold mkBool; simpl.
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    pose proof (bf_funcAsOk _ Ho) as H; rewrite H in Hf.
+    pose proof (bf_fBoolOk b) as H1.
+    pose proof (bf_funcAsOk _ H1) as H2. rewrite <- H2 in Hf.
+    pose proof (BaseFunc_typeOk _ H1) as H3. simpl in H3.
+    rewrite (funcAs_Some _ H3).
+    rewrite (funcAs_Some _ H3) in Hf.
+    inv_all; subst. reflexivity.
+  Qed.
+
+  Lemma mkString_sound (s : string) (tus tvs : tenv typ) (f : func)
+    (df : typD tyString)
+    (Ho : baseS f = Some (pString typ s))
+    (Hf : funcAs f tyString = Some df) :
+    exprD' tus tvs tyString (mkString s) = Some (fun _ _ => df).
+  Proof.
+    unfold mkString; simpl.
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    pose proof (bf_funcAsOk _ Ho) as H; rewrite H in Hf.
+    pose proof (bf_fStringOk s) as H1.
+    pose proof (bf_funcAsOk _ H1) as H2. rewrite <- H2 in Hf.
+    pose proof (BaseFunc_typeOk _ H1) as H3. simpl in H3.
+    rewrite (funcAs_Some _ H3).
+    rewrite (funcAs_Some _ H3) in Hf.
+    inv_all; subst. reflexivity.
+  Qed.
+  
+End MakeBaseFuncSound.
