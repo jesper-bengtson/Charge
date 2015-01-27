@@ -78,9 +78,9 @@ Section ILogic_nat.
   Context {A : Type}.
   Context `{IL: ILogic A}.
 
-  Program Definition ILLaterNatOps : ILLOperators (ILPreFrm ge A)  := 
+  Global Program Instance ILLaterNatOps : ILLOperators (ILPreFrm ge A)  := 
     {|
-      illater P := mkILPreFrm (fun x => Forall y : nat, Forall H : y < x, P y) _
+      illater P := mkILPreFrm (fun x => Forall y : nat, Forall H : y < x, (ILPreFrm_pred P) y) _
     |}.
   Next Obligation.
     intros.
@@ -89,11 +89,8 @@ Section ILogic_nat.
   Qed.
 
 Local Transparent ILPre_Ops.
-Local Existing Instance ILLaterNatOps.
-Local Existing Instance ILPre_Ops.
-Local Existing Instance ILPre_ILogic.
 
-  Instance ILLaterNat : ILLater (ILPreFrm ge A).
+  Global Instance ILLaterNat : ILLater (ILPreFrm ge A).
   Proof.
     split.
     + apply _.
@@ -155,8 +152,8 @@ Section IBILPre.
 
   Local Transparent ILPre_Ops.
 
-  Program Instance ILLaterPreOps : ILLOperators (ILPreFrm ord A) := {|
-    illater P := mkILPreFrm (fun t => |>(P t)) _
+  Global Program Instance ILLaterPreOps : ILLOperators (ILPreFrm ord A) := {|
+    illater P := mkILPreFrm (fun t => |>((ILPreFrm_pred P) t)) _
   |}.
   Next Obligation.
     rewrite H. reflexivity.
@@ -176,6 +173,8 @@ Section IBILPre.
     + intros B F I x; simpl; apply spec_later_exists_inhabited; apply I.
   Qed.
 
+  Global Existing Instance ILLaterPre.
+
 End IBILPre.
 
 Section IBILogic_Fun.
@@ -187,11 +186,11 @@ Section IBILogic_Fun.
 
   Local Transparent ILFun_Ops.
 
-  Program Instance ILLaterFunOps : ILLOperators (T -> A) := {|
+  Program Instance ILLaterFunOps : ILLOperators (Fun T A) := {|
     illater P := fun t => |>(P t)
   |}.
   
-  Program Definition ILLaterFun : ILLater (T -> A).
+  Program Definition ILLaterFun : ILLater (Fun T A).
   Proof.
     split.
     + apply _.
@@ -203,6 +202,8 @@ Section IBILogic_Fun.
     + intros B F x; simpl; apply spec_later_exists.
     + intros B F I x; simpl; apply spec_later_exists_inhabited; apply I.
   Qed.
+  
+  Global Existing Instance ILLaterFun.
 
 End IBILogic_Fun.
 

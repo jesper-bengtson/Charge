@@ -1,7 +1,7 @@
 Require Import BaseTactics.
 Require Import ILogic ILEmbed.
 Require Import List.
-Require Import Maps MapInterface MapFacts.
+Require Import Containers.Maps MapInterface MapFacts.
 
 Set Implicit Arguments.
 Unset Strict Implicit.

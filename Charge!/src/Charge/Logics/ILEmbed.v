@@ -37,7 +37,7 @@ Section ILEmbedId.
 	Context {A : Type} `{ILA : ILogic A}.
 
 	Instance EmbedOpId : EmbedOp A A := { embed := id }.
-	Instance EmbedId : Embed A A.
+	Global Instance EmbedId : Embed A A.
 	Proof.
 		split; firstorder.
 	Qed.
@@ -66,7 +66,7 @@ Section ILogicEmbedCompose.
   	split;
   	rewrite embedImpl; apply embed_sound; rewrite embedImpl; reflexivity.
   Qed.
- 
+
 End ILogicEmbedCompose.
 
 Infix "/\\" := lembedand (at level 75, right associativity).

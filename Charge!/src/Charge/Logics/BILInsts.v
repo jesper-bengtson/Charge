@@ -1,4 +1,4 @@
-Require Import Setoid Morphisms RelationClasses Program.Basics. 
+Require Import Setoid Morphisms RelationClasses Program.Basics.
 Require Import ILogic BILogic ILQuantTac ILInsts Pure.
 Require Import Rel SepAlg.
 
@@ -8,17 +8,19 @@ Set Maximal Implicit Insertion.
 
 Section BISepAlg.
   Context {A} `{sa : SepAlg A}.
-  Context {B} `{IL: ILogic B}.
+  Context {B : Frm} `{IL: ILogic B}.
   Context {HPre : PreOrder (@rel A _)}.
 
   Open Scope sa_scope.
+  
+  Local Transparent ILPre_Ops.
 
-  Program Instance SABIOps: BILOperators (ILPreFrm rel B) := {
+  Global Program Instance SABIOps: BILOperators (ILPreFrm rel B) := {
     empSP := mkILPreFrm (fun x => Exists a : (sa_unit x), ltrue) _;
     sepSP P Q :=  mkILPreFrm (fun x => Exists x1, Exists x2, Exists H : sa_mul x1 x2 x,
-                                                P x1 //\\ Q x2) _;
+                                                (ILPreFrm_pred P) x1 //\\ (ILPreFrm_pred Q) x2) _;
     wandSP P Q := mkILPreFrm (fun x => Forall x1, Forall x2, Forall H : sa_mul x x1 x2,  
-                                                 P x1 -->> Q x2) _
+                                                 (ILPreFrm_pred P) x1 -->> (ILPreFrm_pred Q) x2) _
   }.
   Next Obligation.
   	lexistsL H1. eapply lexistsR. rewrite <- H. assumption. apply ltrueR.
@@ -32,10 +34,6 @@ Section BISepAlg.
 	lforallL a b. apply lforallL. eapply sa_mul_mon; [symmetry|]; eassumption.
 	reflexivity.
   Qed.
-
-  Local Existing Instance ILPre_Ops.
-  Local Existing Instance ILPre_ILogic.
-  Local Transparent ILPre_Ops.
 
   Instance SABILogic : BILogic (ILPreFrm rel B). 
     split.
@@ -72,11 +70,11 @@ Section BISepAlg.
         apply landR; [reflexivity| apply ltrueR].
   Qed.
 
-  Instance pureop_bi_sepalg : PureOp := { 
-    pure := fun (P : ILPreFrm rel B) => forall h h', P h |-- P h'
+  Global Instance pureop_bi_sepalg : PureOp := { 
+    pure := fun (P : ILPreFrm rel B) => forall h h', (ILPreFrm_pred P) h |-- (ILPreFrm_pred P) h'
   }.
 
-  Instance pure_bi_sepalg : Pure pureop_bi_sepalg.
+  Global Instance pure_bi_sepalg : Pure pureop_bi_sepalg.
   Proof.
     constructor.
     { unfold pure; simpl; constructor.
@@ -126,14 +124,12 @@ Section BISepAlg.
         repeat (eapply lforallR; intros).
         eapply lforallL. eapply lforallL. reflexivity.
         apply limplAdj. apply limplL; auto. apply landL1. auto. } }
-    { red. red. unfold pure; simpl.
+    { red. red. unfold pure; simpl. 
       intros. setoid_rewrite H.
       reflexivity. }
   Qed.
 
 End BISepAlg.
-
-Global Opaque SABIOps.
 
 Section BISepAlg2.
   Context {A} `{sa : SepAlg A}.
@@ -143,13 +139,15 @@ Section BISepAlg2.
   }.
 
   Open Scope sa_scope.
+  
+  Local Transparent ILPre_Ops.
 
-  Program Instance SABIOps2: BILOperators (ILPreFrm rel B) := {
+  Global Program Instance SABIOps2: BILOperators (ILPreFrm rel B) := {
     empSP := mkILPreFrm (fun x => Exists a : (sa_unit x), empSP) _;
     sepSP P Q :=  mkILPreFrm (fun x => Exists x1, Exists x2, Exists H : sa_mul x1 x2 x,
-                                                P x1 ** Q x2) _;
+                                                (ILPreFrm_pred P) x1 ** (ILPreFrm_pred Q) x2) _;
     wandSP P Q := mkILPreFrm (fun x => Forall x1, Forall x2, Forall H : sa_mul x x1 x2,  
-                                                 P x1 -* Q x2) _
+                                                 (ILPreFrm_pred P) x1 -* (ILPreFrm_pred Q) x2) _
   }.
   Next Obligation.
   	lexistsL H1. eapply lexistsR. rewrite <- H. assumption. reflexivity.
@@ -164,11 +162,7 @@ Section BISepAlg2.
 	reflexivity.
   Qed.
 
-  Local Existing Instance ILPre_Ops.
-  Local Existing Instance ILPre_ILogic.
-  Local Transparent ILPre_Ops.
-
-  Instance SABILogic2 : BILogic (ILPreFrm rel B). 
+  Global Instance SABILogic2 : BILogic (ILPreFrm rel B). 
     split.
     + apply _.
     + intros P Q x; simpl.
@@ -211,27 +205,28 @@ Section BISepAlg2.
   Context {POB : @PureOp B}.
   Context {PureB : Pure POB}.
 
-  Instance pureop_bi_sepalg2 : PureOp := { 
-    pure := fun (P : ILPreFrm rel B) => (forall h, pure (P h)) /\ (forall h h', P h |-- P h')
+  Print PureOp.
+
+  Global Instance pureop_bi_sepalg2 : PureOp := { 
+    pure := fun (P : ILPreFrm rel B) => 
+        (forall h, pure ((ILPreFrm_pred P) h)) /\
+    	(forall h h', (ILPreFrm_pred P) h |-- (ILPreFrm_pred P) h')
   }.
 
-  Instance pure_bi_sepalg2 : Pure pureop_bi_sepalg2.
+  Global Instance pure_bi_sepalg2 : Pure pureop_bi_sepalg2.
   Proof.
-    admit.
-    (*
     constructor.
-    { unfold pure; simpl; constructor.
+    { unfold pure; simpl; intros; constructor.
       { unfold sepSP; simpl; intros.
-        destruct H as [H1 H2].
-        specialize (H1 t).
-        pose proof (@pure_axiom B _ _ _ PureB _ H1).
-        destruct H as [H _]; rewrite H.
+        destruct H as [H H1].
+        pose proof (@pure_axiom B _ _ _ PureB _ (H t)) as H2.
+        destruct H2 as [H2 _].
         destruct (sa_unit_ex t) as [x [Hx Htx]].
         apply lexistsR with x.
         apply lexistsR with t.
         apply sa_mulC in Htx.
         eapply lexistsR with Htx.
-        specialize (H2 t x). rewrite H2. reflexivity. }
+        rewrite H2, (H1 t x); reflexivity. }
       constructor.
       { unfold sepSP; simpl; intros.
         repeat (eapply lexistsL; intros).
@@ -244,12 +239,12 @@ Section BISepAlg2.
       constructor.
       { split; intros; unfold sepSP; simpl; intros.
         { repeat (eapply lexistsL; intros).
-          apply landR. do 2 apply landL1. auto.
-          eapply lexistsR.
-          eapply lexistsR.
-          eapply lexistsR. eassumption.
-          eapply landR. apply landL1. apply landL2. reflexivity.
-          apply landL2. reflexivity. }
+          destruct H as [H H1].
+          pose proof (@pure_axiom B _ _ _ PureB) _ (H x) as H2.
+          destruct H2 as [_ [_ [H2 _]]].
+          rewrite H2.
+          apply landR; [apply landL1; auto | apply landL2].
+          do 3 eapply lexistsR; [eassumption|reflexivity]. }
         { rewrite landC.
           rewrite landexistsDL.
           repeat (eapply lexistsL; intros).
@@ -258,9 +253,13 @@ Section BISepAlg2.
           rewrite landexistsDL.
           repeat (eapply lexistsL; intros).
           do 3 eapply lexistsR.
-          eassumption.
-          rewrite H.
-          rewrite landC. rewrite landA. reflexivity. } }
+          eassumption. destruct H as [H H1].
+          rewrite (H1 t x).
+          pose proof (@pure_axiom B _ _ _ PureB) _ (H x) as H2.
+          destruct H2 as [_ [_ [H2 _]]].
+          destruct (H2 (Q x) (R x0)) as [_ H3].
+          rewrite landC. assumption.
+	   } }
       constructor.
       { unfold wandSP; simpl; intros.
         repeat (eapply lforallR; intros).
@@ -270,15 +269,22 @@ Section BISepAlg2.
         apply lforallL with x.
         eapply lforallL.
         rewrite x0. auto.
-        apply limplAdj. apply limplL. apply H. apply landL1. reflexivity. }
+        destruct H as [H H2].
+        pose proof (@pure_axiom B _ _ _ PureB) _ (H x1) as H3.
+        destruct H3 as [_ [_ [_ [H3 _]]]].
+        rewrite H3.
+        apply limplAdj. apply limplL. apply H2. apply landL1. reflexivity. }
       { unfold wandSP; simpl; intros.
         repeat (eapply lforallR; intros).
         eapply lforallL. eapply lforallL. reflexivity.
-        apply limplAdj. apply limplL; auto. apply landL1. auto. } }
-    { red. red. unfold pure; simpl.
-      intros. setoid_rewrite H.
-      reflexivity. }
-*)
+        destruct H as [H H2].
+        pose proof (@pure_axiom B _ _ _ PureB) _ (H x) as H3.
+        destruct H3 as [_ [_ [_ [_ H3]]]].
+        destruct H0 as [H4 H5].
+        rewrite <- H3; [|auto].
+        apply limplAdj. apply limplL; auto. apply landL1; auto. } }
+    { red. red. unfold pure; simpl; intros.
+      destruct PureB. repeat setoid_rewrite H; reflexivity. }
   Qed.
 
 End BISepAlg2.
@@ -317,10 +323,10 @@ Section BIViews.
     empSP := mkILPreFrm (fun x => embed (sa_unit x)) _;
     sepSP P Q := mkILPreFrm (fun x =>
         Exists x1, Exists x2,
-        sa_mul x1 x2 x /\\ P x1 //\\ Q x2) _;
+        sa_mul x1 x2 x /\\ (ILPreFrm_pred P) x1 //\\ (ILPreFrm_pred Q) x2) _;
     wandSP P Q := mkILPreFrm (fun x2 =>
         Forall x2', Forall x1, Forall x,
-        rel x2 x2' ->> sa_mul x1 x2' x ->> P x1 -->> Q x) _
+        rel x2 x2' ->> sa_mul x1 x2' x ->> (ILPreFrm_pred P) x1 -->> (ILPreFrm_pred Q) x) _
   }.
   Next Obligation.
     intros. setoid_rewrite H. reflexivity.
@@ -444,9 +450,9 @@ Section BISepRel.
     empSP := mkILPreFrm (fun x => embed (exists e, sa_unit e /\ rel e x)) _;
     sepSP P Q := mkILPreFrm (fun x =>
         Exists x1, Exists x2, Exists x12,
-        sa_mul x1 x2 x12 /\\ rel x12 x /\\ P x1 //\\ Q x2) _;
+        sa_mul x1 x2 x12 /\\ rel x12 x /\\ (ILPreFrm_pred P) x1 //\\ (ILPreFrm_pred Q) x2) _;
     wandSP P Q := mkILPreFrm (fun x2 =>
-        Forall x1, Forall x, sa_mul x1 x2 x ->> P x1 -->> Q x) _
+        Forall x1, Forall x, sa_mul x1 x2 x ->> (ILPreFrm_pred P) x1 -->> (ILPreFrm_pred Q) x) _
   }.
   Next Obligation.
     intros. setoid_rewrite H. reflexivity.
@@ -571,8 +577,8 @@ Section BILPre.
 
   Program Instance BILPre_Ops : BILOperators (ILPreFrm ord A) := {|
     empSP      := mkILPreFrm (fun t => empSP) _;
-    sepSP  P Q := mkILPreFrm (fun t => P t ** Q t) _;
-    wandSP P Q := mkILPreFrm (fun t => Forall t', Forall H : ord t t', P t' -* Q t') _
+    sepSP  P Q := mkILPreFrm (fun t => (ILPreFrm_pred P) t ** (ILPreFrm_pred Q) t) _;
+    wandSP P Q := mkILPreFrm (fun t => Forall t', Forall H : ord t t', (ILPreFrm_pred P) t' -* (ILPreFrm_pred Q) t') _
   |}.
   Next Obligation.
     intros; rewrite H; reflexivity.
@@ -596,7 +602,7 @@ Section BILPre.
     + intros P Q R x; simpl; apply sepSPA.
     + intros P Q R; split; intros H t; simpl.
       * lforallR t' H1.
-        transitivity (P t'); [apply ILPreFrm_closed; assumption|].
+        transitivity ((ILPreFrm_pred P) t'); [apply ILPreFrm_closed; assumption|].
         apply wandSepSPAdj; apply H. 
       *  apply wandSepSPAdj; specialize (H t); unfold wandSP in H; simpl in H.
          rewrite H. lforallL t; apply lforallL; reflexivity.
@@ -607,7 +613,7 @@ Section BILPre.
   Context {POA : @PureOp A} {PA : Pure POA}.
 
   Instance PureBILPreOp : @PureOp (ILPreFrm ord A) := {
-    pure := fun a => forall t, pure (a t)
+    pure := fun a => forall t, pure ((ILPreFrm_pred a) t)
   }.
 
   Instance PureBILPre : Pure (PureBILPreOp).
@@ -636,14 +642,12 @@ Section BILPre.
         intuition. } }
   Qed.
 
-  Instance pureBILPre (a : ILPreFrm ord A) (H : forall t, pure (a t)) : pure a.
+  Instance pureBILPre (a : ILPreFrm ord A) (H : forall t, pure ((ILPreFrm_pred a) t)) : pure a.
   Proof.
     simpl; apply H.
   Qed.
 
 End BILPre.
-
-Global Opaque BILPre_Ops.
 
 Section BILogic_Fun.
   Context (T: Type).
@@ -652,7 +656,7 @@ Section BILogic_Fun.
 
   Local Transparent ILFun_Ops.
 
-  Program Definition BILFun_Ops : BILOperators (T -> A) := {|
+  Program Definition BILFun_Ops : BILOperators ((fun x y => x -> y) T A) := {|
     empSP         := fun t => empSP;
     sepSP     P Q := fun t => P t ** Q t;
     wandSP    P Q := fun t => P t -* Q t
@@ -662,7 +666,7 @@ Section BILogic_Fun.
   Local Existing Instance ILFun_ILogic.
   Local Existing Instance BILFun_Ops.
 
-  Program Definition BILFunLogic : BILogic (T -> A). 
+  Program Definition BILFunLogic : @BILogic ((fun x y => x -> y) T A) (@ILFun_Ops T A _) BILFun_Ops. 
   Proof.
     split.
     + apply _.
@@ -676,7 +680,7 @@ Section BILogic_Fun.
 
   Context {POA : @PureOp A} {PA : Pure POA}.
 
-  Instance PureBILFunOp : @PureOp (T -> A) := {
+  Instance PureBILFunOp : @PureOp ((fun x y => x -> y) T A) := {
     pure := fun a => forall t, pure (a t)
   }.
 
@@ -699,11 +703,14 @@ Section BILogic_Fun.
         2: eapply H0. split. intuition. intuition. } }
   Qed.
 
-  Instance pureBILFun (a : T -> A) (H : forall t, pure (a t)) : pure a.
+  Instance pureBILFun (a : (fun x y => x -> y) T A) (H : forall t, pure (a t)) : @pure _ PureBILFunOp a.
   Proof.
     simpl; apply H.
   Qed.
 
 End BILogic_Fun.
 
+Global Opaque BILPre_Ops.
 Global Opaque BILFun_Ops.
+Global Opaque SABIOps.
+Global Opaque SABIOps2.

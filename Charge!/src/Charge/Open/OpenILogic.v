@@ -1,14 +1,19 @@
-Require Import ILogic ILEmbed ILInsts ILQuantTac Rel.
-Require Import Open Stack.
+Require Import Charge.Rel.
+Require Import Charge.Logics.ILogic. 
+Require Import Charge.Logics.ILEmbed.
+Require Import Charge.Logics.ILInsts.
+Require Import Charge.Tactics.ILQuantTac.
+Require Import Charge.Open.Open.
+Require Import Charge.Open.Stack.
 
 Local Existing Instance ILFun_Ops.
 Local Existing Instance ILFun_ILogic.
 
 Section VLogic.
-  Context {A : Type} {Heq : DecidableEq A}.
-  Context {V : ValNull}.
+  Context {A val : Type} {Heq : DecidableEq A}.
+  Context {V : ValNull val}.
 
-  Definition vlogic := @open A V Prop.
+  Definition vlogic := @open A val Prop.
 
   Definition open_eq {T} (a b : open T) : vlogic :=
     fun s => a s = b s.
@@ -27,8 +32,8 @@ Section VLogic.
 End VLogic.
 
 Section Existentialise.
-  Context {A : Type} {Heq : DecidableEq A}.
-  Context {V : ValNull}.
+  Context {A val : Type} {Heq : DecidableEq A}.
+  Context {V : ValNull val}.
   Context {B : Type} `{ILB : ILogic B} {EmbOp : EmbedOp Prop B} {Emb : Embed Prop B}.
   
   Local Transparent ILFun_Ops.

@@ -45,9 +45,9 @@ Section IBISepAlg.
   Program Instance SAIBIOps: BILOperators (ILPreFrm subheap B) := {
     empSP := mkILPreFrm (fun x => ltrue) _;
     sepSP P Q := mkILPreFrm (fun x => Exists x1, Exists x2, Exists H : sa_mul x1 x2 x,
-                                                P x1 //\\ Q x2) _;
+                                                (ILPreFrm_pred P) x1 //\\ (ILPreFrm_pred Q) x2) _;
     wandSP P Q := mkILPreFrm (fun x => Forall x1, Forall x2, Forall H : sa_mul x x1 x2, 
-                                                 P x1 -->> Q x2) _
+                                                 (ILPreFrm_pred P) x1 -->> (ILPreFrm_pred Q) x2) _
   }.
   Next Obligation.
     lexistsL x1 x2 H1.
@@ -175,7 +175,7 @@ Require Import Setoid Morphisms RelationClasses OrderedType.
   
 *)
   Instance pureop_pure_ibi_sepalg : PureOp := { 
-    pure := fun (P : ILPreFrm subheap B) => forall h h', P h |-- P h'
+    pure := fun (P : ILPreFrm subheap B) => forall h h', (ILPreFrm_pred P) h |-- (ILPreFrm_pred P) h'
   }.
 
   Instance pure_ibi_sepalg : Pure pureop_pure_ibi_sepalg.
@@ -251,7 +251,7 @@ Section IBILogic_Fun.
 
   Local Transparent ILFun_Ops.
 
-  Definition IBILFunLogic : IBILogic (T -> A).
+  Definition IBILFunLogic : @IBILogic ((fun x y => x -> y) T A) (@ILFun_Ops T A _) (@BILFun_Ops T A _).
   Proof.
     split.
     apply BILFunLogic. apply BIL.
@@ -259,3 +259,5 @@ Section IBILogic_Fun.
   Qed.
 
 End IBILogic_Fun.
+
+Opaque SAIBIOps.
