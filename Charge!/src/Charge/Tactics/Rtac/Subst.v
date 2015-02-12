@@ -412,6 +412,28 @@ Ltac forward_step :=
 	    repeat forward_step.
 	    unfold applySubstD, fun_to_typ3; repeat rewrite exprT_App_wrap.
 	    eexists; split; [eapply mkTrue_sound; eassumption|]; intros.
+	    unfold trueD.
+	    unfold fun_to_typ, typ_to_fun, eq_rect_r, eq_rect, eq_sym, id.
+	    generalize (typ2_cast (typ2 tyString tyVal) t0).
+	    generalize (typ2_cast tyString tyVal).
+	    clear.
+	    generalize dependent (typ2 tyString tyVal).
+	    intro.
+	    generalize dependent (typ2 t t0). intro.
+	    generalize dependent (typD t).
+	    generalize dependent (typD t0).
+	    intros; subst.
+	    unfold Rty in r. subst.
+	    generalize dependent (typD tySubst).
+	    generalize dependent (typD t1).
+	    generalize dependent (typD t1).
+	    clear.
+	    generalize dependent (typD tyString).
+	    SearchAbout typ2 typD.
+	    rewrite typ2_cast with (RType_typ := RType_typ) (F := Fun).
+	    generalize (typD tyString).
+	    generalize (typD (typ2 tyString tyVal)).
+	    generalize (typD (typ2 (typ2 tyString tyVal) t0)).
 	    admit.
 	  } { (* False *) 
 	    repeat forward_step.

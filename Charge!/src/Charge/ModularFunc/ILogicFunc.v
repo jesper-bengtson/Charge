@@ -141,6 +141,23 @@ Section ILogicFuncInst.
               end.
 
   Variable gs : logic_ops.
+
+  Definition il_pointwise t :=
+    typ2_match (fun T : Type => Prop) t
+      (fun d r : typ =>
+        match gs (@typ2 typ HR Fun  Typ2_tyArr d r), gs r with
+          | Some ILOps, Some _ => 
+            match eq_sym (typ2_cast d r)  in (_ = t) return ILogicOps t -> Prop with
+              | eq_refl => 
+                fun IL => 
+                  (forall a, ltrue a = ltrue) /\
+                  (forall a, lfalse a = lfalse) /\
+                  (forall (P Q : typD d -> typD r) a, (P //\\ Q) a = (P a //\\ Q a)) /\
+                  (forall (P Q : typD d -> typD r) a, (P \\// Q) a = (P a //\\ Q a)) /\
+                  (forall (P Q : typD d -> typD r) a, (P -->> Q) a = (P a //\\ Q a))
+            end ILOps
+          | _, _ => False
+        end).
   
   Definition typeof_ilfunc (f : ilfunc typ) : option typ :=
     match f with

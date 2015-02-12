@@ -1,4 +1,4 @@
-Require Import ILogic.
+Require Import Charge.Logics.ILogic.
 Require Import Setoid Morphisms RelationClasses Program.Basics Omega. 
 
 Set Implicit Arguments.
