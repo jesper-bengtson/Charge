@@ -111,6 +111,28 @@ Section BILogicFuncInst.
 
   Variable gs : bilogic_ops.
   
+  Definition bil_pointwise := typ -> bool.
+
+  Definition bil_pointwiseOk (bilp : bil_pointwise) :=
+    forall t,
+    typ2_match (fun T : Type => Prop) t
+    (fun d r : typ =>
+    match bilp (tyArr d r) with
+      | true =>
+        match gs (tyArr d r), gs r with
+          | Some BILOps, Some _ => 
+            match eq_sym (typ2_cast d r)  in (_ = t) return BILOperators t -> Prop with
+              | eq_refl => 
+                fun _ => 
+                  (forall a, empSP a = empSP) /\
+                  (forall (P Q : typD d -> typD r) a, (P ** Q) a = (P a ** Q a)) /\
+                  (forall (P Q : typD d -> typD r) a, (wandSP P Q) a = wandSP (P a) (Q a))
+            end BILOps
+          | _, _ => False
+        end
+      | false => True
+    end) False.
+
   Definition typeof_bilfunc (f : bilfunc typ) : option typ :=
     match f with
       | bilf_emp t => match gs t with

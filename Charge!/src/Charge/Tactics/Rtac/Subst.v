@@ -91,28 +91,28 @@ Section PushSubst.
   Context {EF : EmbedFunc typ func}.
   Context {RelDec_string : RelDec (@eq (typD tyString))}.
   Context {RelDec_type : RelDec (@eq typ)}.
-  
+  Context {ilp : il_pointwise (typ := typ)}.
+  Context {bilp : bil_pointwise (typ := typ)}.
   Variable Typ2_tyArr : Typ2 _ Fun.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
   Variable f : expr typ func.
 
-
   Fixpoint pushSubst (e : expr typ func) (t : typ) : expr typ func :=
     match e with
     	| App (App g p) q =>
     		match ilogicS g with
-    			| Some (ilf_and l) => mkAnd l (pushSubst p t) (pushSubst q t)
-    			| Some (ilf_or l) => mkOr l (pushSubst p t) (pushSubst q t)
-    			| Some (ilf_impl l) => mkImpl l (pushSubst p t) (pushSubst q t)
+    			| Some (ilf_and l) => if ilp l then mkAnd l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
+    			| Some (ilf_or l) => if ilp l then mkOr l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
+    			| Some (ilf_impl l) => if ilp l then mkImpl l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
     			| Some _ => mkApplySubst t e f
     			| None => match open_funcS g with
 		    			 | Some (of_ap t1 t2) => mkAp t1 t2 (pushSubst p (tyArr t1 t2))
 		    			             									 (pushSubst q t1)
 		    			 | Some _ => mkApplySubst t e f
 		    			 | _ => match bilogicS g with
-		    			          | Some (bilf_star l) => mkStar l (pushSubst p t) (pushSubst q t)
-		    			          | Some (bilf_wand l) => mkWand l (pushSubst p t) (pushSubst q t)
+		    			          | Some (bilf_star l) => if bilp l then mkStar l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
+		    			          | Some (bilf_wand l) => if bilp l then mkWand l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
 		    			 	      | _ => mkApplySubst t e f
 		    			 	    end
 		    		   end
@@ -128,11 +128,11 @@ Section PushSubst.
     					  end
     		end
     	| _ => match ilogicS e with
-    		     | Some (ilf_true l) => mkTrue l
-    		     | Some (ilf_false l) => mkFalse l
+    		     | Some (ilf_true l) => if ilp l then mkTrue l else mkApplySubst t e f
+    		     | Some (ilf_false l) => if ilp l then mkFalse l else mkApplySubst t e f
     		     | Some _ => mkApplySubst t e f
     		     | None => match bilogicS e with
-    		     		  | Some (bilf_emp l) => mkEmp l
+    		     		  | Some (bilf_emp l) => if bilp l then mkEmp l else mkApplySubst t e f
     		     		  | _ => mkApplySubst t e f
     		     		end
     		   end
@@ -165,6 +165,11 @@ Section SubstTac.
   Context {ILFOK : ILogicFuncOk typ func gs}.
   Context {BILFOK : BILogicFuncOk typ func bs}.
   Context {BFOK : BaseFuncOk typ func}.
+  Context {EqDec_typ : EqDec typ eq}.
+  Context {ilp : il_pointwise (typ := typ)}.
+  Context {ilpOk : il_pointwiseOk _ gs ilp}.
+  Context {bilp : bil_pointwise (typ := typ)}.
+  Context {bilpOk : bil_pointwiseOk _ bs bilp}.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
   Let Expr_expr := Expr_expr (typ := typ) (func := func).
@@ -181,7 +186,7 @@ Section SubstTac.
 	  | Some (of_apply_subst t) =>
 	    match args with
 	      | e :: f :: nil =>
-	        pushSubst Typ2_tyArr f e t
+	        pushSubst (ilp := ilp) (bilp := bilp) Typ2_tyArr f e t
 	      | _ => apps e args
 	    end
 	  | _ => apps e args
@@ -194,8 +199,6 @@ Require Import FunctionalExtensionality.
       Proof.
         apply H.
       Qed.
-
-Locate exprT_App.
 
   Lemma Rcast_option_inj (t u : typ) r (a : typD t) (b : typD u)
     (H : Rcast option r (Some a) = Some b) :
@@ -353,10 +356,9 @@ Ltac forward_step :=
       unfold funcAs in H2; simpl in H2; forward; inv_all; subst
   end.
 
-
   Lemma substTac_ok : partial_reducer_ok (substTac nil).
   Proof.
-    unfold partial_reducer_ok; intros.
+    unfold partial_reducer_ok. intros.
     unfold substTac; simpl.
     destruct e; try (exists val; tauto).
     remember (open_funcS f). destruct o; try (exists val; tauto).
@@ -371,33 +373,6 @@ Ltac forward_step :=
     
     repeat forward_step.
     repeat rewrite Rcast_id.
-    (*
-    forward_step.
-    match goal with 
-        | H1 : open_funcS ?f = Some (of_apply_subst ?t), H2 : funcAs ?f ?u = Some _ |- _ =>
-      let v := constr:(typ2 (typ2 (typ2 tyString tyVal) t) (typ2 tySubst (typ2 (typ2 tyString tyVal) t))) in
-      let Heq := fresh "Heq" in assert (u = v) as Heq by (apply (of_apply_subst_type_eq _ _ H1 H2)); r_inj Heq;
-      let H := fresh "H" in pose proof (of_funcAsOk _ H1) as H ;
-      rewrite H in H2; clear H;
-      unfold funcAs in H2; simpl in H2; rewrite type_cast_refl in H2;
-        [| apply _]
-    end.
-    forward_step.
-    subst.
-    forward_step.
-    r_inj H4.
-    
-    pose proof (typeof_funcAs _ _ H2).
-    pose proof (OpenFunc_typeOk _ Heqo).
-    rewrite H4 in H5. simpl in H5.
-    inversion H5; subst.
-    apply typ2_inj in H7 as [H7 H8]; [|apply _].
-    apply typ2_inj in H8 as [H8 H9]; [|apply _].
-    unfold Rty in *.
-    subst; inv_all; subst.
-    clear H6 H12 H11 H5 H8 H10 H9 H4.
-			  forward_step.
-			  clear H7 H5 H8 H4 H10 H9 H11. *)
     clear Heqo.
 	generalize dependent t0.
     induction e using expr_strong_ind; intros;
@@ -409,69 +384,112 @@ Ltac forward_step :=
 	  [| | (remember (bilogicS i) as o; destruct o; [destruct b|])]; 
 	  try (solve [simpl; eexists; split; [eapply mkApplySubst_sound; try eassumption; autorewrite with exprD_rw; simpl; forward; inv_all; subst; reflexivity|reflexivity]]).
 	  { (* True *)
+	    remember (ilp logic).
+	    destruct b; [|simpl; eexists; split; [eapply mkApplySubst_sound; try eassumption; autorewrite with exprD_rw; simpl; forward; inv_all; subst; reflexivity | reflexivity]].
 	    repeat forward_step.
 	    unfold applySubstD, fun_to_typ3; repeat rewrite exprT_App_wrap.
 	    eexists; split; [eapply mkTrue_sound; eassumption|]; intros.
 	    unfold trueD.
-	    unfold fun_to_typ, typ_to_fun, eq_rect_r, eq_rect, eq_sym, id.
+	    unfold fun_to_typ, typ_to_fun, eq_rect_r, eq_rect, eq_sym.
+	    unfold il_pointwiseOk in ilpOk.
+	    specialize (ilpOk (typ2 (typ2 tyString tyVal) t0)).
+	    rewrite typ2_match_zeta in ilpOk.
+	    rewrite H2 in ilpOk.
+	    rewrite <- Heqb in ilpOk.
+
+	    revert ilpOk.
 	    generalize (typ2_cast (typ2 tyString tyVal) t0).
 	    generalize (typ2_cast tyString tyVal).
-	    clear -RTypeOk_typ. 
-	    intros.
-	    generalize dependent r.
-	    uip_all'.
-	    unfold Rcast, Relim, Rsym, eq_sym.
-	    unfold Rty in r.
 	    generalize dependent (typ2 tyString tyVal).
 	    intro.
 	    generalize dependent (typ2 t t0). intro.
 	    generalize dependent (typD t).
-	    generalize dependent (typD t0).
-		intros.
-		generalize dependent r; uip_all'; intros.
-		generalize dependent (typD t1); intros.
-		subst.
-		apply functional_extensionality. intros.
-		unfold apply_subst.
-		Print RSym.
-		Existing Instance EquivDec_typ.
-		Existing Instance RTypeOk_typ.
-		assert (EqDec typ (@eq typ)); [ eauto with typeclass_instances | ].
-		eapply EquivDec_typ.
-		Check RTypeOk_typ.
-		eapply RTypeOk_typ.
-		apply _.
-		unfold Fun in *.
-		subst.
-		subst.
-		generalize dependent r.
-		uip_all'.
-		generalize dependent r; uip_all'; intros.
+	    intros; subst.
+	    clear -ilpOk RTypeOk_typ RType_typ.
+	    revert ilpOk. revert e1.
 		uip_all.
-		Check UIP.
-		uip_all'.
-		generalize dependent (typD tyString -> typD tyVal).
-	    generalize dependent (typD tySubst).
-	    generalize dependent (typD t1).
-	    generalize dependent (typD t1).
-	    clear.
-	    generalize dependent (typD tyString).
-	    SearchAbout typ2 typD.
-	    rewrite typ2_cast with (RType_typ := RType_typ) (F := Fun).
-	    generalize (typD tyString).
-	    generalize (typD (typ2 tyString tyVal)).
-	    generalize (typD (typ2 (typ2 tyString tyVal) t0)).
-	    admit.
+		rewrite Rcast_id.
+		revert ilpOk.
+	    generalize dependent (typD t1). 
+	    intros; subst. unfold eq_sym in ilpOk.
+	    destruct (gs t0); [|destruct ilpOk].
+
+	    destruct ilpOk as [H [_ [_ [_ [_ [_ _]]]]]]; clear ilpOk.
+	    unfold apply_subst. 
+	    apply functional_extensionality; intros. 
+	    do 2 rewrite H. reflexivity.
+	    apply _.
 	  } { (* False *) 
+	    remember (ilp logic).
+	    destruct b; [|simpl; eexists; split; [eapply mkApplySubst_sound; try eassumption; autorewrite with exprD_rw; simpl; forward; inv_all; subst; reflexivity | reflexivity]].
 	    repeat forward_step.
 	    unfold applySubstD, fun_to_typ3; repeat rewrite exprT_App_wrap.
 	    eexists; split; [eapply mkFalse_sound; eassumption|]; intros.
-	    admit.
+	    unfold falseD.
+	    unfold fun_to_typ, typ_to_fun, eq_rect_r, eq_rect, eq_sym.
+	    unfold il_pointwiseOk in ilpOk.
+	    specialize (ilpOk (typ2 (typ2 tyString tyVal) t0)).
+	    rewrite typ2_match_zeta in ilpOk.
+	    rewrite H2 in ilpOk.
+	    rewrite <- Heqb in ilpOk.
+
+	    revert ilpOk.
+	    generalize (typ2_cast (typ2 tyString tyVal) t0).
+	    generalize (typ2_cast tyString tyVal).
+	    generalize dependent (typ2 tyString tyVal).
+	    intro.
+	    generalize dependent (typ2 t t0). intro.
+	    generalize dependent (typD t).
+	    intros; subst.
+	    clear -ilpOk RTypeOk_typ RType_typ.
+	    revert ilpOk. revert e1.
+		uip_all.
+		rewrite Rcast_id.
+		revert ilpOk.
+	    generalize dependent (typD t1). 
+	    intros; subst. unfold eq_sym in ilpOk.
+	    destruct (gs t0); [|destruct ilpOk].
+
+	    destruct ilpOk as [_ [H [_ [_ [_ [_ _]]]]]]; clear ilpOk.
+	    unfold apply_subst. 
+	    apply functional_extensionality; intros. 
+	    do 2 rewrite H. reflexivity.
+	    apply _.
 	  } { (* Emp *)	    
+	    remember (bilp logic).
+	    destruct b; [|simpl; eexists; split; [eapply mkApplySubst_sound; try eassumption; autorewrite with exprD_rw; simpl; forward; inv_all; subst; reflexivity | reflexivity]].
 	    repeat forward_step.
 	    unfold applySubstD, fun_to_typ3; repeat rewrite exprT_App_wrap.
 	    eexists; split; [eapply mkEmp_sound; eassumption|]; intros.
-	    admit.
+	    unfold empD.
+	    unfold fun_to_typ, typ_to_fun, eq_rect_r, eq_rect, eq_sym.
+	    specialize (bilpOk (typ2 (typ2 tyString tyVal) t0)).
+	    rewrite typ2_match_zeta in bilpOk.
+	    rewrite H2 in bilpOk.
+	    rewrite <- Heqb in bilpOk.
+
+	    revert bilpOk.
+	    generalize (typ2_cast (typ2 tyString tyVal) t0).
+	    generalize (typ2_cast tyString tyVal).
+	    generalize dependent (typ2 tyString tyVal).
+	    intro.
+	    generalize dependent (typ2 t t0). intro.
+	    generalize dependent (typD t).
+	    intros; subst.
+	    clear -bilpOk RTypeOk_typ RType_typ.
+	    revert bilpOk. revert e1.
+		uip_all.
+		rewrite Rcast_id.
+		revert bilpOk.
+	    generalize dependent (typD t1). 
+	    intros; subst. unfold eq_sym in bilpOk.
+	    destruct (bs t0); [|destruct bilpOk].
+
+	    destruct bilpOk as [H [_ _]]; clear bilpOk.
+	    unfold apply_subst. 
+	    apply functional_extensionality; intros. 
+	    do 2 rewrite H. reflexivity.
+	    apply _.
 	 }
    } {
      autorewrite with exprD_rw in H3; simpl in H3; forward; inv_all; subst; simpl.
@@ -658,6 +676,7 @@ Ltac forward_step :=
     }
   }
 }
+*)
 Time Qed.
 	      
 	    
@@ -666,4 +685,4 @@ Time Qed.
   
 End SubstTac.
 Print SUBST.
-Implicit Arguments SUBST [[ST] [RType_typ] [OF] [ILF] [BILF] [EF] [BF] [Typ2_tyArr]].
+Implicit Arguments SUBST [[ST] [RType_typ] [OF] [ILF] [BILF] [EF] [BF] [Typ2_tyArr] [ilp] [bilp]].

@@ -142,28 +142,14 @@ Section ILogicFuncInst.
 
   Variable gs : logic_ops.
 
-  Definition il_pointwise d r (ILOps : ILogicOps (typD d -> typD r) :=
-        match gs r with
-          | Some ILOps, Some _ => 
-            match eq_sym (typ2_cast d r)  in (_ = t) return ILogicOps t -> Prop with
-              | eq_refl => 
-                fun _ => 
-                  (forall a, ltrue a = ltrue) /\
-                  (forall a, lfalse a = lfalse) /\
-                  (forall (P Q : typD d -> typD r) a, (P //\\ Q) a = (P a //\\ Q a)) /\
-                  (forall (P Q : typD d -> typD r) a, (P \\// Q) a = (P a \\// Q a)) /\
-                  (forall (P Q : typD d -> typD r) a, (P -->> Q) a = (P a -->> Q a)) /\
-                  (forall (A : Type) (f : A -> typD d -> typD r) a, 
-                    (lexists f) a = lexists (fun x => f x a)) /\
-                  (forall (A : Type) (f : A -> typD d -> typD r) a, 
-                    (lforall f) a = lforall (fun x => f x a))
-            end ILOps
-          | _, _ => False
-        end.
-  
-  Definition il_pointwise t :=
+  Definition il_pointwise := typ -> bool.
+
+  Definition il_pointwiseOk (ilp : il_pointwise) :=
+    forall t,
     typ2_match (fun T : Type => Prop) t
-      (fun d r : typ =>
+    (fun d r : typ =>
+    match ilp (tyArr d r) with
+      | true =>
         match gs (tyArr d r), gs r with
           | Some ILOps, Some _ => 
             match eq_sym (typ2_cast d r)  in (_ = t) return ILogicOps t -> Prop with
@@ -180,8 +166,10 @@ Section ILogicFuncInst.
                     (lforall f) a = lforall (fun x => f x a))
             end ILOps
           | _, _ => False
-        end).
-  
+        end
+      | false => True
+    end) False.
+ 
   Definition typeof_ilfunc (f : ilfunc typ) : option typ :=
     match f with
       | ilf_true t
@@ -248,9 +236,9 @@ Section ILogicFuncInst.
  Definition implD t IL := fun_to_typ2 (@limpl (typD t) IL).
  
  Definition funcD (f : ilfunc typ) : match typeof_ilfunc f with
-							       | Some t => typD t
-							       | None => unit
-							      end :=
+							         | Some t => typD t
+							         | None => unit
+							        end :=
     match f as f
           return match typeof_ilfunc f with
 		   | Some t => typD t
