@@ -142,19 +142,42 @@ Section ILogicFuncInst.
 
   Variable gs : logic_ops.
 
-  Definition il_pointwise t :=
-    typ2_match (fun T : Type => Prop) t
-      (fun d r : typ =>
-        match gs (@typ2 typ HR Fun  Typ2_tyArr d r), gs r with
+  Definition il_pointwise d r (ILOps : ILogicOps (typD d -> typD r) :=
+        match gs r with
           | Some ILOps, Some _ => 
             match eq_sym (typ2_cast d r)  in (_ = t) return ILogicOps t -> Prop with
               | eq_refl => 
-                fun IL => 
+                fun _ => 
                   (forall a, ltrue a = ltrue) /\
                   (forall a, lfalse a = lfalse) /\
                   (forall (P Q : typD d -> typD r) a, (P //\\ Q) a = (P a //\\ Q a)) /\
-                  (forall (P Q : typD d -> typD r) a, (P \\// Q) a = (P a //\\ Q a)) /\
-                  (forall (P Q : typD d -> typD r) a, (P -->> Q) a = (P a //\\ Q a))
+                  (forall (P Q : typD d -> typD r) a, (P \\// Q) a = (P a \\// Q a)) /\
+                  (forall (P Q : typD d -> typD r) a, (P -->> Q) a = (P a -->> Q a)) /\
+                  (forall (A : Type) (f : A -> typD d -> typD r) a, 
+                    (lexists f) a = lexists (fun x => f x a)) /\
+                  (forall (A : Type) (f : A -> typD d -> typD r) a, 
+                    (lforall f) a = lforall (fun x => f x a))
+            end ILOps
+          | _, _ => False
+        end.
+  
+  Definition il_pointwise t :=
+    typ2_match (fun T : Type => Prop) t
+      (fun d r : typ =>
+        match gs (tyArr d r), gs r with
+          | Some ILOps, Some _ => 
+            match eq_sym (typ2_cast d r)  in (_ = t) return ILogicOps t -> Prop with
+              | eq_refl => 
+                fun _ => 
+                  (forall a, ltrue a = ltrue) /\
+                  (forall a, lfalse a = lfalse) /\
+                  (forall (P Q : typD d -> typD r) a, (P //\\ Q) a = (P a //\\ Q a)) /\
+                  (forall (P Q : typD d -> typD r) a, (P \\// Q) a = (P a \\// Q a)) /\
+                  (forall (P Q : typD d -> typD r) a, (P -->> Q) a = (P a -->> Q a)) /\
+                  (forall (A : Type) (f : A -> typD d -> typD r) a, 
+                    (lexists f) a = lexists (fun x => f x a)) /\
+                  (forall (A : Type) (f : A -> typD d -> typD r) a, 
+                    (lforall f) a = lforall (fun x => f x a))
             end ILOps
           | _, _ => False
         end).

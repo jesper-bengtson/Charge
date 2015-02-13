@@ -416,14 +416,41 @@ Ltac forward_step :=
 	    unfold fun_to_typ, typ_to_fun, eq_rect_r, eq_rect, eq_sym, id.
 	    generalize (typ2_cast (typ2 tyString tyVal) t0).
 	    generalize (typ2_cast tyString tyVal).
-	    clear.
+	    clear -RTypeOk_typ. 
+	    intros.
+	    generalize dependent r.
+	    uip_all'.
+	    unfold Rcast, Relim, Rsym, eq_sym.
+	    unfold Rty in r.
 	    generalize dependent (typ2 tyString tyVal).
 	    intro.
 	    generalize dependent (typ2 t t0). intro.
 	    generalize dependent (typD t).
 	    generalize dependent (typD t0).
-	    intros; subst.
-	    unfold Rty in r. subst.
+		intros.
+		generalize dependent r; uip_all'; intros.
+		generalize dependent (typD t1); intros.
+		subst.
+		apply functional_extensionality. intros.
+		unfold apply_subst.
+		Print RSym.
+		Existing Instance EquivDec_typ.
+		Existing Instance RTypeOk_typ.
+		assert (EqDec typ (@eq typ)); [ eauto with typeclass_instances | ].
+		eapply EquivDec_typ.
+		Check RTypeOk_typ.
+		eapply RTypeOk_typ.
+		apply _.
+		unfold Fun in *.
+		subst.
+		subst.
+		generalize dependent r.
+		uip_all'.
+		generalize dependent r; uip_all'; intros.
+		uip_all.
+		Check UIP.
+		uip_all'.
+		generalize dependent (typD tyString -> typD tyVal).
 	    generalize dependent (typD tySubst).
 	    generalize dependent (typD t1).
 	    generalize dependent (typD t1).
