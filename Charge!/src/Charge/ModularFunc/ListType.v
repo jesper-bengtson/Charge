@@ -21,3 +21,11 @@ Section ListTypeD.
 	}.
 	
 End ListTypeD.
+
+Section ListTypeD'.
+  Context `{LTD : ListTypeD}.
+ 
+  Definition listD (t : typ) (p : typD (tyList t)) : list (typD t) :=
+    eq_rect _ id p _ (btList t).
+    
+End ListTypeD'.  

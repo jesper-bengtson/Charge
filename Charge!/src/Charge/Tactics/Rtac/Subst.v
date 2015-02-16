@@ -25,8 +25,9 @@ Set Implicit Arguments.
 Set Strict Implicit.
 
 Section ApplySubst.
-	Context {typ func : Type} {RType_typ : RType typ} {ST : SubstType typ} {BT : BaseType typ}
-	        {HOF : OpenFunc typ func} {HLF : ListFunc typ func} {HBF : BaseFunc typ func}.
+	Context {typ func : Type} {RType_typ : RType typ} {ST : SubstType typ} {BT : BaseType typ} {LT : ListType typ}
+	        {HOF : OpenFunc typ func} {HLF : ListFunc typ func} {HBF : BaseFunc typ func}
+	        {BTD : BaseTypeD} {LTD : ListTypeD}.
 	Context {RelDec_typ : RelDec (@eq typ)}.
 	Context {RelDec_string : RelDec (@eq (typD tyString))}.
 
@@ -62,20 +63,30 @@ Section ApplySubst.
     						if x ?[ eq ] v then
     							e
     						else
-    							applyParSubst p x vs es
+    							applyTruncSubst p x vs es
     					else
-    						fNull
-    				| _, _ => fNull
+    						mkNull
+    				| _, _ => mkNull
     			end
-    		| _ => fNull
+    		| _ => p
     	end.				
-Check @open_funcS.
-Print baseS.
+
 	Definition applySubst (t : typ) (f e : expr typ func) (x : String.string) :=
 		match f with
 		  | App (App g e') y =>
 		  	match open_funcS g, baseS y with
-		  	  | Some of_single_subst, Some (pString v) => applySingleSubst e x v e'
+		  	  | Some of_single_subst, Some (pConst t' v) => 
+		  	    match type_cast t' tyString with
+		  	      | Some pf => applySingleSubst e x (stringD (eq_rect _ typD v _ pf)) e'
+		  	      | None => mkApplySubst t e f
+		  	    end
+		  	  | Some of_trunc_subst, Some (pConst t' v) => 
+		  	    match type_cast t' (tyList tyString) with
+		  	      | Some pf => applyTruncSubst e x 
+		  	        (eq_rect _ list (listD tyString (eq_rect _ typD v _ pf)) _ btString) e'
+		  	      | None => mkApplySubst t e f
+		  	    end
+		  (*	  | Some of_trunc_subst, Some (pString v) => applyTruncSubst e x v e'*)
 		  	  | _, _ => mkApplySubst t e f
 		  	end
 		  | _ => mkApplySubst t e f
@@ -87,8 +98,9 @@ End ApplySubst.
 
 Section PushSubst.
   Context {typ func : Type} {ST : SubstType typ} {BT : BaseType typ} {RType_typ : RType typ}.
+  Context {BTD : BaseTypeD} {LT : ListType typ} {LTD : ListTypeD}.
   Context {OF : OpenFunc typ func} {ILF : ILogicFunc typ func} {BILF : BILogicFunc typ func} {HBF : BaseFunc typ func}.
-  Context {EF : EmbedFunc typ func}.
+  Context {EF : EmbedFunc typ func} {LF : ListFunc typ func}.
   Context {RelDec_string : RelDec (@eq (typD tyString))}.
   Context {RelDec_type : RelDec (@eq typ)}.
   Context {ilp : il_pointwise (typ := typ)}.
@@ -97,7 +109,8 @@ Section PushSubst.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
   Variable f : expr typ func.
-
+Check @stringD.
+Check @applySubst.
   Fixpoint pushSubst (e : expr typ func) (t : typ) : expr typ func :=
     match e with
     	| App (App g p) q =>
@@ -119,8 +132,12 @@ Section PushSubst.
     		end
     	| App g p =>
     		match open_funcS g, baseS p with
-    			| Some of_stack_get, Some (pString x) => applySubst t f e x
-    			| Some (of_const t), _ => mkConst t p
+    			| Some of_stack_get, Some (pConst t' x) =>
+    			  match type_cast t' tyString with
+    			    | Some pf => applySubst Typ2_tyArr t f e (stringD (eq_rect _ typD x _ pf))
+    			    | None => mkApplySubst t e f
+    			  end
+    			| Some (of_const t), _ => OpenFunc.mkConst t p
     			| Some _, _ => mkApplySubst t e f
     			| None, _ => match embedS g with
     					    | Some (eilf_embed u v) => mkEmbed u v (pushSubst p u)
@@ -143,13 +160,16 @@ End PushSubst.
 Implicit Arguments typeof_funcAs [[typ] [func] [RType_typ] [RSym_func] [f] [t] [e]].
 *)
 
+Require Import Charge.ModularFunc.RelDecTyp.
+
 Section SubstTac.
   Context {typ func subst : Type} {ST : SubstType typ} {BT : BaseType typ} {RType_typ : RType typ}.
   Context {OF : OpenFunc typ func} {ILF : ILogicFunc typ func} {BILF : BILogicFunc typ func} {BF : BaseFunc typ func}.
-  Context {LT : ListType typ}.
+  Context {LT : ListType typ} {LF : ListFunc typ func}.
   Context {EF : EmbedFunc typ func}.
   Context {RelDec_string : RelDec (@eq (typD tyString))}.
   Context {RelDec_typ : RelDec (@eq typ)}.
+  Context {RelDec_typOk : RelDec_Correct RelDec_typ}.
   Context {RTypeOk_typ : RTypeOk}.
   Context {RSym_func : RSym func}.
   Context {RSym_funcOk : RSymOk RSym_func}.
@@ -164,7 +184,8 @@ Section SubstTac.
   Context {bs : @bilogic_ops _ RType_typ}.
   Context {ILFOK : ILogicFuncOk typ func gs}.
   Context {BILFOK : BILogicFuncOk typ func bs}.
-  Context {BFOK : BaseFuncOk typ func}.
+  Context {rd : rel_dec_typ}.
+  Context {BFOK : BaseFuncOk (RelDec_eq := RelDec_typ) (rdt := rd) typ func}.
   Context {EqDec_typ : EqDec typ eq}.
   Context {ilp : il_pointwise (typ := typ)}.
   Context {ilpOk : il_pointwiseOk _ gs ilp}.
@@ -182,7 +203,7 @@ Section SubstTac.
 
   Definition substTac (_ : list (option (expr typ func))) (e : expr typ func) (args : list (expr typ func))
   : expr typ func :=
-    match open_funcS e with
+    match open_funcS (RType_typ := RType_typ) (HST := ST) e with
 	  | Some (of_apply_subst t) =>
 	    match args with
 	      | e :: f :: nil =>
@@ -236,7 +257,7 @@ Ltac forward_step :=
     | H : typ2 _ _ = typ2 _ _ |- _ => r_inj H; clear_eq
     | H : Rty (typ2 _ _) (typ2 _ _) |- _ => r_inj H; clear_eq
     | H : Rcast option _ (Some _) = Some _ |- _ => apply Rcast_option_inj in H; subst
-    | H1 : baseS ?f = Some (pString ?typ ?s), H2 : funcAs ?f ?t = Some _ |- _ =>
+  (*  | H1 : baseS ?f = Some (pString ?typ ?s), H2 : funcAs ?f ?t = Some _ |- _ =>
       assert (t = tyString) by (apply (bf_string_type_eq _ _ H1 H2)); subst;
       let H := fresh "H" in
       assert (funcAs f tyString = funcAs (pString typ s) tyString) as H by
@@ -244,7 +265,7 @@ Ltac forward_step :=
       rewrite H in H2; clear H;
       unfold funcAs in H2; simpl in H2; rewrite type_cast_refl in H2;
         [| apply _]
-      
+    *)  
     | H1 : open_funcS ?f = Some (of_apply_subst ?t), H2 : funcAs ?f ?u = Some _ |- _ =>
       let v := constr:(typ2 (typ2 (typ2 tyString tyVal) t) (typ2 tySubst (typ2 (typ2 tyString tyVal) t))) in
       let Heq := fresh "Heq" in assert (u = v) as Heq by (apply (of_apply_subst_type_eq _ _ H1 H2)); r_inj Heq;
@@ -358,6 +379,8 @@ Ltac forward_step :=
 
   Lemma substTac_ok : partial_reducer_ok (substTac nil).
   Proof.
+    admit.
+    (*
     unfold partial_reducer_ok. intros.
     unfold substTac; simpl.
     destruct e; try (exists val; tauto).
