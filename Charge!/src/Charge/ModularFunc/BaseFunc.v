@@ -8,29 +8,28 @@ Require Import ExtLib.Tactics.
 
 Require Import MirrorCore.TypesI.
 Require Import MirrorCore.syms.SymEnv.
+Require Import MirrorCore.syms.SymSum.
 Require Import MirrorCore.Lambda.Expr.
 
 Require Import Charge.Logics.ILogic.
 Require Import Charge.ModularFunc.BaseType.
+Require Import Charge.ModularFunc.RelDecTyp.
 
 Require Import Coq.Strings.String.
-
 
 Set Implicit Arguments.
 Set Strict Implicit.
 Set Maximal Implicit Insertion.
 
-Inductive base_func typ :=
-  | pNat : nat -> base_func typ
-  | pBool : bool -> base_func typ
-  | pString : string -> base_func typ
-  | pEq : typ -> base_func typ
-  | pPair : typ -> typ -> base_func typ.
+Inductive base_func typ {RType_typ : RType typ} :=
+  | pConst t : typD t -> base_func
+  | pEq : typ -> base_func
+  | pPair : typ -> typ -> base_func.
 
-Class BaseFunc (typ func : Type) := {
-  fNat  : nat -> func;
-  fBool : bool -> func;
-  fString : string -> func;
+Implicit Arguments base_func [[RType_typ]].
+
+Class BaseFunc (typ func : Type) {RType_typ : RType typ} := {
+  fConst t : typD t -> func;
   
   fEq : typ -> func;
   fPair : typ -> typ -> func;
@@ -38,15 +37,15 @@ Class BaseFunc (typ func : Type) := {
   baseS : func -> option (base_func typ)
 }.
 
+Implicit Arguments BaseFunc [[RType_typ]].
     
 Section BaseFuncSum.
-	Context {typ func : Type} {H : BaseFunc typ func}.
+	Context {typ func : Type} {RType_typ : RType typ} {H : BaseFunc typ func}.
 
 	Global Instance BaseFuncSumL (A : Type) : 
 		BaseFunc typ (func + A) := {
-		  fNat n := inl (fNat n)
-	    ; fBool b := inl (fBool b)
-	    ; fString s := inl (fString s)
+		  fConst t e := inl (fConst t e)
+
         ; fEq t := inl (fEq t)
         ; fPair t1 t2 := inl (fPair t1 t2)
         ; baseS f := match f with
@@ -57,9 +56,7 @@ Section BaseFuncSum.
 
 	Global Instance BaseFuncSumR (A : Type) : 
 		BaseFunc typ (A + func) := {
-		  fNat n := inr (fNat n)
-	    ; fBool b := inr (fBool b)
-	    ; fString s := inr (fString s)
+		  fConst t e := inr (fConst t e)
         ; fEq t := inr (fEq t)
         ; fPair t1 t2 := inr (fPair t1 t2)
         ; baseS f := match f with
@@ -70,9 +67,7 @@ Section BaseFuncSum.
         
     Global Instance BaseFuncExpr :
     	BaseFunc typ (expr typ func) := {
-    	  fNat n := Inj (fNat n);
-    	  fBool b := Inj (fBool b);
-    	  fString s := Inj (fString s);
+		  fConst t e := Inj (fConst t e);
     	  fEq t := Inj (fEq t);
     	  fPair t1 t2 := Inj (fPair t1 t2);
     	  baseS f := match f with
@@ -88,6 +83,9 @@ Section BaseFuncInst.
 	        {HT : BaseType typ} {HTD: BaseTypeD}.
 	Context {func : Type} {H : BaseFunc typ func}.
 	Context {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
+	
+	Context {rd : rel_dec_typ}.
+	Context {rdOk : rel_dec_typOk rd}.
 
     Variable Typ2_tyArr : Typ2 _ Fun.
     Variable Typ0_tyProp : Typ0 _ Prop.
@@ -96,9 +94,7 @@ Section BaseFuncInst.
     Let tyProp : typ := @typ0 _ _ _ _.
 
 	Global Instance BaseFuncInst : BaseFunc typ (base_func typ) := {
-	  fNat := pNat typ;
-	  fBool := pBool typ;
-	  fString := pString typ;
+	  fConst t e := pConst t e;
 	  fEq := pEq;
 	  fPair := pPair;
 	  baseS f := Some f 
@@ -106,24 +102,37 @@ Section BaseFuncInst.
 
 	Definition typeof_base_func bf :=
 		match bf with
-		  | pNat _ => Some tyNat
-		  | pBool _ => Some tyBool
-		  | pString _ => Some tyString
+		  | pConst t _ => Some t
 		  | pEq t => Some (tyArr t (tyArr t tyProp))
 		  | pPair t1 t2 => Some (tyArr t1 (tyArr t2 (tyPair t1 t2)))
 		end.
 
-	Definition base_func_eq (a b : base_func typ) : option bool :=
+  Definition rel_dec_cases {T A : Type} {RelDec_T : RelDec (@eq T)} {HROk : RelDec_Correct RelDec_T} (x y : T)
+    (f_true : x = y -> A) (f_false : x <> y -> A) : A :=
+  match Reflect_RelDecCorrect T eq RelDec_T HROk x y with
+	| reflect_true H => (fun eq : x = y => f_true eq) H
+	| reflect_false H => (fun neq : x <> y => f_false neq) H
+  end.
+  
+  Implicit Arguments rel_dec_cases [[T] [A] [RelDec_T] [HROk]].
+
+	  Definition base_func_eq (a b : base_func typ) : option bool :=
 	  match a , b with
-	    | pNat a, pNat b => Some (a ?[ eq ] b)
-	    | pBool a, pBool b => Some (a ?[ eq ] b)
-	    | pString a, pString b => Some (a ?[ eq ] b)
+		| pConst t1 e1, pConst t2 e2 =>
+		  rel_dec_cases t1 t2
+		    (fun pf => 
+		      match rd t1 with
+                | Some rel_dec =>
+  	 		      rel_dec_cases t1 t2 (fun pf => Some (e1 ?[ eq ] (@eq_rect_r _ _ typD e2 _ pf))) (fun pf => None)
+                | None => None
+              end)
+		    (fun _ => None)
 	    | pEq t1, pEq t2 => Some (t1 ?[ eq ] t2)
 	    | pPair t1 t2, pPair t3 t4 => Some (t1 ?[ eq ] t3 &&
 	      								    t2 ?[ eq ] t4)%bool
 	    | _, _ => None
 	  end.
-
+    (*
     Global Instance RelDec_base_func : RelDec (@eq (base_func typ)) := {
       rel_dec a b := match base_func_eq a b with 
     	  		       | Some b => b 
@@ -131,22 +140,32 @@ Section BaseFuncInst.
     			     end
     }.
 
-    Global Instance RelDec_Correct_ilfunc : RelDec_Correct RelDec_base_func.
+    Global Instance RelDec_Correct_base_func : RelDec_Correct RelDec_base_func.
     Proof.
       constructor.
       destruct x; destruct y; simpl;
       try solve [ try rewrite Bool.andb_true_iff ;
                   repeat rewrite rel_dec_correct; intuition congruence ].
+      unfold rel_dec_cases; simpl.
+      forward; subst.
+      destruct (rd t1).
+      admit.
+      split; try intuition congruence.
+      unfold rel_dec_cases. simpl.
+      forward.
+      inversion H0; subst.
+      unfold eq_rect_r, eq_rect, eq_sym; simpl.
+      rewrite rel_dec_correct; intuition; subst.
+      inversion H0; subst.
     Qed.
-  
+  *)
+
 	 Definition base_func_symD bf :=
 		match bf as bf return match typeof_base_func bf with
 								| Some t => typD t
 								| None => unit
 							  end with
-	    | pNat n => eq_rect_r id n btNat
-	    | pBool b => eq_rect_r id b btBool
-	    | pString s => eq_rect_r id s btString
+        | pConst _ c => c
 	    | pEq t => 
 	       eq_rect_r id
              (eq_rect_r (fun T : Type => typD t -> T)
@@ -173,9 +192,16 @@ Section BaseFuncInst.
 	Proof.
 		split; intros.
 		destruct a, b; simpl; try apply I.
-		+ consider (n ?[ eq ] n0); intuition congruence.
-		+ consider (b0 ?[ eq ] b); intuition congruence.
-		+ consider (s ?[ eq ] s0); intuition congruence.
+		+ unfold rel_dec_cases.
+		  forward; inv_all; subst.
+		  unfold eq_rect_r, eq_rect, eq_sym.
+		  specialize (rdOk t1). rewrite H1 in rdOk.
+		  consider (t0 ?[ eq ] t2); intros.
+		  * pose proof (@rel_dec_correct (typD t1) (@eq (typD t1)) r rdOk t0 t2).
+		    apply H3 in H2. subst. reflexivity.
+		  * pose proof (@neg_rel_dec_correct (typD t1) (@eq (typD t1)) r rdOk t0 t2).
+		    apply H3 in H2. intros H4. apply H2. inversion H4; subst.
+		    apply Structures.EqDep.inj_pair2 in H6. apply H6.
 		+ consider (t ?[ eq ] t0); intuition congruence.
 		+ consider (t ?[ eq ] t1 && t0 ?[ eq ] t2)%bool; 
 		  intuition congruence.
@@ -184,43 +210,52 @@ Section BaseFuncInst.
 End BaseFuncInst.
 
 Section MakeBase.
-	Context {typ func : Type} {H : BaseFunc typ func}.
+	Context {typ func : Type} {RType_typ : RType typ}.
+	Context {HT : BaseType typ} {HF : BaseFunc typ func}.
 
-	Definition mkNat n : expr typ func := Inj (fNat n).
-	Definition mkBool b : expr typ func := Inj (fBool b).
-	Definition mkString s : expr typ func := Inj (fString s).
+	Definition mkConst t e : expr typ func := Inj (fConst t e).
+
+	Definition mkNat n : expr typ func := mkConst tyNat n.
+	Definition mkBool b : expr typ func := mkConst tyBool b.
+	Definition mkString s : expr typ func := mkConst tyString s.
 	Definition mkEq (t : typ) (a b : expr typ func) := App (App (fEq t) a) b.
 	Definition mkPair t u a b := App (App (fPair t u) a) b.
 
 End MakeBase.
 
 Section BaseFuncOk.
-  Context {typ func : Type} {BF: BaseFunc typ func}.
-  Context {RType_typ : RType typ} {RSym_func : RSym func}.
+  Context {typ func : Type} {RType_typ : RType typ}.
+  Context {BF: BaseFunc typ func} {RSym_func : RSym func}.
   Context {RelDec_eq : RelDec (@eq typ)}.
+  Context {RelDec_eqOk : RelDec_Correct RelDec_eq}.
   Context {BT : BaseType typ} {BTD : BaseTypeD}.
+  Context {rdt : @rel_dec_typ typ RType_typ}.
+  Context {rdtOk : rel_dec_typOk rdt}.
 
   Context {Typ2_tyArr : Typ2 _ Fun}.
   Context {Typ0_Prop : Typ0 _ Prop}.
 
   Class BaseFuncOk := {
-    bf_funcAsOk (f : func) (e : base_func typ) : baseS f = Some e -> 
-      forall t, funcAs f t = funcAs (RSym_func := RSym_BaseFunc Typ2_tyArr Typ0_Prop) e t;
-    bf_fNatOk n : baseS (fNat n) = Some (pNat typ n);
-    bf_fBoolOk b : baseS (fBool b) = Some (pBool typ b);
-    bf_fStringOk s : baseS (fString s) = Some (pString typ s);
+    bf_funcAsOk (f : func) (e : @base_func typ RType_typ) : baseS f = Some e -> 
+      forall t, 
+        funcAs f t = 
+        funcAs (RSym_func := RSym_BaseFunc (rd := rdt) Typ2_tyArr Typ0_Prop) e t;
+	bf_fConstOk t e : baseS (fConst t e) = Some (pConst t e);
     bf_fEqOk t : baseS (fEq t) = Some (pEq t);
     bf_fPairOk t u : baseS (fPair t u) = Some (pPair t u)
   }.
 
 End BaseFuncOk.
 
-Implicit Arguments BaseFuncOk [[BF] [RType_typ] [RSym_func] [RelDec_eq] [BT] [BTD] [Typ2_tyArr] [Typ0_Prop]].
+Implicit Arguments BaseFuncOk [[BF] [RType_typ] [RSym_func] [RelDec_eq] [BT] [BTD]
+                               [Typ2_tyArr] [Typ0_Prop] [RelDec_eqOk] [rdt]].
 
 Section BaseFuncBaseOk.
-  Context {typ func : Type} {BF: BaseFunc typ func}.
-  Context {RType_typ : RType typ} {RSym_func : RSym func}.
+  Context {typ func : Type} {RType_typ : RType typ}.
+  Context {BF: BaseFunc typ func} {RSym_func : RSym func}.
   Context {RelDec_eq : RelDec (@eq typ)}.
+  Context {RelDec_eqOk : RelDec_Correct RelDec_eq}.
+  Context {rd : rel_dec_typ}.
   Context {BT : BaseType typ}.
   Context {BTD : BaseTypeD}.
 
@@ -228,11 +263,10 @@ Section BaseFuncBaseOk.
   Context {Typ0_Prop : Typ0 _ Prop}.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
   
-  Global Program Instance BaseFuncBaseOk : BaseFuncOk typ (RSym_func := RSym_BaseFunc Typ2_tyArr Typ0_Prop) (base_func typ) := {
+  Global Program Instance BaseFuncBaseOk : 
+  	BaseFuncOk (rdt := rd) typ (RSym_func := RSym_BaseFunc (rd := rd) Typ2_tyArr Typ0_Prop) (base_func typ) := {
     bf_funcAsOk := fun _ _ _ _ => eq_refl;
-    bf_fNatOk n := eq_refl;
-    bf_fBoolOk b := eq_refl;
-    bf_fStringOk s := eq_refl;
+    bf_fConstOk t e := eq_refl;
     bf_fEqOk t := eq_refl;
     bf_fPairOk t u := eq_refl
   }.
@@ -263,27 +297,9 @@ Section BaseFuncExprOk.
  	end.
   Qed.
   
-  Lemma bf_nat_type_eq (f : func) n t df
-    (H1 : baseS f = Some (fNat n)) (H2 : funcAs f t = Some df) :
-    t = tyNat.
-  Proof.
-    rewrite (bf_funcAsOk _ H1) in H2.
-    unfold funcAs in H2; simpl in *.
-    forward.
-  Qed.
-
-  Lemma bf_bool_type_eq (f : func) b t df
-    (H1 : baseS f = Some (fBool b)) (H2 : funcAs f t = Some df) :
-    t = tyBool.
-  Proof.
-    rewrite (bf_funcAsOk _ H1) in H2.
-    unfold funcAs in H2; simpl in *.
-    forward.
-  Qed.
-
-  Lemma bf_string_type_eq (f : func) s t df
-    (H1 : baseS f = Some (fString s)) (H2 : funcAs f t = Some df) :
-    t = tyString.
+  Lemma bf_const_type_eq (f : func) t e t' df
+    (H1 : baseS f = Some (fConst t e)) (H2 : funcAs f t' = Some df) :
+    t = t'.
   Proof.
     rewrite (bf_funcAsOk _ H1) in H2.
     unfold funcAs in H2; simpl in *.
@@ -309,20 +325,17 @@ Section BaseFuncExprOk.
     forward.
     rewrite <- r; reflexivity.
   Qed.
-Require Import MirrorCore.syms.SymSum.
 
   Existing Instance RSym_sum.
 
-  Global Program Instance BaseFuncOkSumR : BaseFuncOk typ ((A + func)%type) := {
+  Global Program Instance BaseFuncOkSumR : BaseFuncOk (rdt := rdt) typ ((A + func)%type) := {
     bf_funcAsOk := 
       fun a f H t => 
         match a with
           | inl b => _
           | inr b => _
         end;
-    bf_fNatOk n := bf_fNatOk (func := func) n;
-    bf_fBoolOk b := bf_fBoolOk (func := func) b;
-    bf_fStringOk s := bf_fStringOk (func := func) s;
+    bf_fConstOk t e := bf_fConstOk (func := func) t e;
     bf_fEqOk t := bf_fEqOk (func := func) t;
     bf_fPairOk t u := bf_fPairOk (func := func) t u
   }.
@@ -331,16 +344,14 @@ Require Import MirrorCore.syms.SymSum.
     apply H.
   Qed.
 
-  Global Program Instance BaseFuncOkSumL : BaseFuncOk typ ((func + A)%type) := {
+  Global Program Instance BaseFuncOkSumL : BaseFuncOk (rdt := rdt) typ ((func + A)%type) := {
     bf_funcAsOk := 
       fun a f H t => 
         match a with
           | inl b => _
           | inr b => _
         end;
-    bf_fNatOk n := bf_fNatOk (func := func) n;
-    bf_fBoolOk b := bf_fBoolOk (func := func) b;
-    bf_fStringOk s := bf_fStringOk (func := func) s;
+    bf_fConstOk t e := bf_fConstOk (func := func) t e;
     bf_fEqOk t := bf_fEqOk (func := func) t;
     bf_fPairOk t u := bf_fPairOk (func := func) t u
   }.
@@ -348,7 +359,6 @@ Require Import MirrorCore.syms.SymSum.
     apply (bf_funcAsOk (func := func)).
     apply H.
   Qed.
-
 
 End BaseFuncExprOk.
 
@@ -385,24 +395,25 @@ Section TypeOfFunc.
   Qed.
 
 End TypeOfFunc.
-
+(*
 Section MakeBaseFuncSound.
   Context {typ func : Type} `{HOK : BaseFuncOk typ func}.
+  Context {rdOk : rel_dec_typOk rdt}.
   Context {HROk : RTypeOk} {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}
           {RSym_funcOk : RSymOk RSym_func0}.
 
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
-  Lemma mkNat_sound (n : nat) (tus tvs : tenv typ) (f : func)
-    (df : typD tyNat)
-    (Ho : baseS f = Some (pNat typ n))
-    (Hf : funcAs f tyNat = Some df) :
-    exprD' tus tvs tyNat (mkNat n) = Some (fun _ _ => df).
+  Lemma mkConst_sound (t : typ) (e : typD t) (tus tvs : tenv typ) (f : func)
+    (df : typD t)
+    (Ho : baseS f = Some (pConst t e))
+    (Hf : funcAs f t = Some df) :
+    exprD' tus tvs t (mkConst t e) = Some (fun _ _ => df).
   Proof.
-    unfold mkNat; simpl.
+    unfold mkConst; simpl.
     autorewrite with exprD_rw; simpl; forward; inv_all; subst.
     pose proof (bf_funcAsOk _ Ho) as H; rewrite H in Hf.
-    pose proof (bf_fNatOk n) as H1.
+    pose proof (bf_fConstOk e) as H1.
     pose proof (bf_funcAsOk _ H1) as H2. rewrite <- H2 in Hf.
     pose proof (BaseFunc_typeOk _ H1) as H3. simpl in H3.
     rewrite (funcAs_Some _ H3).
@@ -445,3 +456,4 @@ Section MakeBaseFuncSound.
   Qed.
   
 End MakeBaseFuncSound.
+*)

@@ -2,7 +2,8 @@ Require Import ExtLib.Core.RelDec.
 Require Import ExtLib.Data.PreFun.
 
 Require Import MirrorCore.TypesI.
-Require Import Charge.Logics.ILogic.
+
+Require Import Charge.ModularFunc.Denotation.
 
 Require Import Coq.Strings.String.
 
@@ -30,3 +31,19 @@ Section BaseTypeD.
 	
 End BaseTypeD.
 
+Section BaseTypeD'.
+  Context `{BTD : BaseTypeD}.
+ 
+  Definition natD (n : typD tyNat) : nat :=
+    eq_rect _ id n _ btNat.
+
+  Definition boolD (b : typD tyBool) : bool :=
+    eq_rect _ id b _ btBool.
+
+  Definition stringD (s : typD tyString) : string :=
+    eq_rect _ id s _ btString.
+
+  Definition pairD (t1 t2 : typ) (p : typD (tyPair t1 t2)) : (typD t1 * typD t2)%type :=
+    eq_rect _ id p _ (btPair t1 t2).
+    
+End BaseTypeD'.  

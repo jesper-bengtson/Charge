@@ -9,6 +9,7 @@ Require Import MirrorCore.Lambda.Expr.
 Require Import Charge.Logics.ILogic.
 Require Import Charge.ModularFunc.ListType.
 Require Import Charge.ModularFunc.BaseType.
+Require Import Charge.ModularFunc.Denotation.
 
 Require Import Coq.Strings.String.
 
@@ -20,6 +21,7 @@ Inductive list_func (typ : Type) :=
   | pNil : typ -> list_func typ
   | pCons : typ -> list_func typ
   | pLength : typ -> list_func typ
+  | pNoDup : typ -> list_func typ
   | pMap : typ -> typ -> list_func typ
   | pFold : typ -> typ -> list_func typ
   | pZip : typ -> typ -> list_func typ.
@@ -28,6 +30,7 @@ Class ListFunc (typ func : Type) := {
   fNil  : typ -> func;
   fCons : typ -> func;
   fLength : typ -> func;
+  fNoDup : typ -> func;
   fMap : typ -> typ -> func;
   fFold : typ -> typ -> func;
   fZip : typ -> typ -> func;
@@ -43,6 +46,7 @@ Section ListFuncSum.
 		  fNil t := inl (fNil t);
 	      fCons t := inl (fCons t);
 	      fLength t := inl (fLength t);
+	      fNoDup t := inl (fNoDup t);
           fMap t1 t2 := inl (fMap t1 t2);
           fFold t1 t2 := inl (fFold t1 t2);
           fZip t1 t2 := inl (fZip t1 t2);
@@ -58,6 +62,7 @@ Section ListFuncSum.
 		  fNil t := inr (fNil t);
 	      fCons t := inr (fCons t);
 	      fLength t := inr (fLength t);
+	      fNoDup t := inr (fNoDup t);
           fMap t1 t2 := inr (fMap t1 t2);
           fFold t1 t2 := inr (fFold t1 t2);
           fZip t1 t2 := inr (fZip t1 t2);
@@ -73,6 +78,7 @@ Section ListFuncSum.
     	  fNil t := Inj (fNil t);
     	  fCons t := Inj (fCons t);
     	  fLength t := Inj (fLength t);
+    	  fNoDup t := Inj (fNoDup t);
     	  fMap t1 t2 := Inj (fMap t1 t2);
     	  fFold t1 t2 := Inj (fFold t1 t2);
     	  fZip t1 t2 := Inj (fZip t1 t2);
@@ -94,6 +100,8 @@ Section ListFuncInst.
 
     Variable Typ2_tyArr : Typ2 _ Fun.
     Variable Typ0_tyProp : Typ0 _ Prop.
+    
+    Context {Typ0_tyPropOk : Typ0Ok Typ0_tyProp}.
 
     Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
     Let tyProp : typ := @typ0 _ _ _ _.
@@ -102,6 +110,7 @@ Section ListFuncInst.
 	  fNil := pNil;
 	  fCons := pCons;
 	  fLength := pLength;
+	  fNoDup := pNoDup;
 	  fMap := pMap;
 	  fFold := pFold;
 	  fZip := pZip;
@@ -114,6 +123,7 @@ Section ListFuncInst.
 		  | pNil t => Some (tyList t)
 		  | pCons t => Some (tyArr t (tyArr (tyList t) (tyList t)))
 		  | pLength t => Some (tyArr (tyList t) tyNat)
+		  | pNoDup t => Some (tyArr (tyList t) tyProp)
 		  | pMap t1 t2 => Some (tyArr (tyArr t1 t2) (tyArr (tyList t1) (tyList t2)))
 		  | pFold t1 t2 => Some (tyArr (tyArr t2 (tyArr t1 t1)) (tyArr t1 (tyArr (tyList t2) t1))) 
 		  | pZip t1 t2 => Some (tyArr (tyList t1) (tyArr (tyList t2) (tyList (tyPair t1 t2))))
@@ -124,6 +134,7 @@ Section ListFuncInst.
 	    | pNil t1, pNil t2 => Some (t1 ?[ eq ] t2)
 	    | pCons t1, pCons t2 => Some (t1 ?[ eq ] t2)
 	    | pLength t1, pLength t2 => Some (t1 ?[ eq ] t2)
+	    | pNoDup t1, pNoDup t2 => Some (t1 ?[ eq ] t2)
 	    | pMap t1 t2, pMap t3 t4 => Some (t1 ?[ eq ] t3 &&
 	      								    t2 ?[ eq ] t4)%bool
 	    | pFold t1 t2, pFold t3 t4 => Some (t1 ?[ eq ] t3 &&
@@ -139,6 +150,9 @@ Section ListFuncInst.
     		 	       | None => false 
     			     end
     }.
+
+  Definition listD (t : typ) (l : typD (tyList t)) : list (typD t) :=
+    eq_rect _ id l _ (btList t).
 
 	 Definition list_func_symD lf :=
 		match lf as lf return match typeof_list_func lf with
@@ -160,6 +174,12 @@ Section ListFuncInst.
 	    	     let lst := eq_rect (typD (tyList t)) id lst (list (typD t)) (btList t) in
 	    			        eq_rect_r id (List.length lst) btNat)
 	          (typ2_cast (tyList t) (tyNat))
+	    | pNoDup t => 
+	      eq_rect_r id 
+	          (fun lst : typD (tyList t) =>
+	    	     let lst := eq_rect (typD (tyList t)) id lst (list (typD t)) (btList t) in
+	    			        eq_rect_r id (NoDup lst) (typ0_cast (Typ0 := Typ0_tyProp)))
+	          (typ2_cast (tyList t) tyProp)
 	    | pMap t1 t2 => 
 	        eq_rect_r id 
 	          (eq_rect_r (fun T : Type => typD (tyArr t1 t2) -> T)
@@ -212,6 +232,7 @@ Section ListFuncInst.
 		+ consider (t ?[ eq ] t0); intuition congruence.
 		+ consider (t ?[ eq ] t0); intuition congruence.
 		+ consider (t ?[ eq ] t0); intuition congruence.
+		+ consider (t ?[ eq ] t0); intuition congruence.
 		+ consider (t ?[ eq ] t1 && t0 ?[ eq ] t2)%bool; intuition congruence. 
 		+ consider (t ?[ eq ] t1 && t0 ?[ eq ] t2)%bool; intuition congruence. 
 		+ consider (t ?[ eq ] t1 && t0 ?[ eq ] t2)%bool; intuition congruence. 
@@ -225,6 +246,7 @@ Section MakeList.
 	Definition mkNil t : expr typ func := Inj (fNil t).
 	Definition mkCons (t : typ) (x xs : expr typ func) := App (App (fCons t) x) xs.
 	Definition mkLength (t : typ) (lst : expr typ func) := App (fLength t) lst.
+	Definition mkNoDup (t : typ) (lst : expr typ func) := App (fNoDup t) lst.
 	Definition mkMap (t u : typ) (f lst : expr typ func) :=  App (App (fMap t u) f) lst.
 	Definition mkFold (t u : typ) (f acc lst : expr typ func) :=  App (App (App (fFold t u) f) acc) lst.
 	Definition mkZip (t u : typ) (xs ys : expr typ func) := App (App (fZip t u) xs) ys.
