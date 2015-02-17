@@ -13,7 +13,7 @@ Require Import MirrorCore.Lambda.Expr.
 
 Require Import Charge.Logics.ILogic.
 Require Import Charge.ModularFunc.BaseType.
-Require Import Charge.ModularFunc.RelDecTyp.
+Require Import Charge.ModularFunc.SemiDecEqTyp.
 
 Require Import Coq.Strings.String.
 
@@ -79,33 +79,33 @@ Section BaseFuncSum.
 End BaseFuncSum.
 
 Section BaseFuncInst.
-	Context {typ : Type} {HR : RType typ} 
-	        {HT : BaseType typ} {HTD: BaseTypeD}.
-	Context {func : Type} {H : BaseFunc typ func}.
-	Context {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
-	
-	Context {rd : rel_dec_typ}.
-	Context {rdOk : rel_dec_typOk rd}.
+  Context {typ : Type} {HR : RType typ} 
+          {HT : BaseType typ} {HTD: BaseTypeD}.
+  Context {func : Type} {H : BaseFunc typ func}.
+  Context {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
 
-    Variable Typ2_tyArr : Typ2 _ Fun.
-    Variable Typ0_tyProp : Typ0 _ Prop.
+  Context {edt : eq_dec_typ typ}.
+  Context {edtOk : eq_dec_typOk edt}.
 
-    Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
-    Let tyProp : typ := @typ0 _ _ _ _.
+  Context {Typ2_tyArr : Typ2 _ Fun}.
+  Context {Typ0_tyProp : Typ0 _ Prop}.
 
-	Global Instance BaseFuncInst : BaseFunc typ (base_func typ) := {
-	  fConst t e := pConst t e;
-	  fEq := pEq;
-	  fPair := pPair;
-	  baseS f := Some f 
-	}.
+  Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
+  Let tyProp : typ := @typ0 _ _ _ _.
 
-	Definition typeof_base_func bf :=
-		match bf with
-		  | pConst t _ => Some t
-		  | pEq t => Some (tyArr t (tyArr t tyProp))
-		  | pPair t1 t2 => Some (tyArr t1 (tyArr t2 (tyPair t1 t2)))
-		end.
+  Global Instance BaseFuncInst : BaseFunc typ (base_func typ) := {
+	fConst t e := pConst t e;
+	fEq := pEq;
+	fPair := pPair;
+	baseS f := Some f 
+  }.
+
+  Definition typeof_base_func bf :=
+    match bf with
+      | pConst t _ => Some t
+      | pEq t => Some (tyArr t (tyArr t tyProp))
+      | pPair t1 t2 => Some (tyArr t1 (tyArr t2 (tyPair t1 t2)))
+    end.
 
   Definition rel_dec_cases {T A : Type} {RelDec_T : RelDec (@eq T)} {HROk : RelDec_Correct RelDec_T} (x y : T)
     (f_true : x = y -> A) (f_false : x <> y -> A) : A :=
@@ -120,45 +120,13 @@ Section BaseFuncInst.
 	  match a , b with
 		| pConst t1 e1, pConst t2 e2 =>
 		  rel_dec_cases t1 t2
-		    (fun pf => 
-		      match rd t1 with
-                | Some rel_dec =>
-  	 		      rel_dec_cases t1 t2 (fun pf => Some (e1 ?[ eq ] (@eq_rect_r _ _ typD e2 _ pf))) (fun pf => None)
-                | None => None
-              end)
+		    (fun pf => edt t1 e1 (@eq_rect_r _ _ typD e2 _ pf))
 		    (fun _ => None)
 	    | pEq t1, pEq t2 => Some (t1 ?[ eq ] t2)
 	    | pPair t1 t2, pPair t3 t4 => Some (t1 ?[ eq ] t3 &&
 	      								    t2 ?[ eq ] t4)%bool
 	    | _, _ => None
 	  end.
-    (*
-    Global Instance RelDec_base_func : RelDec (@eq (base_func typ)) := {
-      rel_dec a b := match base_func_eq a b with 
-    	  		       | Some b => b 
-    		 	       | None => false 
-    			     end
-    }.
-
-    Global Instance RelDec_Correct_base_func : RelDec_Correct RelDec_base_func.
-    Proof.
-      constructor.
-      destruct x; destruct y; simpl;
-      try solve [ try rewrite Bool.andb_true_iff ;
-                  repeat rewrite rel_dec_correct; intuition congruence ].
-      unfold rel_dec_cases; simpl.
-      forward; subst.
-      destruct (rd t1).
-      admit.
-      split; try intuition congruence.
-      unfold rel_dec_cases. simpl.
-      forward.
-      inversion H0; subst.
-      unfold eq_rect_r, eq_rect, eq_sym; simpl.
-      rewrite rel_dec_correct; intuition; subst.
-      inversion H0; subst.
-    Qed.
-  *)
 
 	 Definition base_func_symD bf :=
 		match bf as bf return match typeof_base_func bf with
@@ -194,14 +162,11 @@ Section BaseFuncInst.
 		destruct a, b; simpl; try apply I.
 		+ unfold rel_dec_cases.
 		  forward; inv_all; subst.
-		  unfold eq_rect_r, eq_rect, eq_sym.
-		  specialize (rdOk t1). rewrite H1 in rdOk.
-		  consider (t0 ?[ eq ] t2); intros.
-		  * pose proof (@rel_dec_correct (typD t1) (@eq (typD t1)) r rdOk t0 t2).
-		    apply H3 in H2. subst. reflexivity.
-		  * pose proof (@neg_rel_dec_correct (typD t1) (@eq (typD t1)) r rdOk t0 t2).
-		    apply H3 in H2. intros H4. apply H2. inversion H4; subst.
-		    apply Structures.EqDep.inj_pair2 in H6. apply H6.
+		  unfold eq_rect_r, eq_rect, eq_sym in H1.
+		  specialize (edtOk t1 t0 t2). rewrite H1 in edtOk.
+		  destruct b; [try intuition congruence|].
+		  intros H2; apply edtOk; inversion H2.
+		  apply Structures.EqDep.inj_pair2 in H4. apply H4.
 		+ consider (t ?[ eq ] t0); intuition congruence.
 		+ consider (t ?[ eq ] t1 && t0 ?[ eq ] t2)%bool; 
 		  intuition congruence.
@@ -229,8 +194,8 @@ Section BaseFuncOk.
   Context {RelDec_eq : RelDec (@eq typ)}.
   Context {RelDec_eqOk : RelDec_Correct RelDec_eq}.
   Context {BT : BaseType typ} {BTD : BaseTypeD}.
-  Context {rdt : @rel_dec_typ typ RType_typ}.
-  Context {rdtOk : rel_dec_typOk rdt}.
+  Context {edt : eq_dec_typ typ}.
+  Context {edtOk : eq_dec_typOk edt}.
 
   Context {Typ2_tyArr : Typ2 _ Fun}.
   Context {Typ0_Prop : Typ0 _ Prop}.
@@ -239,7 +204,7 @@ Section BaseFuncOk.
     bf_funcAsOk (f : func) (e : @base_func typ RType_typ) : baseS f = Some e -> 
       forall t, 
         funcAs f t = 
-        funcAs (RSym_func := RSym_BaseFunc (rd := rdt) Typ2_tyArr Typ0_Prop) e t;
+        funcAs (RSym_func := RSym_BaseFunc (edt := edt)) e t;
 	bf_fConstOk t e : baseS (fConst t e) = Some (pConst t e);
     bf_fEqOk t : baseS (fEq t) = Some (pEq t);
     bf_fPairOk t u : baseS (fPair t u) = Some (pPair t u)
@@ -248,14 +213,14 @@ Section BaseFuncOk.
 End BaseFuncOk.
 
 Implicit Arguments BaseFuncOk [[BF] [RType_typ] [RSym_func] [RelDec_eq] [BT] [BTD]
-                               [Typ2_tyArr] [Typ0_Prop] [RelDec_eqOk] [rdt]].
+                               [Typ2_tyArr] [Typ0_Prop] [RelDec_eqOk] [edt]].
 
 Section BaseFuncBaseOk.
   Context {typ func : Type} {RType_typ : RType typ}.
   Context {BF: BaseFunc typ func} {RSym_func : RSym func}.
   Context {RelDec_eq : RelDec (@eq typ)}.
   Context {RelDec_eqOk : RelDec_Correct RelDec_eq}.
-  Context {rd : rel_dec_typ}.
+  Context {edt : eq_dec_typ typ}.
   Context {BT : BaseType typ}.
   Context {BTD : BaseTypeD}.
 
@@ -264,7 +229,7 @@ Section BaseFuncBaseOk.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
   
   Global Program Instance BaseFuncBaseOk : 
-  	BaseFuncOk (rdt := rd) typ (RSym_func := RSym_BaseFunc (rd := rd) Typ2_tyArr Typ0_Prop) (base_func typ) := {
+  	BaseFuncOk (edt := edt) typ (RSym_func := RSym_BaseFunc (edt := edt)) (base_func typ) := {
     bf_funcAsOk := fun _ _ _ _ => eq_refl;
     bf_fConstOk t e := eq_refl;
     bf_fEqOk t := eq_refl;
@@ -282,7 +247,7 @@ Section BaseFuncExprOk.
   Let tyProp : typ := @typ0 _ _ _ _.
 
   Lemma BaseFunc_typeOk (f : func) (e : base_func typ) (H : baseS f = Some e) :
-    typeof_sym f = typeof_base_func _ _ e.
+    typeof_sym f = typeof_base_func e.
   Proof.
     destruct HOK as [H1 H2 _ _ _ _ _ _ _].
     specialize (H1 _ _ H).
@@ -328,7 +293,7 @@ Section BaseFuncExprOk.
 
   Existing Instance RSym_sum.
 
-  Global Program Instance BaseFuncOkSumR : BaseFuncOk (rdt := rdt) typ ((A + func)%type) := {
+  Global Program Instance BaseFuncOkSumR : BaseFuncOk (edt := edt) typ ((A + func)%type) := {
     bf_funcAsOk := 
       fun a f H t => 
         match a with
@@ -344,7 +309,7 @@ Section BaseFuncExprOk.
     apply H.
   Qed.
 
-  Global Program Instance BaseFuncOkSumL : BaseFuncOk (rdt := rdt) typ ((func + A)%type) := {
+  Global Program Instance BaseFuncOkSumL : BaseFuncOk (edt := edt) typ ((func + A)%type) := {
     bf_funcAsOk := 
       fun a f H t => 
         match a with

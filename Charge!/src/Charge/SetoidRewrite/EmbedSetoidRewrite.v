@@ -9,7 +9,8 @@ Require Import Charge.ModularFunc.ILogicFunc.
 Require Import Charge.ModularFunc.EmbedFunc.
 
 Section EmbedSetoidRewrite.
-  Context {typ func : Type} {HIL : ILogicFunc typ func} {HB : BaseFunc typ func}.
+  Context {typ func : Type} {RType_typ : RType typ}.
+  Context {HIL : ILogicFunc typ func} {HB : BaseFunc typ func}.
   Context {HE : EmbedFunc typ func}.
   Context {RelDec_func : RelDec (@eq (expr typ func))}.
 

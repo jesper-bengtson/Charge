@@ -160,7 +160,7 @@ End PushSubst.
 Implicit Arguments typeof_funcAs [[typ] [func] [RType_typ] [RSym_func] [f] [t] [e]].
 *)
 
-Require Import Charge.ModularFunc.RelDecTyp.
+Require Import Charge.ModularFunc.SemiDecEqTyp.
 
 Section SubstTac.
   Context {typ func subst : Type} {ST : SubstType typ} {BT : BaseType typ} {RType_typ : RType typ}.
@@ -184,8 +184,8 @@ Section SubstTac.
   Context {bs : @bilogic_ops _ RType_typ}.
   Context {ILFOK : ILogicFuncOk typ func gs}.
   Context {BILFOK : BILogicFuncOk typ func bs}.
-  Context {rd : rel_dec_typ}.
-  Context {BFOK : BaseFuncOk (RelDec_eq := RelDec_typ) (rdt := rd) typ func}.
+  Context {edt : eq_dec_typ typ}.
+  Context {BFOK : BaseFuncOk (RelDec_eq := RelDec_typ) (edt := edt) typ func}.
   Context {EqDec_typ : EqDec typ eq}.
   Context {ilp : il_pointwise (typ := typ)}.
   Context {ilpOk : il_pointwiseOk _ gs ilp}.

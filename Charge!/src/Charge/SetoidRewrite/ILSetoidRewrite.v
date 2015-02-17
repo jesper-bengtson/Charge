@@ -11,8 +11,9 @@ Require Import Charge.ModularFunc.ILogicFunc.
 Require Import Charge.Logics.ILogic.
 
 Section ILSetoidRewrite.
-	Context {typ func : Type} {HIL : ILogicFunc typ func} {HB : BaseFunc typ func}.
-	Context {RelDec_func : RelDec (@eq (expr typ func))} {RType_typ : RType typ}.
+	Context {typ func : Type} {RType_typ : RType typ}.
+	Context {HIL : ILogicFunc typ func} {HB : BaseFunc typ func}.
+	Context {RelDec_func : RelDec (@eq (expr typ func))}.
 	Context {ilogic : forall t : typ, option (ILogicOps (typD t))}.
 	Context {HT2 : Typ2 RType_typ Fun}.
 	Context {HT0 : Typ0 _ Prop}.

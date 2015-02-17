@@ -26,12 +26,11 @@ Set Implicit Arguments.
 Set Strict Implicit.
 
 Section PullQuant.
-  Context (typ func : Type).
+  Context (typ func : Type) {RType_typ : RType typ}.
   Context {HIL : ILogicFunc typ func} {HB : BaseFunc typ func}.
   Context {HBIL : BILogicFunc typ func} {HE : EmbedFunc typ func}.
   Context {RelDec_func : RelDec (@eq (expr typ func))}.
   Context {target : expr typ func -> bool}.
-  Context {RType_typ : RType typ}.
   Context {Typ2_typ : Typ2 RType_typ Fun}.
   Context {Typ0_typ : Typ0 RType_typ Prop}.
   Context {RSym_func : RSym func}.

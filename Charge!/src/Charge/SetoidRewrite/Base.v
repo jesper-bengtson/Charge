@@ -19,10 +19,10 @@ Set Implicit Arguments.
 Set Strict Implicit.
 
 Section SetoidRewrite.
-  Context {typ func : Type}.
+  Context {typ func : Type} {RType_typ : RType typ}.
   Context {HB : BaseFunc typ func}.
 
-  Context {RType_typ : RType typ} {RelDec_typ_eq : RelDec (@eq typ)}
+  Context {RelDec_typ_eq : RelDec (@eq typ)}
           {RelDecCorrect_typ_eq : RelDec_Correct RelDec_typ_eq}.
 
   Context {RelDec_func_eq : RelDec (@eq (expr typ func))}.
