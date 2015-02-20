@@ -9,6 +9,7 @@ Require Import MirrorCore.Lambda.Expr.
 Require Import Charge.Logics.ILogic.
 Require Import Charge.ModularFunc.ListType.
 Require Import Charge.ModularFunc.BaseType.
+Require Import Charge.ModularFunc.BaseFunc.
 Require Import Charge.ModularFunc.Denotation.
 
 Require Import Coq.Strings.String.
@@ -252,3 +253,12 @@ Section MakeList.
 	Definition mkZip (t u : typ) (xs ys : expr typ func) := App (App (fZip t u) xs) ys.
 	
 End MakeList.
+
+Section ListOps.
+  Context {typ func : Type} {RType_typ : RType typ}.
+  Context {BF: BaseFunc typ func} {LF : ListFunc typ func}.
+ 
+  Definition list_const_to_expr (t : typ) (lst : list (typD t)) :=
+    fold_right (fun x acc => mkCons t (mkConst t x) acc) (mkNil t) lst.
+  
+End ListOps.

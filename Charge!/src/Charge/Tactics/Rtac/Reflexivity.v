@@ -3,9 +3,10 @@ Require Import MirrorCore.Lambda.Expr.
 Require Import MirrorCore.RTac.Core.
 
 Require Import Charge.ModularFunc.BaseFunc.
+Require Import Charge.ModularFunc.SemiDecEqTyp.
 
 Require Import ExtLib.Tactics.
-
+Require Import ExtLib.Data.HList.
 
 Section Reflexivity.
 
@@ -14,6 +15,8 @@ Section Reflexivity.
   
   Context {Expr_func : Expr RType_typ (expr typ func)}.
   Context {EU : ExprUVar (expr typ func)}.
+  
+  Context {edt : eq_dec_typ typ}.
 
   Context {Typ0_Prop : Typ0 RType_typ Prop}.
 
@@ -24,10 +27,18 @@ Section Reflexivity.
       match e with
         | App (App f e1) e2 =>
           match baseS f with
-            | Some (pEq _) =>
+            | Some (pEq t) =>
               match sym_eqb e1 e2 with
                 | Some true => Solved s
-                | _ => Fail
+                | _ =>
+                  match exprD' nil nil e1 t, exprD' nil nil e2 t with
+                    | Some e1D, Some e2D =>
+                      match edt t (e1D Hnil Hnil) (e2D Hnil Hnil) with
+                        | Some true => Solved s
+                        | _ => Fail
+                      end
+                    | _, _ => Fail
+                  end
               end
             | _ => Fail
           end 
@@ -45,19 +56,7 @@ Section Reflexivity.
 	destruct o; [|apply I].
     destruct b; try apply I.
     remember (sym_eqb g1_2 g2).
-    destruct o; [|apply I].
-    destruct b; [|apply I].
-    intros H Hs. 
-    split; [apply Hs|].
-
-    forward.
-
-    split; [reflexivity|].
-
-	intros us vs.
-
-	unfold goalD, propD, exprD'_typ0 in H1.
-	forward; inv_all; subst.
+    
 	
    admit.
 

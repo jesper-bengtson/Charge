@@ -28,4 +28,7 @@ Section ListTypeD'.
   Definition listD (t : typ) (p : typD (tyList t)) : list (typD t) :=
     eq_rect _ id p _ (btList t).
     
+  Definition listD_inv (t : typ) (p : list (typD t)) : typD (tyList t) :=
+    eq_rect _ id p _ (eq_sym (btList t)).
+    
 End ListTypeD'.  
