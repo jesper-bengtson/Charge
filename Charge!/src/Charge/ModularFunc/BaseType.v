@@ -46,4 +46,16 @@ Section BaseTypeD'.
   Definition pairD (t1 t2 : typ) (p : typD (tyPair t1 t2)) : (typD t1 * typD t2)%type :=
     eq_rect _ id p _ (btPair t1 t2).
     
+  Definition natD_sym (n : nat) : typD tyNat :=
+    eq_rect _ id n _ (eq_sym btNat).
+
+  Definition boolD_sym (b : bool) : typD tyBool :=
+    eq_rect _ id b _ (eq_sym btBool).
+
+  Definition stringD_sym (s : string) : typD tyString :=
+    eq_rect _ id s _ (eq_sym btString).
+
+  Definition pairD_sym (t1 t2 : typ) (p : (typD t1 * typD t2)%type) : typD (tyPair t1 t2) :=
+    eq_rect _ id p _ (eq_sym (btPair t1 t2)).
+    
 End BaseTypeD'.  

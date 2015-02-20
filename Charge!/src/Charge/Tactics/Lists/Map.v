@@ -1,6 +1,8 @@
 Require Import MirrorCore.TypesI.
 Require Import MirrorCore.Lambda.AppN.
 Require Import MirrorCore.Lambda.Red.
+Require Import MirrorCore.Lambda.RedAll.
+Require Import MirrorCore.RTac.Simplify.
 
 Require Import Charge.ModularFunc.BaseFunc.
 Require Import Charge.ModularFunc.ListFunc.
@@ -31,5 +33,7 @@ Section Map.
         end
       | _ => apps e args
     end.
+
+  Definition MAP := SIMPLIFY (typ := typ) (fun _ _ _ _ => (beta_all (fun _ => mapTac))).
 
 End Map.

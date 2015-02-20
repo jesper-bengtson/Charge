@@ -131,7 +131,7 @@ Section BILogicFuncInst.
           | _, _ => False
         end
       | false => True
-    end) False.
+    end) True.
 
   Definition typeof_bilfunc (f : bilfunc typ) : option typ :=
     match f with

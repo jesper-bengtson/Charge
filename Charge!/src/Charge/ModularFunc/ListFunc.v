@@ -152,72 +152,32 @@ Section ListFuncInst.
     			     end
     }.
 
-  Definition listD (t : typ) (l : typD (tyList t)) : list (typD t) :=
+  Definition listD {t : typ} (l : typD (tyList t)) : list (typD t) :=
     eq_rect _ id l _ (btList t).
+
+  Definition listD_sym {t : typ} (l :list (typD t)) : typD (tyList t) :=
+    eq_rect _ id l _ (eq_sym (btList t)).
+
+  Definition nilD t := eq_rect_r id (@nil (typD t)) (btList t).
+  Definition consD t := fun_to_typ2 (fun x xs => listD_sym (cons x (@listD t xs))).
+  Definition lengthD t := fun_to_typ (fun xs => natD_sym (List.length (@listD t xs))).
+  Definition NoDupD t := fun_to_typ (fun xs => eq_rect_r id (NoDup (@listD t xs)) (typ0_cast (Typ0 := Typ0_tyProp))).
+  Definition mapD t1 t2 := fun_to_typ2 (fun f xs => @listD_sym t2 (map (typ_to_fun f) (@listD t1 xs))).
+  Definition foldD t1 t2 := fun_to_typ3 (fun f (acc : typD t1) lst => fold_right (typ_to_fun2 f) acc (@listD t2 lst)).
+  Definition zipD t1 t2 := fun_to_typ2 (fun xs ys => listD_sym (eq_rect_r list (combine (listD xs) (listD ys)) (btPair t1 t2))).
 
 	 Definition list_func_symD lf :=
 		match lf as lf return match typeof_list_func lf with
 								| Some t => typD t
 								| None => unit
 							  end with
-	    | pNil t => eq_rect_r id (@nil (typD t)) (btList t)
-	    | pCons t => 
-	       eq_rect_r id
-             (eq_rect_r (fun T : Type => typD t -> T)
-               (fun x xs => 
-                    let xs := eq_rect _ id xs _ (btList t) in
-                    eq_rect_r id (cons x xs) (btList t))
-               (typ2_cast (tyList t) (tyList t)))
-             (typ2_cast t (typ2 (tyList t) (tyList t)))
-	    | pLength t => 
-	        eq_rect_r id 
-	          (fun lst : typD (tyList t) =>
-	    	     let lst := eq_rect (typD (tyList t)) id lst (list (typD t)) (btList t) in
-	    			        eq_rect_r id (List.length lst) btNat)
-	          (typ2_cast (tyList t) (tyNat))
-	    | pNoDup t => 
-	      eq_rect_r id 
-	          (fun lst : typD (tyList t) =>
-	    	     let lst := eq_rect (typD (tyList t)) id lst (list (typD t)) (btList t) in
-	    			        eq_rect_r id (NoDup lst) (typ0_cast (Typ0 := Typ0_tyProp)))
-	          (typ2_cast (tyList t) tyProp)
-	    | pMap t1 t2 => 
-	        eq_rect_r id 
-	          (eq_rect_r (fun T : Type => typD (tyArr t1 t2) -> T)
-	            (fun f lst =>
-	              let f := eq_rect _ id f _ (typ2_cast t1 t2) in
-	              let lst := eq_rect _ id lst _ (btList t1) in
-	                eq_rect_r id (List.map f lst) (btList t2))
-	            (typ2_cast (tyList t1) (tyList t2)))
-	          (typ2_cast (tyArr t1 t2) (typ2 (tyList t1) (tyList t2)))
-	    | pFold t1 t2 => 
-	        eq_rect_r id 
-	          (eq_rect_r (fun T : Type => typD (tyArr t2 (tyArr t1 t1)) -> T)
-				(eq_rect_r (fun T : Type => typD (tyArr t2 (tyArr t1 t1)) -> typD t1 -> T)
-					(fun f acc lst =>
-						let f := eq_rect _ id f _ 
-							(eq_ind_r (fun T : Type => T = (typD t2 -> typD t1 -> typD t1))
-						      (eq_ind_r
-						         (fun T : Type => Fun (typD t2) T = (typD t2 -> typD t1 -> typD t1))
-         eq_refl (typ2_cast t1 t1)) (typ2_cast t2 (typ2 t1 t1))) in
-						let lst := eq_rect _ id lst _ (btList t2) in
-						   fold_right f acc lst)
-					(typ2_cast (tyList t2) t1))				  
-	            (typ2_cast t1 (typ2 (tyList t2) t1)))
-	          (typ2_cast (typ2 t2 (typ2 t1 t1)) (typ2 t1 (typ2 (tyList t2) t1)))
-	    | pZip t1 t2 => 
-	        eq_rect_r id 
-	          (eq_rect_r (fun T : Type => typD (tyList t1) -> T)
-	            (fun xs ys =>
-	              let xs := eq_rect _ id xs _ (btList t1) in
-	              let ys := eq_rect _ id ys _ (btList t2) in
-	                eq_rect_r id (combine xs ys) 
-	                  (eq_ind_r (fun T => T = list ((typD t1 * typD t2)%type))
-	                    (eq_ind_r (fun T => list T = list ((typD t1 * typD t2)%type)) eq_refl
-	                  	  (btPair t1 t2))
-	                  	(btList (tyPair t1 t2))))
-	            (typ2_cast (tyList t2) (tyList (tyPair t1 t2))))
-	          (typ2_cast (tyList t1) (typ2 (tyList t2) (tyList (tyPair t1 t2))))
+	    | pNil t => nilD t
+	    | pCons t => consD t
+	    | pLength t => lengthD t
+	    | pNoDup t => NoDupD t
+	    | pMap t1 t2 => mapD t1 t2
+	    | pFold t1 t2 => foldD t1 t2
+	    | pZip t1 t2 => zipD t1 t2
 	 end.
 
 	Global Instance RSym_ListFunc : SymI.RSym (list_func typ) := {

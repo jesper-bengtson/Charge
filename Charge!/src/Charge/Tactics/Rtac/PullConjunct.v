@@ -27,7 +27,7 @@ Section PullConjunct.
   Context {Typ0_typ : Typ0 RType_typ Prop}.
   Context {RSym_func : RSym func}.
   Context {ilogic : forall t : typ, option (ILogicOps (typD t))}.
-Check setoid_rewrite.
+
   Definition pull_conjunct vars := 
 	setoid_rewrite vars _ fEntails rw_fail (il_rewrite_respects typ func ilogic) (il_pull_conjunct target).
 

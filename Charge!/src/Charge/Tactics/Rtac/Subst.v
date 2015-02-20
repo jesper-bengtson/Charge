@@ -708,4 +708,4 @@ Time Qed.
   
 End SubstTac.
 Print SUBST.
-Implicit Arguments SUBST [[ST] [RType_typ] [OF] [ILF] [BILF] [EF] [BF] [Typ2_tyArr] [ilp] [bilp]].
+Implicit Arguments SUBST [[ST] [BT] [RType_typ] [OF] [ILF] [BILF] [LT] [LF] [EF] [BF] [Typ2_tyArr] [ilp] [bilp] [RelDec_typ] [HBTD] [HLTD]].

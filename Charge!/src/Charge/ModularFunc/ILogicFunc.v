@@ -168,7 +168,7 @@ Section ILogicFuncInst.
           | _, _ => False
         end
       | false => True
-    end) False.
+    end) True.
  
   Definition typeof_ilfunc (f : ilfunc typ) : option typ :=
     match f with

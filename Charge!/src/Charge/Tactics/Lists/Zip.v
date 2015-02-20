@@ -1,6 +1,8 @@
 Require Import MirrorCore.TypesI.
 Require Import MirrorCore.Lambda.AppN.
 Require Import MirrorCore.Lambda.Red.
+Require Import MirrorCore.Lambda.RedAll.
+Require Import MirrorCore.RTac.Simplify.
 
 Require Import Charge.ModularFunc.BaseFunc.
 Require Import Charge.ModularFunc.ListFunc.
@@ -14,18 +16,31 @@ Section Zip.
   Context {BF : BaseFunc typ func} {LF: ListFunc typ func}.
 
   Fixpoint zipExpr (t u : typ) (e1 e2 : expr typ func) : expr typ func :=
-    match e1, e2 with 
-      | App (App (Inj f) x) xs, App (App (Inj g) y) ys =>
-        match listS f, listS g with
-          | Some mkZip t u e1 e2
-      | _, _ => mkZip t u e1 e2
-    end.
-    match listS e1, listS e2 with
-      | Some (pNil _), Some (pNil _) => mkNil (tyPair t u)
-      | Some (pCons _), Some (pNil _) => mkNil (tyPair t u)
-      | Some (pNil _), Some (pCons _) => mkNil (tyPair t u)
-      | Some (pCons _ x xs), Some (pCons _ y ys) => mkCons (tyPair v w) (mkPair _ _ x y) (zipExpr t u xs ys)
-      | _, _ => mkZip t u e1 e2
+    match e1 with
+      | App (App (Inj f) x) xs =>
+        match listS f with
+          | Some (pCons _) =>
+            match e2 with
+              | App (App (Inj g) y) ys =>
+                match listS g with
+                  | Some (pCons _) => mkCons (tyPair t u) (mkPair t u x y) (zipExpr t u xs ys)
+                  | _ => mkZip t u e1 e2
+                end
+              | Inj g =>
+                match listS g with
+                  | Some (pNil _) => mkNil (tyPair t u)
+                  | _ => mkZip t u e1 e2
+                end
+              | _ => mkZip t u e1 e2
+            end
+          | _ => mkZip t u e1 e2
+        end
+      | Inj f =>
+        match listS f with
+          | Some (pNil _) => mkNil (tyPair t u)
+          | _ => mkZip t u e1 e2
+        end
+      | _ => mkZip t u e1 e2
     end.
 
   Definition zipTac (e : expr typ func) (args : list (expr typ func)) : expr typ func :=
@@ -43,12 +58,23 @@ Section Zip.
                            (listD _ (eq_rect _ typD ys' _ pfys))) _ (eq_sym (btPair t u))))
                   | _, _ => apps e args
                 end 
-              | Some (pConst v xs'), None => apps e args
+              | Some (pConst v xs'), None => 
+                match type_cast v (tyList t) with
+                  | Some pf => zipExpr t u (list_const_to_expr t (listD _ (eq_rect _ typD xs' _ pf))) ys
+                  | None => apps e args
+                end
+              | None, Some (pConst v ys') => 
+                match type_cast v (tyList t) with
+                  | Some pf => zipExpr t u xs (list_const_to_expr t (listD _ (eq_rect _ typD ys' _ pf)))
+                  | None => apps e args
+                end
               | _, _ => apps e args
             end
           | _ => apps e args
         end
       | _ => apps e args
     end.
+
+Definition ZIP := SIMPLIFY (typ := typ) (fun _ _ _ _ => (beta_all (fun _ => zipTac))).
 
 End Zip.
