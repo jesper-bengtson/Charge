@@ -43,4 +43,16 @@ Section Denotation.
     forward.
   Qed.
 
+  Lemma exprT_App_wrap_sym tus tvs (t u : typ) (f : HList.hlist typD tus -> HList.hlist typD tvs -> typD (tyArr t u)) (a : exprT tus tvs (typD t)) :
+    exprT_App f a = fun us vs => (typ_to_fun (f us vs)) (a us vs).
+  Proof.
+    unfold typ_to_fun, exprT_App, eq_rect_r, eq_sym, eq_rect.
+    unfold tyArr in f.
+    generalize (typ2_cast t u).
+    generalize dependent (typ2 t u).
+    intros.
+    generalize dependent (typD t0).
+    intros. subst. reflexivity.
+  Qed.
+
 End Denotation.

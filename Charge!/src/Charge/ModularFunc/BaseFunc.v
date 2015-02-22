@@ -13,7 +13,7 @@ Require Import MirrorCore.Lambda.Expr.
 
 Require Import Charge.Logics.ILogic.
 Require Import Charge.ModularFunc.BaseType.
-Require Import Charge.ModularFunc.SemiDecEqTyp.
+Require Import Charge.ModularFunc.SemiEqDecTyp.
 
 Require Import Coq.Strings.String.
 
@@ -84,8 +84,8 @@ Section BaseFuncInst.
   Context {func : Type} {H : BaseFunc typ func}.
   Context {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
 
-  Context {edt : eq_dec_typ typ}.
-  Context {edtOk : eq_dec_typOk edt}.
+  Context {Hseq : SemiEqDecTyp typ}.
+  Context {HseqOk : SemiEqDecTypOk Hseq}.
 
   Context {Typ2_tyArr : Typ2 _ Fun}.
   Context {Typ0_tyProp : Typ0 _ Prop}.
@@ -120,7 +120,7 @@ Section BaseFuncInst.
 	  match a , b with
 		| pConst t1 e1, pConst t2 e2 =>
 		  rel_dec_cases t1 t2
-		    (fun pf => edt t1 e1 (@eq_rect_r _ _ typD e2 _ pf))
+		    (fun pf => semi_eq_dec_typ e1 (@eq_rect_r _ _ typD e2 _ pf))
 		    (fun _ => None)
 	    | pEq t1, pEq t2 => Some (t1 ?[ eq ] t2)
 	    | pPair t1 t2, pPair t3 t4 => Some (t1 ?[ eq ] t3 &&
@@ -163,10 +163,11 @@ Section BaseFuncInst.
 		+ unfold rel_dec_cases.
 		  forward; inv_all; subst.
 		  unfold eq_rect_r, eq_rect, eq_sym in H1.
-		  specialize (edtOk t1 t0 t2). rewrite H1 in edtOk.
+		  pose proof (semi_eq_dec_typOk t1 t0 t2) as H2.
+		  rewrite H1 in H2.
 		  destruct b; [try intuition congruence|].
-		  intros H2; apply edtOk; inversion H2.
-		  apply Structures.EqDep.inj_pair2 in H4. apply H4.
+		  intros H3; apply H2; inversion H3.
+		  apply Structures.EqDep.inj_pair2 in H5. apply H5.
 		+ consider (t ?[ eq ] t0); intuition congruence.
 		+ consider (t ?[ eq ] t1 && t0 ?[ eq ] t2)%bool; 
 		  intuition congruence.
@@ -194,8 +195,7 @@ Section BaseFuncOk.
   Context {RelDec_eq : RelDec (@eq typ)}.
   Context {RelDec_eqOk : RelDec_Correct RelDec_eq}.
   Context {BT : BaseType typ} {BTD : BaseTypeD}.
-  Context {edt : eq_dec_typ typ}.
-  Context {edtOk : eq_dec_typOk edt}.
+  Context {Heqd : SemiEqDecTyp typ}.
 
   Context {Typ2_tyArr : Typ2 _ Fun}.
   Context {Typ0_Prop : Typ0 _ Prop}.
@@ -204,7 +204,7 @@ Section BaseFuncOk.
     bf_funcAsOk (f : func) (e : @base_func typ RType_typ) : baseS f = Some e -> 
       forall t, 
         funcAs f t = 
-        funcAs (RSym_func := RSym_BaseFunc (edt := edt)) e t;
+        funcAs (RSym_func := RSym_BaseFunc) e t;
 	bf_fConstOk t e : baseS (fConst t e) = Some (pConst t e);
     bf_fEqOk t : baseS (fEq t) = Some (pEq t);
     bf_fPairOk t u : baseS (fPair t u) = Some (pPair t u)
@@ -213,23 +213,24 @@ Section BaseFuncOk.
 End BaseFuncOk.
 
 Implicit Arguments BaseFuncOk [[BF] [RType_typ] [RSym_func] [RelDec_eq] [BT] [BTD]
-                               [Typ2_tyArr] [Typ0_Prop] [RelDec_eqOk] [edt]].
+                               [Typ2_tyArr] [Typ0_Prop] [RelDec_eqOk] [Heqd]].
 
 Section BaseFuncBaseOk.
   Context {typ func : Type} {RType_typ : RType typ}.
   Context {BF: BaseFunc typ func} {RSym_func : RSym func}.
   Context {RelDec_eq : RelDec (@eq typ)}.
   Context {RelDec_eqOk : RelDec_Correct RelDec_eq}.
-  Context {edt : eq_dec_typ typ}.
+  Context {Heqd : SemiEqDecTyp typ}.
   Context {BT : BaseType typ}.
   Context {BTD : BaseTypeD}.
 
   Context {Typ2_tyArr : Typ2 _ Fun}.
   Context {Typ0_Prop : Typ0 _ Prop}.
+
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
   
   Global Program Instance BaseFuncBaseOk : 
-  	BaseFuncOk (edt := edt) typ (RSym_func := RSym_BaseFunc (edt := edt)) (base_func typ) := {
+  	BaseFuncOk typ (RSym_func := RSym_BaseFunc) (base_func typ) := {
     bf_funcAsOk := fun _ _ _ _ => eq_refl;
     bf_fConstOk t e := eq_refl;
     bf_fEqOk t := eq_refl;
@@ -242,6 +243,9 @@ Section BaseFuncExprOk.
   Context {typ func : Type} `{HOK : BaseFuncOk typ func}.
   Context {HROk : RTypeOk}.
   Context {A : Type} {RSymA : RSym A}.
+
+  Context {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}
+          {RSym_funcOk : RSymOk RSym_func0}.
 
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
   Let tyProp : typ := @typ0 _ _ _ _.
@@ -262,13 +266,28 @@ Section BaseFuncExprOk.
  	end.
   Qed.
   
-  Lemma bf_const_type_eq (f : func) t e t' df
+  Lemma bf_typeof_const (t : typ) (c : typD t) : typeof_sym (fConst t c) = Some t.
+  Proof.
+    pose proof (BaseFunc_typeOk _ (bf_fConstOk t c)).
+    rewrite H. reflexivity.
+  Qed.
+  
+  Lemma bf_const_func_type_eq (f : func) t e t' df
     (H1 : baseS f = Some (fConst t e)) (H2 : funcAs f t' = Some df) :
     t = t'.
   Proof.
     rewrite (bf_funcAsOk _ H1) in H2.
     unfold funcAs in H2; simpl in *.
     forward.
+  Qed.
+
+  Lemma bf_const_type_eq (e : expr typ func) t c t' tus tvs de
+    (H1 : baseS e = Some (fConst t c)) (H2 : exprD' tus tvs t' e = Some de) :
+    t = t'.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
+   apply (bf_const_func_type_eq _ _ H1 H).
   Qed.
 
   Lemma bf_eq_type_eq (f : func) t u df
@@ -293,7 +312,7 @@ Section BaseFuncExprOk.
 
   Existing Instance RSym_sum.
 
-  Global Program Instance BaseFuncOkSumR : BaseFuncOk (edt := edt) typ ((A + func)%type) := {
+  Global Program Instance BaseFuncOkSumR : BaseFuncOk typ ((A + func)%type) := {
     bf_funcAsOk := 
       fun a f H t => 
         match a with
@@ -309,7 +328,7 @@ Section BaseFuncExprOk.
     apply H.
   Qed.
 
-  Global Program Instance BaseFuncOkSumL : BaseFuncOk (edt := edt) typ ((func + A)%type) := {
+  Global Program Instance BaseFuncOkSumL : BaseFuncOk typ ((func + A)%type) := {
     bf_funcAsOk := 
       fun a f H t => 
         match a with
@@ -360,32 +379,50 @@ Section TypeOfFunc.
   Qed.
 
 End TypeOfFunc.
-(*
+
 Section MakeBaseFuncSound.
   Context {typ func : Type} `{HOK : BaseFuncOk typ func}.
-  Context {rdOk : rel_dec_typOk rdt}.
+  Context {HeqdOk : SemiEqDecTypOk Heqd}.
   Context {HROk : RTypeOk} {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}
           {RSym_funcOk : RSymOk RSym_func0}.
 
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
-  Lemma mkConst_sound (t : typ) (e : typD t) (tus tvs : tenv typ) (f : func)
-    (df : typD t)
-    (Ho : baseS f = Some (pConst t e))
-    (Hf : funcAs f t = Some df) :
-    exprD' tus tvs t (mkConst t e) = Some (fun _ _ => df).
+  Lemma bf_const_func_eq (t : typ) (c : typD t) (f : func) (fD : typD t)
+    (Ho : baseS f = Some (pConst t c))
+    (Hf : funcAs f t = Some fD) :
+    fD = c.
+  Proof.
+   rewrite (bf_funcAsOk _ Ho) in Hf.
+   unfold funcAs in Hf; simpl in *.
+   rewrite type_cast_refl in Hf; [|apply HROk].
+   unfold Rcast, Relim_refl in Hf.
+   inversion Hf. reflexivity.
+  Qed.
+
+  Lemma bf_const_eq (t : typ) (c : typD t) (e : expr typ func) tus tvs
+    (eD : ExprI.exprT tus tvs (typD t))
+    (Ho : baseS e = Some (pConst t c))
+    (Hf : exprD' tus tvs t e = Some eD) :
+    eD = fun us vs => c.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   rewrite (bf_const_func_eq _ Ho H); reflexivity.
+  Qed.
+
+ 
+  Lemma mkConst_sound (t : typ) (c : typD t) (tus tvs : tenv typ) :
+    exprD' tus tvs t (mkConst t c) = Some (fun _ _ => c).
   Proof.
     unfold mkConst; simpl.
     autorewrite with exprD_rw; simpl; forward; inv_all; subst.
-    pose proof (bf_funcAsOk _ Ho) as H; rewrite H in Hf.
-    pose proof (bf_fConstOk e) as H1.
-    pose proof (bf_funcAsOk _ H1) as H2. rewrite <- H2 in Hf.
-    pose proof (BaseFunc_typeOk _ H1) as H3. simpl in H3.
-    rewrite (funcAs_Some _ H3).
-    rewrite (funcAs_Some _ H3) in Hf.
-    inv_all; subst. reflexivity.
+    pose proof (bf_fConstOk t c) as H1.
+    pose proof (bf_funcAsOk _ H1) as H2. rewrite H2.
+    unfold funcAs; simpl; rewrite type_cast_refl; [|apply _].
+    reflexivity.
   Qed.
-    
+(*    
   Lemma mkBool_sound (b : bool) (tus tvs : tenv typ) (f : func)
     (df : typD tyBool)
     (Ho : baseS f = Some (pBool typ b))
@@ -419,6 +456,5 @@ Section MakeBaseFuncSound.
     rewrite (funcAs_Some _ H3) in Hf.
     inv_all; subst. reflexivity.
   Qed.
-  
+  *)
 End MakeBaseFuncSound.
-*)

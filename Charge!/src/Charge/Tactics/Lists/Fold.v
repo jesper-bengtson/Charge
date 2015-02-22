@@ -6,14 +6,23 @@ Require Import MirrorCore.RTac.Simplify.
 
 Require Import Charge.ModularFunc.BaseFunc.
 Require Import Charge.ModularFunc.ListFunc.
+Require Import Charge.ModularFunc.BaseType.
 Require Import Charge.ModularFunc.ListType.
+Require Import Charge.ModularFunc.SemiEqDecTyp.
+
+Require Import ExtLib.Core.RelDec.
 
 Section Fold.
-  Context {typ func : Type} {RType_typ : RType typ}.
+  Context {typ func : Type} {RType_typ : RType typ} {RSym_func : RSym func}.
+  Context {BT : BaseType typ} {BTD : BaseTypeD}.
   Context {LT : ListType typ} {LTD : ListTypeD}. 
   Context {BF : BaseFunc typ func} {LF: ListFunc typ func}.
-  Context {RSym_func : RSym func}.
+  Context {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
+  Context {Heqd : SemiEqDecTyp typ} {HeqdOk : SemiEqDecTypOk Heqd}.
   Context {Typ2_Fun : Typ2 RType_typ Fun}.
+  Context {Typ0_Prop : Typ0 RType_typ Prop}.
+  
+  Context {BFOk : BaseFuncOk typ func} {LFOk : ListFuncOk typ func}.
 
   Context {RTypeOk_typ : RTypeOk}.
   Context {RSymOk_func : RSymOk RSym_func}.
@@ -29,7 +38,7 @@ Section Fold.
 		  	    match type_cast v (tyList u) with
 		  	      | Some pf => 
                     fold_right (fun x acc => beta (beta (App (App f (mkConst u x)) acc))) acc 
-                       (listD _ (eq_rect _ typD lst _ pf))
+                       (listD (eq_rect _ typD lst _ pf))
 		  	      | None => apps e args
 		  	    end
               | _ => apps e args
@@ -43,6 +52,33 @@ Section Fold.
 
 Require Import ExtLib.Tactics.
 
+  Ltac clear_eq := 
+    match goal with 
+      | H : ?x = ?x |- _ => clear H
+    end.
+    
+  Ltac r_inj H :=
+      first [
+        let H1 := fresh "H" in let H2 := fresh "H" in
+          apply typ2_inj in H as [H1 H2]; [unfold Rty in H1, H2; r_inj H1; r_inj H2 | apply _] |
+        repeat subst].
+ Context {Expr_typ : Expr RType_typ (expr typ func)}.
+
+Check Typ2Ok_Fun.
+  Lemma beta_sound (tus tvs : list typ) (t : typ) (e : expr typ func) (df : ExprI.exprT tus tvs (typD t))
+    (H : ExprDsimul.ExprDenote.exprD' tus tvs t e = Some df) :
+    ExprDsimul.ExprDenote.exprD' tus tvs t (beta e) = Some df.
+  Proof.
+
+    pose proof (beta_sound tus tvs e t).
+    rewrite H in H0.
+    forward; inv_all; subst. 
+    f_equal.
+    Require Import FunctionalExtensionality.
+    do 2 (apply functional_extensionality; intro).
+    symmetry; apply H1.
+  Qed.
+  
   Lemma foldTacOk : partial_reducer_ok foldTac.
   Proof.
     unfold partial_reducer_ok; intros.
@@ -61,80 +97,45 @@ Require Import ExtLib.Tactics.
     autorewrite with exprD_rw in H; simpl in H; forward; inv_all; subst.
     autorewrite with exprD_rw in H0; simpl in H0; forward; inv_all; subst.
     autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
+    unfold Rty in r; subst.
     
+    eexists; split; [|reflexivity].
     
     Opaque beta.
     
-    unfold Rty in r.
-    subst.
-    
-    unfold eq_rect.
-    
-    
-    unfold ExprDsimul.ExprDenote.exprT_App, eq_sym. simpl.
-    
-    autorewrite with exprD_rw in H1; simpl in H1; forward; inv_all; subst.
-    autorewrite with exprD_rw in H4; simpl in H4; forward; inv_all; subst.
-    autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
-    
-    unfold Rty in r. subst.
-    
-    unfold type_cast in Heqo1. simpl in Heqo1.
-    SearchAbout type_cast.
-    
-    destruct e2; try (exists val; tauto).
-    destruct f; try (exists val; tauto).
-    
-    destruct j; try (exists val; tauto).
-    destruct es; try (exists val; tauto).
-    destruct e; simpl in Heqo; try congruence.
-    destruct f; simpl in Heqo; try congruence.
-    destruct s; simpl in Heqo; try congruence.
-    destruct s; simpl in Heqo; try congruence.
-    destruct s; simpl in Heqo; try congruence.
-    destruct s; simpl in Heqo; try congruence.
-    inv_all; subst.
-    autorewrite with exprD_rw in H; simpl in H; forward; inv_all; subst.
-    autorewrite with exprD_rw in H; simpl in H; forward; inv_all; subst; [|apply _].
-    autorewrite with exprD_rw in H; simpl in H; forward; inv_all; subst; [|apply _].
-    autorewrite with exprD_rw in H0; simpl in H0; forward; inv_all; subst; [|apply _].
-    autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst; [|apply _].
-    unfold funcAs in H2. 
-    Opaque type_cast.
-    simpl in H2. forward; inv_all; subst. red in r. inv_all.
-    inversion r; subst.
-    rewrite (UIP_refl r) in H4. unfold Rcast in H4; simpl in H4.
-    inversion H4; unfold eq_rect_r in H6; simpl in H6.
-    subst. clear H4.
-    clear H2 r.
-    Opaque beta.
     simpl.
-    unfold exprT_App, eq_rect_r. simpl.
-    cut (exists val' : exprT tus tvs (typD t),
-  ExprDsimul.ExprDenote.exprD' tus tvs t
-    (fold_right
-       (fun (x : string) (acc : expr typ func) =>
-        beta (beta (App (App e0 (mkString x)) acc))) e1 l) = Some val' /\
-  (forall (us : hlist typD tus) (vs : hlist typD tvs),
-   fold_right (e4 us vs) (e3 us vs) (exprT_Inj tus tvs l us vs) = val' us vs)).
-   intros [? [? ?]].
-   eexists; split; [eassumption | intros; apply H4].
-    induction l; simpl; intros.
-
-    + exists e3; tauto.
-    + destruct IHl as [? [? ?]].
-      eexists; split; [|intros; reflexivity].
-
-  Lemma exprD'_remove_beta tus tvs t e de (H : exprD' tus tvs e t = Some de) :
-    exprD' tus tvs (beta e) t = Some de.
-  Proof.
-    pose proof (beta_sound tus tvs e t).
-    unfold exprD' in *. simpl in *. forward; inv_all; subst.
-	Require Import FunctionalExtensionality.
-	f_equal. symmetry.
-    apply functional_extensionality; intros.
-    apply functional_extensionality; intros.
-    apply H2.
+    symmetry in Heqo.
+    pose proof (lf_fold_type_eq _ _ Heqo H4).
+    r_inj H6.
+    pose proof (lf_fold_eq _ Heqo H4).
+	subst.
+	unfold foldD.
+	
+	clear H4.
+	Require Import Charge.ModularFunc.Denotation.
+	unfold Denotation.fun_to_typ3.    
+	repeat rewrite exprT_App_wrap.
+	
+	Check @bf_const_type_eq.
+	symmetry in Heqo0.
+	pose proof (bf_const_eq _ Heqo0 H1).
+	subst. clear H1.	
+	remember (listD t3). clear Heql.
+	induction l; intros; subst.
+	+ simpl. assumption.
+	+ simpl.
+	  apply beta_sound.
+	  apply beta_sound.
+      autorewrite with exprD_rw; simpl. 
+      pose proof (ExprTac.exprD_typeof_Some _ _ _ _ _ IHl).
+      forward.
+      autorewrite with exprD_rw; simpl; inv_all; subst.
+      rewrite bf_typeof_const.
+      forward; inv_all; subst.
+      rewrite mkConst_sound.
+      rewrite exprT_App_wrap_sym.
+      rewrite exprT_App_wrap_sym.
+      reflexivity.
   Qed.
 
 End Fold.
