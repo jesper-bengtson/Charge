@@ -495,6 +495,19 @@ Section ListFuncExprOk.
 
 End ListFuncExprOk.
 
+  Ltac clear_eq := 
+    match goal with 
+      | H : ?x = ?x |- _ => clear H
+    end.
+    
+  Ltac r_inj H :=
+      first [
+        let H1 := fresh "H" in let H2 := fresh "H" in
+          apply typ2_inj in H as [H1 H2]; [unfold Rty in H1, H2; r_inj H1; r_inj H2 | apply _] |
+        repeat subst].
+  
+
+
 Section MakeListFuncSound.
   Context {typ func : Type} `{HOK : ListFuncOk typ func}.
   Context {HROk : RTypeOk} {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}
@@ -645,6 +658,28 @@ Section MakeListFuncSound.
     pose proof (lf_funcAsOk _ Ho) as H1.
     rewrite H1. unfold funcAs; simpl.
     rewrite type_cast_refl; [reflexivity | apply _].
+  Qed.
+
+  Lemma mkConsD (t : typ) (tus tvs : tenv typ) x xs (lstD : ExprI.exprT tus tvs (typD (tyList t)))
+    (H : exprD' tus tvs (tyList t) (mkCons t x xs) = Some lstD) : 
+    match exprD' tus tvs t x with
+      | Some xD => 
+        match exprD' tus tvs (tyList t) xs with
+          | Some xsD => lstD = exprT_App (exprT_App (fun _ _ => consD t) xD) xsD
+          | None => False
+        end
+      | None => False
+    end.
+  Proof.
+    unfold mkCons in H.
+    autorewrite with exprD_rw in H; simpl in H; forward; inv_all; subst.
+    autorewrite with exprD_rw in H0; simpl in H0; forward; inv_all; subst.
+    autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
+    pose proof (lf_cons_func_type_eq _ _ (lf_fConsOk t) H2).
+    r_inj H4.
+    forward; inv_all; subst. 
+    pose proof (lf_cons_func_eq _ (lf_fConsOk t) H2); subst.
+    reflexivity.
   Qed.
 
   Lemma mkLength_sound (t : typ) (tus tvs : tenv typ) lst

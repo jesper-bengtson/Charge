@@ -59,24 +59,13 @@ SearchAbout typ2_match.
 
 Require Import ExtLib.Tactics.
 
-  Ltac clear_eq := 
-    match goal with 
-      | H : ?x = ?x |- _ => clear H
-    end.
-    
-  Ltac r_inj H :=
-      first [
-        let H1 := fresh "H" in let H2 := fresh "H" in
-          apply typ2_inj in H as [H1 H2]; [unfold Rty in H1, H2; r_inj H1; r_inj H2 | apply _] |
-        repeat subst].
-  
   Ltac list_inj :=
     match goal with
       | H : tyList _ = tyList _ |- _ => apply tyList_inj in H; unfold Rty in H; subst
     end.
  Context {Expr_typ : Expr RType_typ (expr typ func)}.
 
-Check Typ2Ok_Fun.
+
   Lemma beta_sound (tus tvs : list typ) (t : typ) (e : expr typ func) (df : ExprI.exprT tus tvs (typD t))
     (H : ExprDsimul.ExprDenote.exprD' tus tvs t e = Some df) :
     ExprDsimul.ExprDenote.exprD' tus tvs t (beta e) = Some df.
@@ -110,214 +99,207 @@ Ltac run_forward_step H1 H2 type_tac expr_tac :=
       pose proof type_tac as H; r_inj H; pose proof expr_tac; subst;
       clear H1 H2.
 
+Ltac lf_fold_type :=
+  match goal with
+    | _ : listS ?e = Some (pFold _ _), _ : ExprDsimul.ExprDenote.exprD' _ _
+       (typ2 (typ2 ?u (typ2 ?t ?t)) (typ2 ?t (typ2 (tyList ?u) ?t))) ?e =
+     Some _ |- _ => fail 1
+	| H1 : listS ?e = Some (pFold _ _), H2 : ExprDsimul.ExprDenote.exprD' _ _ _ ?e = Some _|- _ =>
+	  let H := fresh "H" in
+	     pose proof (lf_fold_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+  end.
+  
+Ltac lf_fold_expr :=
+  match goal with
+    | _ : listS ?e = Some (pFold ?t ?u),
+      _ : ExprDsimul.ExprDenote.exprD' ?tus ?tvs
+       (typ2 (typ2 ?u (typ2 ?t ?t)) (typ2 ?t (typ2 (tyList ?u) ?t))) ?e =
+     Some (fun _ _ => foldD ?t ?u) |- _ => fail 1
+	| H1 : listS ?e = Some (pFold _ _),
+	  H2 : ExprDsimul.ExprDenote.exprD' _ _  (typ2 (typ2 ?u (typ2 ?t ?t)) (typ2 ?t (typ2 (tyList ?u) ?t))) ?e = Some _|- _ =>
+	  let H := fresh "H" in pose proof(lf_fold_eq _ H1 H2); subst
+  end.
+
+Ltac lf_nil_type :=
+  match goal with
+    | _ : listS ?e = Some (pNil _), _ : ExprDsimul.ExprDenote.exprD' ?tus ?tvs (tyList ?t) ?e = Some _ |- _ => fail 1
+	| H1 : listS ?e = Some (pNil _), H2 : ExprDsimul.ExprDenote.exprD' _ _ _ ?e = Some _ |- _ =>
+	  let H := fresh "H" in
+	     pose proof (lf_nil_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+  end.
+
+Ltac lf_nil_expr :=
+  match goal with
+    | _ : ExprDsimul.ExprDenote.exprD' _ _ (tyList ?t) ?e = Some (fun _ _ => nilD ?t) |- _ => fail 1
+	| H1 : listS ?e = Some (pNil _), H2 : ExprDsimul.ExprDenote.exprD' _ _ (tyList ?t) ?e = Some _|- _ =>
+	  pose proof(lf_nil_eq _ H1 H2); subst
+  end.
+
+Ltac destruct_match_oneres :=
+    match goal with
+      | H : context[match ?x with _ => _ end] |- _ =>
+        (destruct x eqn:?; try intuition congruence); [ idtac ]      
+      | |- context[match ?x with _ => _ end] =>
+        (destruct x eqn:?; try intuition congruence); [ idtac ]     
+    end.
+
+Ltac lf_cons_expr :=
+  match goal with
+    | _ : listS ?e = Some (pCons ?t),
+      _ : ExprDsimul.ExprDenote.exprD' ?tus ?tvs  ?e =
+     Some (fun _ _ => consD ?t) |- _ => fail 1
+	| H1 : listS ?e = Some (pCons ?t),
+	  H2 : ExprDsimul.ExprDenote.exprD' ?tus ?tvs (typ2 ?t (typ2 (tyList ?t) (tyList ?t))) ?e = Some _|- _ =>
+	  let H := fresh "H" in pose proof(lf_cons_eq _ H1 H2); subst
+	| H : ExprDsimul.ExprDenote.exprD' _ _ (tyList ?t) (mkCons ?t _ _) = Some _ |- _ =>
+	  pose proof (mkConsD _ _ _ H); clear H; (repeat destruct_match_oneres)
+  end.
+
 Ltac lf_forward_step :=
   match goal with 
     | H : Some _ = listS _ |- _ =>  symmetry in H
-    | H : typ2 _ _ = typ2 _ _ |- _ => r_inj H; clear_eq
-    | H : Rty (typ2 _ _) (typ2 _ _) |- _ => r_inj H; clear_eq
     | H : Rcast option _ (Some _) = Some _ |- _ => apply Rcast_option_inj in H; subst
-	| H1 : listS ?e = Some (pNil _), H2 : ExprDsimul.ExprDenote.exprD' _ _ _ ?e = Some _|- _ =>
-	  let H := fresh "H" in
-	     pose proof (lf_nil_type_eq _ _ H1 H2) as H; r_inj H; pose proof(lf_nil_eq _ H1 H2); subst;
-	     clear H1 H2
-	| H1 : listS ?e = Some (pFold _ _), H2 : ExprDsimul.ExprDenote.exprD' _ _ _ ?e = Some _|- _ =>
-	  let H := fresh "H" in
-	     pose proof (lf_fold_type_eq _ _ H1 H2) as H; r_inj H; pose proof(lf_fold_eq _ H1 H2); subst;
-	     clear H1 H2
     | _ => 
        first [
-        progress (unfold foldD, fun_to_typ3 in *) |
-        progress (repeat rewrite (exprT_App_wrap) in *)
+        lf_nil_type |
+        lf_fold_type |
+        lf_nil_expr |
+        lf_cons_expr |
+        lf_fold_expr
       ]
   end.
- 
-Ltac lf_fold_step :=
-  match goal with
-    | H2 : ExprDsimul.ExprDenote.exprD' ?tus ?tvs
-       (typ2 (typ2 ?u (typ2 ?t ?t)) (typ2 ?t (typ2 (tyList ?u) ?t))) ?e =
-     Some (fun _ _ => foldD ?t ?u) |- _ => fail 1
-	| H1 : listS ?e = Some (pFold _ _), H2 : ExprDsimul.ExprDenote.exprD' _ _ _ ?e = Some _|- _ =>
-	  let H := fresh "H" in
-	     pose proof (lf_fold_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; pose proof(lf_fold_eq _ H1 H2); subst
-  end.
 
-  
 Ltac bf_forward_step :=
   match goal with 
     | H : Some _ = baseS _ |- _ =>  symmetry in H
+	| _ : baseS ?e = Some (pConst ?t ?c),
+	  _ : ExprDsimul.ExprDenote.exprD' _ _ ?t ?e = Some (fun _ _ => ?c) |- _ => fail 1
 	| H1 : baseS ?e = Some (pConst _ _), H2 : ExprDsimul.ExprDenote.exprD' _ _ _ ?e = Some _|- _ =>
 	  let H := fresh "H" in
-	     pose proof (bf_const_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; pose proof(bf_const_eq _ H1 H2); subst;
-	     clear H1 H2
+	     pose proof (bf_const_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; pose proof(bf_const_eq _ H1 H2); subst
   end.
   
+Ltac saturate_exprD_types :=
+  match goal with
+    | H : ExprDsimul.ExprDenote.exprD' ?tus ?tvs ?t ?e = Some _ |- _ =>
+      match goal with
+        | _ : typeof_expr tus tvs e = Some t |- _ => fail 1
+        | H1 : typeof_expr tus tvs e = Some ?u |- _ =>
+          let H2 := fresh "H" in
+            assert (t = u) as H1 by
+              (let H3 := fresh "H" in
+                 pose proof (ExprTac.exprD_typeof_Some _ _ _ _ _ H) as H3;
+                 rewrite H3 in H1; inv_all; subst; reflexivity);
+            subst 
+        | _ => pose proof (ExprTac.exprD_typeof_Some _ _ _ _ _ H)
+      end
+  end. 
+  
+Ltac forward_step :=
+  first [
+    lf_forward_step | 
+    bf_forward_step
+  ].
+
+Ltac destruct_match_goal tac :=
+  repeat (
+    match goal with 
+      | |- context [match ?e with _ => _ end] =>
+        destruct e eqn:?; try tac
+    end
+  ); subst.
+
+Ltac bf_rewrite_in_match :=
+  match goal with 
+    | |- context [typeof_sym (fConst ?t ?c)] =>
+        rewrite (BaseFunc_typeOk _ (bf_fConstOk _ _)); simpl     
+    | |- context [ExprDsimul.ExprDenote.exprD' _ _ ?t (mkConst ?t _)] =>
+      rewrite mkConst_sound      
+  end.
+
+Ltac rewrite_in_match :=
+  match goal with 
+    | [ H : ?x = _ |- context[match ?x with _ => _ end]] => 
+       rewrite H
+    | [ H : ?x = _, H1 : context[match ?x with _ => _ end] |- _] => 
+       rewrite H in H1
+    | _ => bf_rewrite_in_match
+  end.
+
+Ltac red_exprD_hyp := 
+  repeat (
+    match goal with
+      |  H : ExprDsimul.ExprDenote.exprD' _ _ _ (apps _ _) = Some _ |- _ =>
+        simpl in H
+      |  H : ExprDsimul.ExprDenote.exprD' _ _ _ (App _ _) = Some _ |- _ =>
+        rewrite exprD'_App in H; simpl in H; (repeat (first [
+          rewrite_in_match | 
+          destruct_match_oneres])); inv_all; subst
+    end).
+
+Ltac red_exprD_goal := 
+  repeat (
+    match goal with
+      | |- context [ExprDsimul.ExprDenote.exprD' _ _ _ (apps _ _)] =>
+        simpl
+      | |- ExprDsimul.ExprDenote.exprD' _ _ _ (beta _) = Some _ =>
+        apply beta_sound
+      | |- context [ExprDsimul.ExprDenote.exprD' _ _ _ (App _ _)] =>
+        rewrite exprD'_App; simpl; (repeat rewrite_in_match); inv_all; subst
+    end).
+
+Ltac Rty_elim :=
+  match goal with
+    | H : typ2 _ _ = typ2 _ _ |- _ => r_inj H; clear_eq
+    | H : Rty (typ2 _ _) (typ2 _ _) |- _ => r_inj H; clear_eq
+    | H : Rty _ _ |- _ => unfold Rty in H; subst
+  end.
+  
+Opaque beta.
+
+Ltac destruct_exprs tac :=
+  destruct_match_goal tac; simpl;
+  try Rty_elim; simpl.
+
+Ltac reduce :=
+  (try red_exprD_hyp); repeat forward_step; repeat saturate_exprD_types; (try red_exprD_goal); repeat (first [
+        progress (unfold foldD, fun_to_typ3) |
+        progress (unfold consD, fun_to_typ2) |
+        progress (repeat rewrite (exprT_App_wrap) in *)]).
+
   Lemma foldTacOk : partial_reducer_ok foldTac.
   Proof.
     unfold partial_reducer_ok; intros.
     exists val; split; [|reflexivity].
     unfold foldTac.
-    remember (listS e); destruct o; [|assumption].
-    destruct l; try assumption.
-    destruct es; try assumption.
-    destruct es; try assumption.
-    destruct es; try assumption.
-    destruct es; try assumption.
-    simpl in H.
-    remember (baseS e2); destruct o.
-    destruct b; try assumption.
-    remember (type_cast t2 (tyList t1)).
-    destruct o; [|assumption].
-    simpl in H.
-    autorewrite with exprD_rw in H; simpl in H; forward; inv_all; subst.
-    autorewrite with exprD_rw in H0; simpl in H0; forward; inv_all; subst.
-    autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
-Check @lf_fold_eq.
-
-	lf_forward_step.
-	lf_fold_step.
-	lf_fold_step.
-  match goal with
-    | H2 : ExprDsimul.ExprDenote.exprD' ?tus ?tvs
-       (typ2 (typ2 ?u (typ2 ?t ?t)) (typ2 ?t (typ2 (tyList ?u) ?t))) ?e =
-     Some (fun  (_ : HList.hlist typD tus) (_ : HList.hlist typD tvs) => foldD ?t ?u) |- _ => idtac "hej"
-  end.
-	lf_fold_step.
-	progress lf_fold_step.
-	progress lf_fold_step.
-	repeat clear_eq.
-	lf_forward_step.
-    unfold Rty in r; subst.
-    Opaque beta.
-    bf_forward_step.
-    bf_forward_step.
-    clear_eq.
-    lf_forward_step.
-    lf_forward_step.
-    simpl.
-	remember (listD t3). clear Heql.
-	induction l; intros; subst.
-	+ simpl. assumption.
-	+ simpl.
-	  apply beta_sound.
-	  apply beta_sound.
-      autorewrite with exprD_rw; simpl. 
-      pose proof (ExprTac.exprD_typeof_Some _ _ _ _ _ IHl).
-      forward.
-      autorewrite with exprD_rw; simpl; inv_all; subst.
-      rewrite bf_typeof_const.
-      forward; inv_all; subst.
-      rewrite mkConst_sound.
-      rewrite exprT_App_wrap_sym.
-      rewrite exprT_App_wrap_sym.
-      reflexivity.
-    + remember (expr_to_list e2).
-      destruct p.
+    destruct_exprs assumption.
+    reduce.
+    + remember (listD t3); clear Heql.
+	  induction l; intros; subst; simpl.
+	  * assumption.
+	  * reduce.
+  	    do 2 rewrite exprT_App_wrap_sym.
+	    reflexivity.
+    + reduce. 
       clear Heqo0.
-      autorewrite with exprD_rw in H; simpl in H; forward; inv_all; subst.
-      autorewrite with exprD_rw in H0; simpl in H0; forward; inv_all; subst.
-      autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
-      autorewrite with exprD_rw in H1; simpl in H1; forward; inv_all; subst.
-      repeat lf_forward_step.
-      generalize dependent e2. induction l. simpl. intros. 
-      symmetry in Heqp. apply expr_to_list_nil in Heqp. subst.
-      
-      autorewrite with exprD_rw; simpl; forward; inv_all; subst.
-      autorewrite with exprD_rw; simpl; forward; inv_all; subst.
-      autorewrite with exprD_rw; simpl; forward; inv_all; subst.
-      forward; inv_all; subst.
-      forward; inv_all; subst.
-      autorewrite with exprD_rw; simpl; forward; inv_all; subst.
-       assumption.
-      intros.
-      symmetry in Heqp.
-      simpl.
-      apply beta_sound.
-      apply beta_sound.
+      generalize dependent e2; generalize dependent e5. 
+      induction l3; intros; simpl. 
+      * apply expr_to_list_nil in Heqp. subst.
+        reduce. 
+        reflexivity.
+      * reduce.
+        destruct (expr_to_list_cons tus tvs _ _ Heqp Heqo1) as [? [? ?]]; subst.
+        reduce; subst.
 
-
-      lf_forward_step.
-      lf_forward_step.
-      lf_forward_step.
-      lf_forward_step.
-      repeat rewrite (exprT_App_wrap) in IHl.
-      
-      autorewrite with exprD_rw; simpl; forward; inv_all; subst.
-      
-      destruct (expr_to_list_cons tus tvs _ _ Heqp H) as [? [? ?]].
-      subst.
-      assert ( ExprDsimul.ExprDenote.exprD' tus tvs t0 (App (App (App e e0) e1) x) =
-      Some
-        (fun (us : HList.hlist typD tus) (vs : HList.hlist typD tvs) =>
-         fold_right (typ_to_fun2 (e8 us vs)) (e7 us vs) (listD (e5 us vs)))).
-      autorewrite with exprD_rw; simpl; forward; inv_all; subst.
-      assert (typeof_expr tus tvs x = Some (tyList t1)) by admit.
-      forward.
-      autorewrite with exprD_rw; simpl; forward; inv_all; subst.
-      autorewrite with exprD_rw; simpl; forward; inv_all; subst.
-      
-      lf_forward_step.
-      pose proof (lf_nil_func_type_eq _ _ Heqo1 H1).
-      subst.
-      rewrite H4 in *.
-      list_inj.
-      pose proof (lf_nil_func_eq _ Heqo1 H1).
-	  subst.
-	  simpl.
-	  
-	  Lemma listD_nil (t : typ) : listD (nilD t) = nil.
-	  Proof.
-	    unfold listD, nilD, eq_rect_r, eq_rect, id, eq_sym.
-	    generalize (btList t).
-	    generalize dependent (tyList t).
-	    generalize dependent (typD t).
-		intros.
-		generalize dependent (typD t0).
-		intros; subst. reflexivity.
-	  Qed.
-	  
-	  rewrite listD_nil. simpl. assumption.
-	  
-	  destruct e2_2; try assumption.
-	  destruct e2_1; try assumption.
-	  simpl.
-	  remember (listS f). destruct o; try assumption.
-	  destruct l; try assumption.
-
-	  simpl in H.
-	  autorewrite with exprD_rw in H; simpl in H; forward; inv_all; subst.
-      autorewrite with exprD_rw in H0; simpl in H0; forward; inv_all; subst.
-      autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
-      autorewrite with exprD_rw in H1; simpl in H1; forward; inv_all; subst.
-      autorewrite with exprD_rw in H11; simpl in H11; forward; inv_all; subst.
-      autorewrite with exprD_rw in H10; simpl in H10; forward; inv_all; subst.
-	  
-      lf_forward_step.
-      lf_forward_step.
-      lf_forward_step.
-      lf_forward_step.
-      lf_forward_step.
-      pose proof (lf_cons_func_type_eq _ _ Heqo1 H5).
-      Check lf_cons_func_type_eq.
-      r_inj H8.
-      pose proof (lf_cons_func_eq _ Heqo1 H5).
-	  subst.
-	  simpl.
-
-
-      lf_forward_step.
-      Print type_of_apply.
-      Check typ2_inj.
-      Print Rty.
-      Print Typ2Ok.
-      SearchAbout type_of_apply.
-      lf_forward_step.
-      lf_forward_step.
-	  
-	  unfold nilD, listD, eq_rect_r, eq_rect, eq_sym. simpl.
-	  remember (btList t2).
-	  destruct e2.      
-      lf_forward_step.
-      simpl in H.
+        specialize (IHl3 _ _ H0 H2 Heqo3).
+        reduce.
+        rewrite H1.
+        
+        reduce.
+        do 2 (rewrite exprT_App_wrap_sym).
+        f_equal.
+        do 2 (apply functional_extensionality; intro).
+        rewrite listD_inv. reflexivity.
   Qed.
 
 End Fold.

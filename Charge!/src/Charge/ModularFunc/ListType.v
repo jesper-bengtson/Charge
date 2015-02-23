@@ -33,6 +33,12 @@ Section ListTypeD'.
   Definition listD_sym (t : typ) (p : list (typD t)) : typD (tyList t) :=
     eq_rect _ id p _ (eq_sym (btList t)).
     
+    
+  Lemma listD_inv (t : typ) (lst : list (typD t)) : listD t (listD_sym t lst) = lst.
+  Proof.
+    unfold listD, listD_sym, eq_rect, eq_sym, id.
+    destruct (btList t). reflexivity.
+  Qed.
 End ListTypeD'.  
 
 Implicit Arguments listD [[typ] [HT] [HR] [LTD] [t]].
