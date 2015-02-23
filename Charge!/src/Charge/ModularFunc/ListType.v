@@ -14,12 +14,14 @@ Class ListType (typ : Type) := {
 }.
 
 Section ListTypeD.
-	Context {typ : Type} {HT : ListType typ} {HR : RType typ}.
+  Context {typ : Type} {HT : ListType typ} {HR : RType typ}.
 	
-	Class ListTypeD := {
-	  btList : forall t, typD (tyList t) = list (typD t)
-	}.
-	
+  Class ListTypeD := {
+    btList : forall t, typD (tyList t) = list (typD t);
+    
+    tyList_inj : forall t u, Rty (tyList t) (tyList u) -> Rty t u
+  }.
+
 End ListTypeD.
 
 Section ListTypeD'.

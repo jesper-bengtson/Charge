@@ -36,14 +36,24 @@ Section Denotation.
 	  typD a -> typD b -> typD c -> typD d :=
     fun x y => typ_to_fun (typ_to_fun (typ_to_fun f x) y).
 
-  Lemma exprT_App_wrap tus tvs (t u : typ) (f : HList.hlist typD tus -> HList.hlist typD tvs -> typD t -> typD u) (a : exprT tus tvs (typD t)) :
+  Lemma fun_to_typ_inv (t u : typ) (f : typD t -> typD u) :
+    typ_to_fun (fun_to_typ f) = f.
+  Proof.
+    unfold fun_to_typ, typ_to_fun, eq_rect_r, eq_rect, eq_sym, id.
+    generalize (typ2_cast t u); unfold Fun.
+    remember (typ2 t u).    
+    generalize dependent (typ2 t u); intros; subst.
+    generalize dependent (typD t0); intros. subst. reflexivity.
+  Qed.
+
+  Lemma exprT_App_wrap tus tvs (t u : typ) (f : exprT tus tvs (typD t -> typD u)) (a : exprT tus tvs (typD t)) :
     exprT_App (fun us vs => fun_to_typ (f us vs)) a = fun us vs => (f us vs) (a us vs).
   Proof.
     unfold fun_to_typ, exprT_App, eq_rect_r, eq_sym, eq_rect.
     forward.
   Qed.
 
-  Lemma exprT_App_wrap_sym tus tvs (t u : typ) (f : HList.hlist typD tus -> HList.hlist typD tvs -> typD (tyArr t u)) (a : exprT tus tvs (typD t)) :
+  Lemma exprT_App_wrap_sym tus tvs (t u : typ) (f : exprT tus tvs (typD (tyArr t u))) (a : exprT tus tvs (typD t)) :
     exprT_App f a = fun us vs => (typ_to_fun (f us vs)) (a us vs).
   Proof.
     unfold typ_to_fun, exprT_App, eq_rect_r, eq_sym, eq_rect.

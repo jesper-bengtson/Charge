@@ -224,9 +224,52 @@ End MakeList.
 Section ListOps.
   Context {typ func : Type} {RType_typ : RType typ}.
   Context {BF: BaseFunc typ func} {LF : ListFunc typ func}.
+  Context {RSym_func : RSym func}.
+  Context {LT : ListType typ}.
  
-  Definition list_const_to_expr (t : typ) (lst : list (typD t)) :=
+  Context {Typ2_tyArr : Typ2 _ Fun}.
+
+  Definition list_to_expr (t : typ) (lst : list (typD t)) :=
     fold_right (fun x acc => mkCons t (mkConst t x) acc) (mkNil t) lst.
+ 
+  Fixpoint expr_to_list (e : expr typ func) : (list (expr typ func) * expr typ func) :=
+    match e with
+      | App (App f x) xs =>
+        match listS f with
+          | Some (pCons t) =>
+            let p := expr_to_list xs in (x::fst p, snd p)
+          | _ => (nil, e)
+        end
+      | _ => (nil, e)
+    end.
+  
+  Lemma expr_to_list_nil (e1 e2 : expr typ func) (H : expr_to_list e1 = (nil, e2)) : e1 = e2.
+  Proof.
+    destruct e1; simpl in *; try (solve [inversion H; reflexivity]).
+    destruct e1_1; simpl in *; try (solve [inversion H; reflexivity]).
+    destruct e1_1_1; simpl in *; try (solve [inversion H; reflexivity]).
+    destruct (listS f); simpl in *; try (solve [inversion H; reflexivity]).
+    destruct l; simpl in *; try (solve [inversion H; reflexivity]).
+  Qed.
+
+  Lemma expr_to_list_cons tus tvs t (e1 e2 : expr typ func) x xs (H : expr_to_list e1 = (x::xs, e2))
+    (Htype : typeof_expr tus tvs e1 = Some (tyList t)) :
+    exists e3, expr_to_list e3 = (xs, e2) /\ e1 = mkCons t x e3.
+  Proof.
+    destruct e1; simpl in *; try (solve [inversion H; reflexivity]).
+    destruct e1_1; simpl in *; try (solve [inversion H; reflexivity]).
+    destruct e1_1_1; simpl in *; try (solve [inversion H; reflexivity]).
+    remember (listS f); destruct o; simpl in *; try (solve [inversion H; reflexivity]).
+    destruct l; simpl in *; try (solve [inversion H; reflexivity]).
+    inversion H; subst.
+    exists e1_2.
+    split.
+    destruct (expr_to_list e1_2). reflexivity.
+    unfold mkCons.
+    symmetry in Heqo.
+    forward.
+	admit.
+  Qed.
   
 End ListOps.
 
@@ -312,7 +355,7 @@ Section ListFuncExprOk.
  	end.
   Qed.
   
-  Lemma lf_nil_type_eq (f : func) t t' df
+  Lemma lf_nil_func_type_eq (f : func) t t' df
     (H1 : listS f = Some (fNil t)) (H2 : funcAs f t' = Some df) :
     t' = tyList t.
   Proof.
@@ -321,7 +364,16 @@ Section ListFuncExprOk.
     forward.
   Qed.
 
-  Lemma lf_cons_type_eq (f : func) t t' df
+  Lemma lf_nil_type_eq tus tvs (e : expr typ func) t t' df
+    (H1 : listS e = Some (fNil t)) (H2 : exprD' tus tvs t' e = Some df) :
+    t' = tyList t.
+  Proof.
+    destruct e; simpl in *; try congruence.
+    autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
+    eapply lf_nil_func_type_eq; eassumption.
+  Qed.
+
+  Lemma lf_cons_func_type_eq (f : func) t t' df
     (H1 : listS f = Some (fCons t)) (H2 : funcAs f t' = Some df) :
     t' = tyArr t (tyArr (tyList t) (tyList t)).
   Proof.
@@ -329,6 +381,15 @@ Section ListFuncExprOk.
     unfold funcAs in H2; simpl in *.
     forward.
     rewrite <- r. reflexivity.
+  Qed.
+
+  Lemma lf_cons_type_eq tus tvs (e : expr typ func) t t' df
+    (H1 : listS e = Some (fCons t)) (H2 : exprD' tus tvs t' e = Some df) :
+    t' = tyArr t (tyArr (tyList t) (tyList t)).
+  Proof.
+    destruct e; simpl in *; try congruence.
+    autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
+    eapply lf_cons_func_type_eq; eassumption.
   Qed.
 
   Lemma lf_length_type_eq (f : func) t t' df
@@ -442,7 +503,7 @@ Section MakeListFuncSound.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
   Let tyProp : typ := @typ0 _ _ _ _.
   
-  Lemma lf_nil_eq (t : typ) (f : func) (df : typD (tyList t))
+  Lemma lf_nil_func_eq (t : typ) (f : func) (df : typD (tyList t))
     (Ho : listS f = Some (pNil t))
     (Hf : funcAs f (tyList t) = Some df) :
     df = nilD t.
@@ -454,7 +515,17 @@ Section MakeListFuncSound.
    inversion Hf. reflexivity.
   Qed.
 
-  Lemma lf_cons_eq (t : typ) (f : func) (df : typD (tyArr t (tyArr (tyList t) (tyList t))))
+  Lemma lf_nil_eq tus tvs (t : typ) (e : expr typ func) (df : ExprI.exprT tus tvs (typD (tyList t)))
+    (Ho : listS e = Some (pNil t))
+    (Hf : exprD' tus tvs (tyList t) e = Some df) :
+    df = fun us vs => nilD t.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   erewrite <- lf_nil_func_eq; try eassumption; reflexivity.
+  Qed.
+
+  Lemma lf_cons_func_eq (t : typ) (f : func) (df : typD (tyArr t (tyArr (tyList t) (tyList t))))
     (Ho : listS f = Some (pCons t))
     (Hf : funcAs f (tyArr t (tyArr (tyList t) (tyList t))) = Some df) :
     df = consD t.
@@ -464,6 +535,17 @@ Section MakeListFuncSound.
    rewrite type_cast_refl in Hf; [|apply HROk].
    unfold Rcast, Relim_refl in Hf.
    inversion Hf. reflexivity.
+  Qed.
+
+  Lemma lf_cons_eq tus tvs (t : typ) (e : expr typ func) 
+    (df : ExprI.exprT tus tvs (typD (tyArr t (tyArr (tyList t) (tyList t)))))
+    (Ho : listS e = Some (pCons t))
+    (Hf : exprD' tus tvs (tyArr t (tyArr (tyList t) (tyList t))) e = Some df) :
+    df = fun us vs => consD t.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   erewrite <- lf_cons_func_eq; try eassumption; reflexivity.
   Qed.
 
   Lemma lf_length_eq (t : typ) (f : func) (df : typD (tyArr (tyList t) tyNat))
