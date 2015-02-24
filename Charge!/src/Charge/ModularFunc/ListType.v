@@ -43,3 +43,8 @@ End ListTypeD'.
 
 Implicit Arguments listD [[typ] [HT] [HR] [LTD] [t]].
 Implicit Arguments listD_sym [[typ] [HT] [HR] [LTD] [t]].
+
+Ltac list_inj :=
+  match goal with
+    | H : tyList _ = tyList _ |- _ => apply tyList_inj in H; unfold Rty in H; subst
+  end.

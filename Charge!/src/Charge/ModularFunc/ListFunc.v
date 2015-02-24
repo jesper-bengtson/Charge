@@ -495,19 +495,6 @@ Section ListFuncExprOk.
 
 End ListFuncExprOk.
 
-  Ltac clear_eq := 
-    match goal with 
-      | H : ?x = ?x |- _ => clear H
-    end.
-    
-  Ltac r_inj H :=
-      first [
-        let H1 := fresh "H" in let H2 := fresh "H" in
-          apply typ2_inj in H as [H1 H2]; [unfold Rty in H1, H2; r_inj H1; r_inj H2 | apply _] |
-        repeat subst].
-  
-
-
 Section MakeListFuncSound.
   Context {typ func : Type} `{HOK : ListFuncOk typ func}.
   Context {HROk : RTypeOk} {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}
@@ -659,7 +646,7 @@ Section MakeListFuncSound.
     rewrite H1. unfold funcAs; simpl.
     rewrite type_cast_refl; [reflexivity | apply _].
   Qed.
-
+Require Import Charge.Tactics.Base.MirrorCoreTacs.
   Lemma mkConsD (t : typ) (tus tvs : tenv typ) x xs (lstD : ExprI.exprT tus tvs (typD (tyList t)))
     (H : exprD' tus tvs (tyList t) (mkCons t x xs) = Some lstD) : 
     match exprD' tus tvs t x with
