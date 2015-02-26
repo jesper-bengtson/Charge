@@ -138,15 +138,15 @@ End OpenFuncSum.
 
 Section OpenFuncInst.
 
-	Context {typ func : Type} {HBT : BaseType typ} {HLT : ListType typ}.
-	Context {HR : RType typ} {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
+	Context {typ func : Type} {BT : BaseType typ} {LT : ListType typ}.
+	Context {RType_typ : RType typ} {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
 
     Variable Typ2_tyArr : Typ2 _ Fun.
     Variable Typ0_tyProp : Typ0 _ Prop.
     
-    Context {HST : SubstType typ} {HV : ValNull (typD tyVal)}.
-    Context {HSTD : SubstTypeD}.
-    Context {HBTD : BaseTypeD} {HLTD : ListTypeD}.
+    Context {ST : SubstType typ} {HV : ValNull (typD tyVal)}.
+    Context {STD : SubstTypeD}.
+    Context {BTD : BaseTypeD} {LTD : ListTypeD LT}.
     
 	Context {RelDec_string : RelDec (@eq (typD tyString))}.
 	Context {RelDec_string_Correct : RelDec_Correct RelDec_string}.
@@ -290,13 +290,13 @@ Section OpenFuncInst.
 End OpenFuncInst.
 
 Section OpenFuncOk.
-  Context {typ func : Type} {HBT : BaseType typ} {HLT : ListType typ} {HST : SubstType typ}.
-  Context {HR : RType typ} {HO: OpenFunc typ func} {Heq' : RelDec (@eq typ)}. 
-  Context {HS : RSym func} {Heq : RelDec (@eq (typD tyString))}.
+  Context {typ func : Type} {BT : BaseType typ} {LT : ListType typ} {ST : SubstType typ}.
+  Context {RType_typ : RType typ} {HO: OpenFunc typ func} {Heq' : RelDec (@eq typ)}. 
+  Context {RSym_func : RSym func} {Heq : RelDec (@eq (typD tyString))}.
   Context {HV : ValNull (typD tyVal)}.
 
-  Context {HSTD : SubstTypeD}.
-  Context {HBTD : BaseTypeD} {HLTD : ListTypeD}.
+  Context {STD : SubstTypeD}.
+  Context {BTD : BaseTypeD} {LTD : ListTypeD LT}.
 
   Context  {Typ2_tyArr : Typ2 _ Fun}.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
@@ -316,16 +316,16 @@ Section OpenFuncOk.
 
 End OpenFuncOk.
 
-Implicit Arguments OpenFuncOk [[HBT] [HLT] [HST] [HR] [HO] [Heq'] [HS] [Heq] [HV] [HSTD] [HBTD] [HLTD] [Typ2_tyArr]].
+Implicit Arguments OpenFuncOk [[BT] [LT] [ST] [RType_typ] [HO] [Heq'] [RSym_func] [Heq] [HV] [STD] [BTD] [LTD] [Typ2_tyArr]].
 
 Section OpenFuncBaseOk.
-  Context {typ func : Type} {HBT : BaseType typ} {HLT : ListType typ} {HST : SubstType typ}.
-  Context {HR : RType typ} {HO: OpenFunc typ func} {Heq' : RelDec (@eq typ)}. 
-  Context {HS : RSym func} {Heq : RelDec (@eq (typD tyString))}.
+  Context {typ func : Type} {BT : BaseType typ} {LT : ListType typ} {ST : SubstType typ}.
+  Context {RType_typ : RType typ} {HO: OpenFunc typ func} {Heq' : RelDec (@eq typ)}. 
+  Context {RSym_func : RSym func} {Heq : RelDec (@eq (typD tyString))}.
   Context {HV : ValNull (typD tyVal)}.
 
-  Context {HSTD : SubstTypeD}.
-  Context {HBTD : BaseTypeD} {HLTD : ListTypeD}.
+  Context {STD : SubstTypeD}.
+  Context {BTD : BaseTypeD} {LTD : ListTypeD LT}.
 
   Context  {Typ2_tyArr : Typ2 _ Fun}.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
@@ -658,8 +658,8 @@ Section MakeOpenSound.
   Context {Typ0_Prop : Typ0 _ Prop}.
   Context {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}.
   Context {HV : ValNull (typD tyVal)}.
-  Context {HSTD : SubstTypeD}.
-  Context {HBTD : BaseTypeD} {HLTD : ListTypeD}.
+  Context {STD : SubstTypeD}.
+  Context {BTD : BaseTypeD} {LTD : ListTypeD LT}.
   Context {OFOK : OpenFuncOk typ func}.
 
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.

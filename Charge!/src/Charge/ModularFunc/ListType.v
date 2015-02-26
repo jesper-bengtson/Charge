@@ -14,7 +14,7 @@ Class ListType (typ : Type) := {
 }.
 
 Section ListTypeD.
-  Context {typ : Type} {HT : ListType typ} {HR : RType typ}.
+  Context {typ : Type} {LT : ListType typ} {RType_typ : RType typ}.
 	
   Class ListTypeD := {
     btList : forall t, typD (tyList t) = list (typD t);
@@ -24,8 +24,10 @@ Section ListTypeD.
 
 End ListTypeD.
 
+Implicit Arguments ListTypeD [[typ] [RType_typ]].
+
 Section ListTypeD'.
-  Context `{LTD : ListTypeD}.
+  Context {typ : Type} {LT : ListType typ} {RType_typ : RType typ} {LTD : ListTypeD LT}.
  
   Definition listD (t : typ) (p : typD (tyList t)) : list (typD t) :=
     eq_rect _ id p _ (btList t).
@@ -39,12 +41,35 @@ Section ListTypeD'.
     unfold listD, listD_sym, eq_rect, eq_sym, id.
     destruct (btList t). reflexivity.
   Qed.
+
+  Lemma listD_sym_inv (t : typ) (lst : typD (tyList t)) : listD_sym t (listD t lst) = lst.
+  Proof.
+    unfold listD, listD_sym, eq_rect, eq_sym, id.
+    destruct (btList t). reflexivity.
+  Qed.
+
 End ListTypeD'.  
 
-Implicit Arguments listD [[typ] [HT] [HR] [LTD] [t]].
-Implicit Arguments listD_sym [[typ] [HT] [HR] [LTD] [t]].
+Implicit Arguments listD [[typ] [LT] [RType_typ] [LTD] [t]].
+Implicit Arguments listD_sym [[typ] [LT] [RType_typ] [LTD] [t]].
+
+Ltac list_inj :=
+  match goal with
+    | typ : Type |- _ =>
+      match goal with
+        | LT : ListType typ, RType_typ : RType typ |- _ =>
+          match goal with
+            | _ : ListTypeD LT, H : tyList _ = tyList _ |- _ => apply tyList_inj in H; unfold Rty in H; subst
+          end
+      end
+  end.
+     
+(*
+This would be the ideal tactic, unfortunately it seems like LTac can not handle type class inference in a proper way
+but everything has to be made explicit.
 
 Ltac list_inj :=
   match goal with
     | H : tyList _ = tyList _ |- _ => apply tyList_inj in H; unfold Rty in H; subst
   end.
+*)
