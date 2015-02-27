@@ -32,6 +32,28 @@ Section Map.
   Context {RTypeOk_typ : RTypeOk}.
   Context {RSymOk_func : RSymOk RSym_func}.
   Context {Typ2Ok_Fun : Typ2Ok Typ2_Fun}.
+  
+  Fixpoint mapTac_aux (t u : typ) (f : expr typ func) (lst : expr typ func) :=
+    match listS lst with
+      | Some (pNil v) =>
+        match type_cast t v with 
+          Some pf => mkNil u
+          | _ => mkMap t u f lst
+        end
+      | _ =>
+        match lst with
+          | App (App g x) xs =>
+            match listS g with
+              | Some (pCons v) =>
+                match type_cast t v with
+                  | Some pf => mkCons u (beta (App f x)) (mapTac_aux t u f xs)
+                  | None => mkMap t u f lst
+                end
+              | _ => mkMap t u f lst
+            end
+          | _ => mkMap t u f lst
+       end
+     end.
 
   Definition mapTac (e : expr typ func) (args : list (expr typ func)) : expr typ func :=
     match listS e with
@@ -48,16 +70,7 @@ Section Map.
 		  	      | None => apps e args
 		  	    end
 		  	  | Some _ => apps e args
-              | None =>
-                let (lst', e') := expr_to_list lst in
-                  match listS e' with
-                    | Some (pNil v) =>
-                      match type_cast u v with
-                        | Some pf => fold_right (fun x acc => mkCons u (beta (App f x)) acc) (mkNil u) lst'
-                        | _ => fold_right (fun x acc => mkCons u (beta (App f x)) acc) (apps e (f::e'::nil)) lst'
-                      end
-                    | _ => fold_right (fun x acc => mkCons u (beta (App f x)) acc) (apps e (f::e'::nil)) lst'
-                 end
+              | None => mapTac_aux t u f lst
             end
           | _ => apps e args
         end
@@ -66,57 +79,57 @@ Section Map.
 
   Definition MAP := SIMPLIFY (typ := typ) (fun _ _ _ _ => (beta_all (fun _ => mapTac))).
 
+
   Opaque beta.
-  Opaque listS.
   Opaque baseS.
   
+  Lemma mapTac_auxOk tus tvs (t u : typ) (f lst : expr typ func) fD lstD
+    (Hf : ExprDsimul.ExprDenote.exprD' tus tvs (typ2 t u) f = Some fD)
+    (Hlst : ExprDsimul.ExprDenote.exprD' tus tvs (tyList t) lst = Some lstD) :
+    ExprDsimul.ExprDenote.exprD' tus tvs (tyList u) (mapTac_aux t u f lst) = Some (fun us vs => typ_to_fun2 (mapD t u) (fD us vs) (lstD us vs)).
+  Proof.
+    Transparent listS.
+    generalize dependent lstD.
+    induction lst using expr_strong_ind; simpl; intros;
+      try (erewrite mkMap_sound; try eassumption; do 2 rewrite exprT_App_wrap_sym; reflexivity).
+    + do 3 (destruct_exprs; try (erewrite mkMap_sound; try eassumption; do 2 rewrite exprT_App_wrap_sym; reflexivity)).
+      reduce. rewrite mkNil_sound.
+      unfold typ_to_fun2, mapD, fun_to_typ2. repeat rewriteD fun_to_typ_inv.
+      rewrite listD_nil; reflexivity.
+    + do 4 (destruct_exprs; try (erewrite mkMap_sound; try eassumption; do 2 rewrite exprT_App_wrap_sym; reflexivity)).
+      reduce.
+      erewrite mkCons_sound; [| reduce; reflexivity | apply H; [repeat constructor | eassumption]].
+      do 2 rewrite exprT_App_wrap_sym.
+      unfold consD, fun_to_typ2.
+      do 2 rewriteD fun_to_typ_inv.
+      rewriteD exprT_App_wrap_sym.
+      unfold mapD, fun_to_typ2, typ_to_fun2.
+      repeat rewriteD fun_to_typ_inv.
+      do 2 rewriteD listD_inv.
+      reflexivity.
+  Qed.
+
   Lemma mapTacOk : partial_reducer_ok mapTac.
   Proof.
     unfold partial_reducer_ok; intros.
     exists val; split; [|reflexivity].
     unfold mapTac.
-
-    do 8 (destruct_exprs; try assumption).
-	+ reduce. unfold mapD, Denotation.fun_to_typ2.
+    
+    do 6 (destruct_exprs; try assumption).
+	+ do 2 (destruct_exprs; try assumption). reduce. unfold mapD, Denotation.fun_to_typ2.
 	  do 2 rewrite Denotation.exprT_App_wrap_sym.
 	  rewrite Denotation.fun_to_typ_inv.
 	  rewriteD Denotation.fun_to_typ_inv.
 	  remember (listD t3); clear Heql.
 	  induction l; simpl.
-	  * simpl; rewrite mkNil_sound; reflexivity.
+	  * simpl; rewrite mkNil_sound. reflexivity.
 	  * erewrite mkCons_sound; [| do 2 reduce; reflexivity | eassumption].
 	    reduce.
 	    rewriteD listD_inv. 
 	    rewriteD exprT_App_wrap_sym. reflexivity.
-	+ destruct_exprs.
-	  destruct_exprs. simpl.
-	   reduce. 
-	    SearchAbout ExprDsimul.ExprDenote.exprT_App.
-	    unfold ExprDsimul.ExprDenote.exprT_App. simpl.
-	    Check listD_sym.
-	    rewriteD IHl.
-	    Focus 2.
-	    reduce.
-	    reduce. reflexivity.
-	    eassumption.
-	    rewrite mkNil_sound.
-	    reflexivity.
-	  setoid_rewrite Denotation.fun_to_typ_inv.
-Check Denotation.fun_to_typ_inv.
-	  rewrite Denotation.fun_to_typ_inv.
-	  rewrite listD_sym_inv.
-	lf_map_type.
-	lf_map_expr.
-	lf_map_type.
-	lf_map_expr.
-	pose proof (lf_map_type_eq _ _ Heqo Heqo6).
-	Require Import Charge.Tactics.Base.BaseTacs.
-	Require Import Charge.Tactics.Base.MirrorCoreTacs.
-	reduce.
-	
-	Check bf_const_type_eq.
-	     pose proof (bf_const_type_eq _ _ Heqo0 Heqo4) as H5; r_inj H5; repeat clear_eq; pose proof(bf_const_eq _ Heqo0 Heqo4); subst.
+	+ reduce.
+	  do 2 rewriteD exprT_App_wrap_sym.
+	  apply mapTac_auxOk; assumption.
+  Qed.
 
-	  bf_forward_step.
-      reduce.
 End Map.

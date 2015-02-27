@@ -8,12 +8,26 @@ Require Import Charge.ModularFunc.BaseFunc.
 Require Import Charge.ModularFunc.ListFunc.
 Require Import Charge.ModularFunc.ListType.
 Require Import Charge.ModularFunc.BaseType.
+Require Import Charge.ModularFunc.SemiEqDecTyp.
+Require Import Charge.ModularFunc.Denotation.
+
+Require Import ExtLib.Core.RelDec.
 
 Section Zip.
-  Context {typ func : Type} {RType_typ : RType typ}.
-  Context {LT : ListType typ} {LTD : ListTypeD}. 
+  Context {typ func : Type} {RType_typ : RType typ} {RSym_func : RSym func}.
+  Context {LT : ListType typ} {LTD : ListTypeD LT}. 
   Context {BT : BaseType typ} {BTD : BaseTypeD}.
   Context {BF : BaseFunc typ func} {LF: ListFunc typ func}.
+  Context {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
+  Context {Heqd : SemiEqDecTyp typ} {HeqdOk : SemiEqDecTypOk Heqd}.
+  Context {Typ2_Fun : Typ2 RType_typ Fun}.
+  Context {Typ0_Prop : Typ0 RType_typ Prop}.
+  Check @BaseFuncOk.
+  Context {BFOk : BaseFuncOk typ func} {LFOk : ListFuncOk typ func}.
+
+  Context {RTypeOk_typ : RTypeOk}.
+  Context {RSymOk_func : RSymOk RSym_func}.
+  Context {Typ2Ok_Fun : Typ2Ok Typ2_Fun}.
 
   Fixpoint zipExpr (t u : typ) (e1 e2 : expr typ func) : expr typ func :=
     match e1 with
@@ -42,6 +56,16 @@ Section Zip.
         end
       | _ => mkZip t u e1 e2
     end.
+  
+  Lemma zipExprOk tus tvs (t u : typ) (xs ys : expr typ func) 
+    (xsD : ExprI.exprT tus tvs (typD (tyList t))) (ysD : ExprI.exprT tus tvs (typD (tyList u)))
+    (Hxs : ExprDsimul.ExprDenote.exprD' tus tvs (tyList t) xs = Some xsD)
+    (Hys : ExprDsimul.ExprDenote.exprD' tus tvs (tyList u) ys = Some ysD) : 
+    ExprDsimul.ExprDenote.exprD' tus tvs (tyList (tyPair t u)) (zipExpr t u xs ys) =
+      Some (ExprDsimul.ExprDenote.exprT_App (ExprDsimul.ExprDenote.exprT_App (fun _ _ => zipD t u) xsD) ysD).
+  Proof.
+    generalize dependent ys; generalize dependent xsD; generalize dependent ysD.
+    induction 
 
   Definition zipTac (e : expr typ func) (args : list (expr typ func)) : expr typ func :=
     match listS e with

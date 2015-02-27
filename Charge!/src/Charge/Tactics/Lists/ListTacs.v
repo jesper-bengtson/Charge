@@ -50,7 +50,11 @@ Ltac lf_map_expr :=
 
 Ltac lf_nil_type :=
   match goal with
+    | _ : listS ?e = Some (pNil ?t), _ : ExprDsimul.ExprDenote.funcAs ?e (tyList ?t) = Some _ |- _ => fail 1
     | _ : listS ?e = Some (pNil ?t), _ : ExprDsimul.ExprDenote.exprD' ?tus ?tvs (tyList ?t) ?e = Some _ |- _ => fail 1
+ 	| H1 : listS ?e = Some (pNil _), H2 : ExprDsimul.ExprDenote.funcAs ?e _ = Some _ |- _ =>
+	  let H := fresh "H" in
+	     pose proof (lf_nil_func_type_eq _ _ H1 H2) as H; try list_inj H; repeat clear_eq; subst
 	| H1 : listS ?e = Some (pNil _), H2 : ExprDsimul.ExprDenote.exprD' _ _ _ ?e = Some _ |- _ =>
 	  let H := fresh "H" in
 	     pose proof (lf_nil_type_eq _ _ H1 H2) as H; try list_inj H; repeat clear_eq; subst
@@ -58,18 +62,39 @@ Ltac lf_nil_type :=
 
 Ltac lf_nil_expr :=
   match goal with
+    | _ : ExprDsimul.ExprDenote.funcAs ?e (tyList ?t) = Some (nilD ?t) |- _ => fail 1
     | _ : ExprDsimul.ExprDenote.exprD' _ _ (tyList ?t) ?e = Some (fun _ _ => nilD ?t) |- _ => fail 1
+	| H1 : listS ?e = Some (pNil _), H2 : ExprDsimul.ExprDenote.funcAs ?e (tyList ?t) = Some _ |- _ =>
+	  pose proof(lf_nil_func_eq _ H1 H2); subst
 	| H1 : listS ?e = Some (pNil _), H2 : ExprDsimul.ExprDenote.exprD' _ _ (tyList ?t) ?e = Some _ |- _ =>
 	  pose proof(lf_nil_eq _ H1 H2); subst
+  end.
+
+Ltac lf_cons_type :=
+  match goal with
+    | _ : listS ?e = Some (pCons ?t), _ : ExprDsimul.ExprDenote.funcAs ?e (typ2 ?t (typ2 (tyList ?t) (tyList ?t))) = Some _ |- _ => fail 1
+    | _ : listS ?e = Some (pCons ?t), _ : ExprDsimul.ExprDenote.exprD' ?tus ?tvs (typ2 ?t (typ2 (tyList ?t) (tyList ?t))) ?e = Some _ |- _ => fail 1
+ 	| H1 : listS ?e = Some (pCons _), H2 : ExprDsimul.ExprDenote.funcAs ?e _ = Some _ |- _ =>
+	  let H := fresh "H" in
+	     pose proof (lf_cons_func_type_eq _ _ H1 H2) as H; try (r_inj H); repeat clear_eq; subst
+	| H1 : listS ?e = Some (pCons _), H2 : ExprDsimul.ExprDenote.exprD' _ _ _ ?e = Some _ |- _ =>
+	  let H := fresh "H" in
+	     pose proof (lf_cons_type_eq _ _ H1 H2) as H; try (r_inj H); repeat clear_eq; subst
   end.
 
 Ltac lf_cons_expr :=
   match goal with
     | _ : listS ?e = Some (pCons ?t),
-      _ : ExprDsimul.ExprDenote.exprD' ?tus ?tvs  ?e =
+      _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 ?t (typ2 (tyList ?t) (tyList ?t))) ?e =
      Some (fun _ _ => consD ?t) |- _ => fail 1
+    | _ : listS ?e = Some (pCons ?t),
+      _ : ExprDsimul.ExprDenote.funcAs ?e (typ2 ?t (typ2 (tyList ?t) (tyList ?t))) =
+     Some (consD ?t) |- _ => fail 1
 	| H1 : listS ?e = Some (pCons ?t),
-	  H2 : ExprDsimul.ExprDenote.exprD' ?tus ?tvs (typ2 ?t (typ2 (tyList ?t) (tyList ?t))) ?e = Some _|- _ =>
+	  H2 : ExprDsimul.ExprDenote.funcAs ?e (typ2 ?t (typ2 (tyList ?t) (tyList ?t))) = Some _ |- _ =>
+	  let H := fresh "H" in pose proof(lf_cons_func_eq _ H1 H2); subst
+	| H1 : listS ?e = Some (pCons ?t),
+	  H2 : ExprDsimul.ExprDenote.exprD' _ _ (typ2 ?t (typ2 (tyList ?t) (tyList ?t))) ?e = Some _ |- _ =>
 	  let H := fresh "H" in pose proof(lf_cons_eq _ H1 H2); subst
 	| H : ExprDsimul.ExprDenote.exprD' _ _ (tyList ?t) (mkCons ?t _ _) = Some _ |- _ =>
 	  pose proof (mkConsD _ _ _ H); clear H; (repeat destruct_match_oneres)
@@ -84,6 +109,7 @@ Ltac lf_forward_step :=
         lf_fold_type |
         lf_map_type |
         lf_nil_expr |
+        lf_cons_type |
         lf_cons_expr |
         lf_fold_expr |
         lf_map_expr

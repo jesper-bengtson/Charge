@@ -100,6 +100,10 @@ Ltac red_exprD_hyp :=
         rewrite exprD'_App in H; simpl in H; (repeat (first [
           rewrite_in_match | 
           destruct_match_oneres])); inv_all; subst
+      |  H : ExprDsimul.ExprDenote.exprD' _ _ _ (Inj _) = Some _ |- _ =>
+        rewrite exprD'_Inj in H; (try (apply _)); [idtac]; simpl in H; (repeat (first [
+          rewrite_in_match | 
+          destruct_match_oneres])); inv_all; subst
     end).
 
 Ltac red_exprD_goal := 
