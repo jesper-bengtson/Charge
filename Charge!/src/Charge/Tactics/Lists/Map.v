@@ -9,9 +9,11 @@ Require Import Charge.ModularFunc.BaseType.
 Require Import Charge.ModularFunc.ListFunc.
 Require Import Charge.ModularFunc.ListType.
 Require Import Charge.ModularFunc.SemiEqDecTyp.
+Require Import Charge.ModularFunc.Denotation.
 
 Require Import Charge.Tactics.Lists.ListTacs.
 Require Import Charge.Tactics.Base.DenotationTacs.
+Require Import Charge.Tactics.Base.MirrorCoreTacs.
 
 Require Import ExtLib.Core.RelDec.
 
@@ -78,6 +80,27 @@ Section Map.
 	+ reduce. unfold mapD, Denotation.fun_to_typ2.
 	  do 2 rewrite Denotation.exprT_App_wrap_sym.
 	  rewrite Denotation.fun_to_typ_inv.
+	  rewriteD Denotation.fun_to_typ_inv.
+	  remember (listD t3); clear Heql.
+	  induction l; simpl.
+	  * simpl; rewrite mkNil_sound; reflexivity.
+	  * erewrite mkCons_sound; [| do 2 reduce; reflexivity | eassumption].
+	    reduce.
+	    rewriteD listD_inv. 
+	    rewriteD exprT_App_wrap_sym. reflexivity.
+	+ destruct_exprs.
+	  destruct_exprs. simpl.
+	   reduce. 
+	    SearchAbout ExprDsimul.ExprDenote.exprT_App.
+	    unfold ExprDsimul.ExprDenote.exprT_App. simpl.
+	    Check listD_sym.
+	    rewriteD IHl.
+	    Focus 2.
+	    reduce.
+	    reduce. reflexivity.
+	    eassumption.
+	    rewrite mkNil_sound.
+	    reflexivity.
 	  setoid_rewrite Denotation.fun_to_typ_inv.
 Check Denotation.fun_to_typ_inv.
 	  rewrite Denotation.fun_to_typ_inv.

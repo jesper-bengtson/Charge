@@ -114,11 +114,9 @@ Opaque baseS listS.
       specialize (IHlst _ _ H3 Heqo0).
       reduce.
       do 2 (rewrite exprT_App_wrap_sym).
-      f_equal.
-      do 2 (apply functional_extensionality; intro).
-      rewrite listD_inv. reflexivity.
+      rewriteD listD_inv. reflexivity.
   Qed.
-  
+   
   Lemma exprD_fold_expr tus tvs (t u : typ) (f acc : expr typ func) (lst : list (expr typ func)) (xs ys g : expr typ func)
     (fD : exprT tus tvs (typD (typ2 u (typ2 t t)))) (accD : exprT tus tvs (typD t))
     (xsD ysD : exprT tus tvs (typD (tyList u))) 
@@ -143,9 +141,8 @@ Opaque baseS listS.
       specialize (IHlst _ _ H3 Heqo0).
       reduce.
       do 2 (rewrite exprT_App_wrap_sym).
-      f_equal.
-      do 2 (apply functional_extensionality; intro).
-      rewrite listD_inv. reflexivity.
+      rewriteD listD_inv.
+      reflexivity.
   Qed.
   
   Lemma foldTacOk : partial_reducer_ok foldTac.

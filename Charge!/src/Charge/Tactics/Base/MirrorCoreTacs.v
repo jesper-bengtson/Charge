@@ -1,4 +1,4 @@
-(* All tactics in this file should appear in MirrorCore. *)
+(* All tactics in this file should appear in MirrorCore or ExtLib. *)
 
 Require Import MirrorCore.ExprI.
 Require Import MirrorCore.Lambda.Expr.
@@ -6,6 +6,8 @@ Require Import MirrorCore.Lambda.Red.
 Require Import MirrorCore.Lambda.AppN.
 
 Require Import ExtLib.Tactics.
+
+Require Import FunctionalExtensionality.
 
 Section Tactics.
   Context {typ func : Type} {RType_typ : RType typ} {RSym_func : RSym func}.
@@ -118,3 +120,20 @@ Ltac Rty_elim :=
     | H : Rty (typ2 _ _) (typ2 _ _) |- _ => r_inj H; clear_eq
     | H : Rty _ _ |- _ => unfold Rty in H; subst
   end.
+  
+Ltac rewriteD tac := 
+  first [
+    rewrite tac |
+    match goal with
+      | |- context [fun x => @?P x] =>
+          let H := fresh "H" in 
+    	  let t := type of P in evar (H : t);
+    	  let x := eval unfold H in H in 
+    	  let H1 := fresh "H" in 
+    	    assert (P = x) as H1 
+    	      by (apply functional_extensionality; intro; rewriteD tac; reflexivity);
+    	    rewrite H1; clear H1 H
+    end
+  ].
+  
+  
