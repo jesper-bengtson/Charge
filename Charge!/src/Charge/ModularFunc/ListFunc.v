@@ -15,6 +15,8 @@ Require Import Charge.ModularFunc.BaseFunc.
 Require Import Charge.ModularFunc.Denotation.
 Require Import Charge.ModularFunc.SemiEqDecTyp.
 
+Require Import Charge.Tactics.Base.MirrorCoreTacs.
+
 Require Import Coq.Strings.String.
 
 Set Implicit Arguments.
@@ -130,7 +132,7 @@ Section ListFuncInst.
 		  | pNoDup t => Some (tyArr (tyList t) tyProp)
 		  | pMap t1 t2 => Some (tyArr (tyArr t1 t2) (tyArr (tyList t1) (tyList t2)))
 		  | pFold t1 t2 => Some (tyArr (tyArr t2 (tyArr t1 t1)) (tyArr t1 (tyArr (tyList t2) t1))) 
-		  | pZip t1 t2 => Some (tyArr (tyList t1) (tyArr (tyList t2) (tyList (tyPair t1 t2))))
+		  | pZip t1 t2 => Some (tyArr (tyList t1) (tyArr (tyList t2) (tyList (tyProd t1 t2))))
 		end.
 
 	Definition list_func_eq (a b : list_func typ) : option bool :=
@@ -157,25 +159,34 @@ Section ListFuncInst.
 
   Definition nilD t := eq_rect_r id (@nil (typD t)) (btList t).
   Definition consD t := fun_to_typ2 (fun x (xs : typD (tyList t)) => 
-    listD_sym (cons x (listD xs))).
+    listR (cons x (listD xs))).
   Definition lengthD t := fun_to_typ (fun (xs : typD (tyList t)) => 
-    natD_sym (List.length (listD xs))).
+    natR (List.length (listD xs))).
   Definition NoDupD t := 
-    fun_to_typ (fun (xs : typD (tyList t)) => 
-      eq_rect_r id (NoDup (listD xs)) (typ0_cast (Typ0 := Typ0_tyProp))).
+    fun_to_typ (fun (xs : typD (tyList t)) => PropR (NoDup (listD xs))).
   Definition mapD t u :=
     fun_to_typ2 (fun (f : typD (tyArr t u)) (xs : typD (tyList t)) => 
-      listD_sym (map (typ_to_fun f) (listD xs))).
+      listR (map (typ_to_fun f) (listD xs))).
   Definition foldD t u := 
     fun_to_typ3 (fun (f : typD (tyArr u (tyArr t t))) (acc : typD t) (lst : typD (tyList u)) => 
       fold_right (typ_to_fun2 f) acc (listD lst)).
+
   Definition zipD t u := 
     fun_to_typ2 (fun (xs : typD (tyList t)) (ys : typD (tyList u)) => 
-      listD_sym (eq_rect_r list (combine (listD xs) (listD ys)) (btPair t u))).
+      listR (eq_rect_r list (combine (listD xs) (listD ys)) (btProd t u))).
 
   Lemma listD_nil t : listD (nilD t) = nil.
   Proof.
     unfold listD, nilD, eq_rect_r, eq_rect, eq_sym, id.
+    generalize (btList t).
+    generalize dependent (typD t).
+    generalize dependent (typD (tyList t)).
+    intros. subst. reflexivity.
+  Qed.
+
+  Lemma listR_nil t : listR nil = nilD t.
+  Proof.
+    unfold listR, nilD, eq_rect_r, eq_rect, eq_sym, id.
     generalize (btList t).
     generalize dependent (typD t).
     generalize dependent (typD (tyList t)).
@@ -479,7 +490,7 @@ Section ListFuncExprOk.
 
   Lemma lf_zip_func_type_eq (f : func) t u t' df
     (H1 : listS f = Some (fZip t u)) (H2 : funcAs f t' = Some df) :
-    t' = tyArr (tyList t) (tyArr (tyList u) (tyList (tyPair t u))).
+    t' = tyArr (tyList t) (tyArr (tyList u) (tyList (tyProd t u))).
   Proof.
     rewrite (lf_funcAsOk _ H1) in H2.
     unfold funcAs in H2; simpl in *.
@@ -489,7 +500,7 @@ Section ListFuncExprOk.
 
   Lemma lf_zip_type_eq tus tvs (e : expr typ func) t u t' df
     (H1 : listS e = Some (fZip t u)) (H2 : exprD' tus tvs t' e = Some df) :
-    t' = tyArr (tyList t) (tyArr (tyList u) (tyList (tyPair t u))).
+    t' = tyArr (tyList t) (tyArr (tyList u) (tyList (tyProd t u))).
   Proof.
     destruct e; simpl in *; try congruence.
     autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
@@ -682,9 +693,9 @@ Section MakeListFuncSound.
    erewrite <- lf_fold_func_eq; try eassumption; reflexivity.
   Qed.
 
-  Lemma lf_zip_func_eq (t u : typ) (f : func) (df : typD (tyArr (tyList t) (tyArr (tyList u) (tyList (tyPair t u)))))
+  Lemma lf_zip_func_eq (t u : typ) (f : func) (df : typD (tyArr (tyList t) (tyArr (tyList u) (tyList (tyProd t u)))))
     (Ho : listS f = Some (pZip t u))
-    (Hf : funcAs f (tyArr (tyList t) (tyArr (tyList u) (tyList (tyPair t u)))) = Some df) :
+    (Hf : funcAs f (tyArr (tyList t) (tyArr (tyList u) (tyList (tyProd t u)))) = Some df) :
     df = zipD t u.
   Proof.
    rewrite (lf_funcAsOk _ Ho) in Hf.
@@ -694,9 +705,9 @@ Section MakeListFuncSound.
    inversion Hf. reflexivity.
   Qed.
 
-  Lemma lf_zip_eq tus tvs (t u : typ) (e : expr typ func) (df : ExprI.exprT tus tvs (typD (tyArr (tyList t) (tyArr (tyList u) (tyList (tyPair t u))))))
+  Lemma lf_zip_eq tus tvs (t u : typ) (e : expr typ func) (df : ExprI.exprT tus tvs (typD (tyArr (tyList t) (tyArr (tyList u) (tyList (tyProd t u))))))
     (Ho : listS e = Some (pZip t u))
-    (Hf : exprD' tus tvs (tyArr (tyList t) (tyArr (tyList u) (tyList (tyPair t u)))) e = Some df) :
+    (Hf : exprD' tus tvs (tyArr (tyList t) (tyArr (tyList u) (tyList (tyProd t u)))) e = Some df) :
     df = fun us vs => zipD t u.
   Proof.
    destruct e; simpl in *; try congruence.
@@ -731,7 +742,7 @@ Section MakeListFuncSound.
     rewrite H1. unfold funcAs; simpl.
     rewrite type_cast_refl; [reflexivity | apply _].
   Qed.
-Require Import Charge.Tactics.Base.MirrorCoreTacs.
+
   Lemma mkConsD (t : typ) (tus tvs : tenv typ) x xs (lstD : ExprI.exprT tus tvs (typD (tyList t)))
     (H : exprD' tus tvs (tyList t) (mkCons t x xs) = Some lstD) : 
     match exprD' tus tvs t x with
@@ -751,6 +762,28 @@ Require Import Charge.Tactics.Base.MirrorCoreTacs.
     r_inj H4.
     forward; inv_all; subst. 
     pose proof (lf_cons_func_eq _ (lf_fConsOk t) H2); subst.
+    reflexivity.
+  Qed.
+
+  Lemma mkZipD (t u : typ) (tus tvs : tenv typ) xs ys (lstD : ExprI.exprT tus tvs (typD (tyList (tyProd t u))))
+    (H : exprD' tus tvs (tyList (tyProd t u)) (mkZip t u xs ys) = Some lstD) : 
+    match exprD' tus tvs (tyList t) xs with
+      | Some xsD => 
+        match exprD' tus tvs (tyList u) ys with
+          | Some ysD => lstD = exprT_App (exprT_App (fun _ _ => zipD t u) xsD) ysD
+          | None => False
+        end
+      | None => False
+    end.
+  Proof.
+    unfold mkZip in H.
+    autorewrite with exprD_rw in H; simpl in H; forward; inv_all; subst.
+    autorewrite with exprD_rw in H0; simpl in H0; forward; inv_all; subst.
+    autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
+    pose proof (lf_zip_func_type_eq _ _ (lf_fZipOk t u) H2).
+    r_inj H4.
+    forward; inv_all; subst. 
+    pose proof (lf_zip_func_eq _ (lf_fZipOk t u) H2); subst.
     reflexivity.
   Qed.
 
@@ -831,7 +864,7 @@ Require Import Charge.Tactics.Base.MirrorCoreTacs.
     (ysD : ExprI.exprT tus tvs (typD (tyList u))) 
     (Hxs : exprD' tus tvs (tyList t) xs = Some xsD) 
     (Hys : exprD' tus tvs (tyList u) ys = Some ysD) :
-    exprD' tus tvs (tyList (tyPair t u)) (mkZip t u xs ys) = 
+    exprD' tus tvs (tyList (tyProd t u)) (mkZip t u xs ys) = 
       Some (exprT_App (exprT_App (fun _ _ => zipD t u) xsD) ysD).
   Proof.
     unfold mkZip; simpl.

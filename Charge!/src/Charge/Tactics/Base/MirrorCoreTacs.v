@@ -115,6 +115,8 @@ Ltac red_exprD_goal :=
         apply beta_sound
       | |- context [ExprDsimul.ExprDenote.exprD' _ _ _ (App _ _)] =>
         rewrite exprD'_App; simpl; (repeat rewrite_in_match); inv_all; subst
+      | |- context [ExprDsimul.ExprDenote.exprD' _ _ _ (Inj _)] =>
+        rewrite exprD'_Inj; simpl; (repeat rewrite_in_match); inv_all; subst; try apply _; try reflexivity
     end).
 
 Ltac Rty_elim :=

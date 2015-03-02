@@ -105,7 +105,7 @@ Section Map.
       rewriteD exprT_App_wrap_sym.
       unfold mapD, fun_to_typ2, typ_to_fun2.
       repeat rewriteD fun_to_typ_inv.
-      do 2 rewriteD listD_inv.
+      do 2 rewriteD listDR.
       reflexivity.
   Qed.
 
@@ -118,14 +118,14 @@ Section Map.
     do 6 (destruct_exprs; try assumption).
 	+ do 2 (destruct_exprs; try assumption). reduce. unfold mapD, Denotation.fun_to_typ2.
 	  do 2 rewrite Denotation.exprT_App_wrap_sym.
-	  rewrite Denotation.fun_to_typ_inv.
-	  rewriteD Denotation.fun_to_typ_inv.
+	  rewrite fun_to_typ_inv.
+	  rewriteD fun_to_typ_inv.
 	  remember (listD t3); clear Heql.
 	  induction l; simpl.
 	  * simpl; rewrite mkNil_sound. reflexivity.
 	  * erewrite mkCons_sound; [| do 2 reduce; reflexivity | eassumption].
 	    reduce.
-	    rewriteD listD_inv. 
+	    rewriteD listDR. 
 	    rewriteD exprT_App_wrap_sym. reflexivity.
 	+ reduce.
 	  do 2 rewriteD exprT_App_wrap_sym.

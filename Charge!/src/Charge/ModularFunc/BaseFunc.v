@@ -14,6 +14,7 @@ Require Import MirrorCore.Lambda.Expr.
 Require Import Charge.Logics.ILogic.
 Require Import Charge.ModularFunc.BaseType.
 Require Import Charge.ModularFunc.SemiEqDecTyp.
+Require Import Charge.ModularFunc.Denotation.
 
 Require Import Coq.Strings.String.
 
@@ -104,7 +105,7 @@ Section BaseFuncInst.
     match bf with
       | pConst t _ => Some t
       | pEq t => Some (tyArr t (tyArr t tyProp))
-      | pPair t1 t2 => Some (tyArr t1 (tyArr t2 (tyPair t1 t2)))
+      | pPair t1 t2 => Some (tyArr t1 (tyArr t2 (tyProd t1 t2)))
     end.
 
   Definition rel_dec_cases {T A : Type} {RelDec_T : RelDec (@eq T)} {HROk : RelDec_Correct RelDec_T} (x y : T)
@@ -128,26 +129,26 @@ Section BaseFuncInst.
 	    | _, _ => None
 	  end.
 
+    Definition PropD (P : typD tyProp) : Prop :=
+      eq_rect _ id P _ (typ0_cast (Typ0 := Typ0_tyProp)).
+
+    Definition PropR (P : Prop) : typD tyProp :=
+      eq_rect _ id P _ (eq_sym (typ0_cast (Typ0 := Typ0_tyProp))).
+
+	 Definition eqD (t : typ) : typD (tyArr t (tyArr t tyProp)) :=
+	   (fun_to_typ2 (fun a b => PropR (@eq (typD t) a b))).
+	   
+	 Definition pairD (t u : typ) : typD (tyArr t (tyArr u (tyProd t u))) :=
+	   (fun_to_typ2 (fun a b => prodR t u (@pair (typD t) (typD u) a b))).
+	   
 	 Definition base_func_symD bf :=
 		match bf as bf return match typeof_base_func bf with
 								| Some t => typD t
 								| None => unit
 							  end with
         | pConst _ c => c
-	    | pEq t => 
-	       eq_rect_r id
-             (eq_rect_r (fun T : Type => typD t -> T)
-               (fun A B : typD t => eq_rect_r id (A = B)
-                                    (typ0_cast (F:=Prop)))
-               (typ2_cast t tyProp))
-             (typ2_cast t (typ2 t tyProp))
-        | pPair t1 t2 => 
-           eq_rect_r id 
-             (eq_rect_r (fun T : Type => typD t1 -> T)
-               (fun (A : typD t1) (B : typD t2) => 
-               	     eq_rect_r id (A, B) (btPair t1 t2))
-               (typ2_cast t2 (tyPair t1 t2)))
-             (typ2_cast t1 (typ2 t2 (tyPair t1 t2)))
+	    | pEq t => eqD t
+        | pPair t u => pairD t u
 	end.
 
 	Global Instance RSym_BaseFunc : SymI.RSym (base_func typ) := {
@@ -302,7 +303,7 @@ Section BaseFuncExprOk.
 
   Lemma bf_pair_type_eq (f : func) t u v df
     (H1 : baseS f = Some (fPair t u)) (H2 : funcAs f v = Some df) :
-    v = tyArr t (tyArr u (tyPair t u)).
+    v = tyArr t (tyArr u (tyProd t u)).
   Proof.
     rewrite (bf_funcAsOk _ H1) in H2.
     unfold funcAs in H2; simpl in *.
@@ -422,39 +423,24 @@ Section MakeBaseFuncSound.
     unfold funcAs; simpl; rewrite type_cast_refl; [|apply _].
     reflexivity.
   Qed.
-(*    
-  Lemma mkBool_sound (b : bool) (tus tvs : tenv typ) (f : func)
-    (df : typD tyBool)
-    (Ho : baseS f = Some (pBool typ b))
-    (Hf : funcAs f tyBool = Some df) :
-    exprD' tus tvs tyBool (mkBool b) = Some (fun _ _ => df).
+  
+  Lemma mkPair_sound (t u : typ) (tus tvs : tenv typ) a b
+    (aD : ExprI.exprT tus tvs (typD t)) 
+    (bD : ExprI.exprT tus tvs (typD u)) 
+    (Ha : exprD' tus tvs t a = Some aD) 
+    (Hb : exprD' tus tvs u b = Some bD)  :
+    exprD' tus tvs (tyProd t u) (mkPair t u a b) = Some (exprT_App (exprT_App (fun _ _ => pairD t u) aD) bD).
   Proof.
-    unfold mkBool; simpl.
+    unfold mkPair; simpl.
     autorewrite with exprD_rw; simpl; forward; inv_all; subst.
-    pose proof (bf_funcAsOk _ Ho) as H; rewrite H in Hf.
-    pose proof (bf_fBoolOk b) as H1.
-    pose proof (bf_funcAsOk _ H1) as H2. rewrite <- H2 in Hf.
-    pose proof (BaseFunc_typeOk _ H1) as H3. simpl in H3.
-    rewrite (funcAs_Some _ H3).
-    rewrite (funcAs_Some _ H3) in Hf.
-    inv_all; subst. reflexivity.
+    rewrite (ExprTac.exprD_typeof_Some _ _ _ b _ Hb).
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    rewrite (ExprTac.exprD_typeof_Some _ _ _ a _ Ha).
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    pose proof (bf_fPairOk t u) as Ho.
+    pose proof (bf_funcAsOk _ Ho) as H1.
+    rewrite H1. unfold funcAs; simpl.
+    rewrite type_cast_refl; [reflexivity | apply _].
   Qed.
 
-  Lemma mkString_sound (s : string) (tus tvs : tenv typ) (f : func)
-    (df : typD tyString)
-    (Ho : baseS f = Some (pString typ s))
-    (Hf : funcAs f tyString = Some df) :
-    exprD' tus tvs tyString (mkString s) = Some (fun _ _ => df).
-  Proof.
-    unfold mkString; simpl.
-    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
-    pose proof (bf_funcAsOk _ Ho) as H; rewrite H in Hf.
-    pose proof (bf_fStringOk s) as H1.
-    pose proof (bf_funcAsOk _ H1) as H2. rewrite <- H2 in Hf.
-    pose proof (BaseFunc_typeOk _ H1) as H3. simpl in H3.
-    rewrite (funcAs_Some _ H3).
-    rewrite (funcAs_Some _ H3) in Hf.
-    inv_all; subst. reflexivity.
-  Qed.
-  *)
 End MakeBaseFuncSound.

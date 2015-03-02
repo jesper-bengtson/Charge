@@ -32,26 +32,26 @@ Section ListTypeD'.
   Definition listD (t : typ) (p : typD (tyList t)) : list (typD t) :=
     eq_rect _ id p _ (btList t).
     
-  Definition listD_sym (t : typ) (p : list (typD t)) : typD (tyList t) :=
+  Definition listR (t : typ) (p : list (typD t)) : typD (tyList t) :=
     eq_rect _ id p _ (eq_sym (btList t)).
     
     
-  Lemma listD_inv (t : typ) (lst : list (typD t)) : listD t (listD_sym t lst) = lst.
+  Lemma listDR (t : typ) (lst : list (typD t)) : listD t (listR t lst) = lst.
   Proof.
-    unfold listD, listD_sym, eq_rect, eq_sym, id.
+    unfold listD, listR, eq_rect, eq_sym, id.
     destruct (btList t). reflexivity.
   Qed.
 
-  Lemma listD_sym_inv (t : typ) (lst : typD (tyList t)) : listD_sym t (listD t lst) = lst.
+  Lemma listRD (t : typ) (lst : typD (tyList t)) : listR t (listD t lst) = lst.
   Proof.
-    unfold listD, listD_sym, eq_rect, eq_sym, id.
+    unfold listD, listR, eq_rect, eq_sym, id.
     destruct (btList t). reflexivity.
   Qed.
 
 End ListTypeD'.  
 
 Implicit Arguments listD [[typ] [LT] [RType_typ] [LTD] [t]].
-Implicit Arguments listD_sym [[typ] [LT] [RType_typ] [LTD] [t]].
+Implicit Arguments listR [[typ] [LT] [RType_typ] [LTD] [t]].
 
 Ltac list_inj :=
   match goal with
