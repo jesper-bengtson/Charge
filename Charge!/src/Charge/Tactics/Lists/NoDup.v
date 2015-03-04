@@ -1,4 +1,5 @@
 Require Import ExtLib.Data.HList.
+Require Import ExtLib.Core.RelDec.
 
 Require Import Charge.Logics.ILogic.
 Require Import Charge.ModularFunc.ListType.
@@ -6,6 +7,9 @@ Require Import Charge.ModularFunc.BaseType.
 Require Import Charge.ModularFunc.ListFunc.
 Require Import Charge.ModularFunc.BaseFunc.
 Require Import Charge.ModularFunc.SemiEqDecTyp.
+Require Import Charge.Tactics.Base.DenotationTacs.
+Require Import Charge.Tactics.Base.MirrorCoreTacs.
+Require Import ExtLib.Tactics.
 
 Require Import MirrorCore.TypesI.
 Require Import MirrorCore.RTac.Core.
@@ -15,15 +19,20 @@ Section NoDup.
   Context {typ func : Type} {RType_typ : RType typ} {RSym_func : RSym func}
           {BT : BaseType typ} {BTD : BaseTypeD}
           {LT : ListType typ} {LTD: ListTypeD LT}.
-  Context {H : ListFunc typ func} {BF : BaseFunc typ func}.
+  Context {BF : BaseFunc typ func} {LF : ListFunc typ func}.
+  Context {RelDec_eq : RelDec (@eq typ)} {RelDecOk_eq : RelDec_Correct RelDec_eq}.
+  Context {Heqd : SemiEqDecTyp typ} {HeqdOk : SemiEqDecTypOk Heqd}.
   
-  Context {Expr_func : Expr _ (expr typ func)}.
-  Context {EU : ExprUVar (expr typ func)}.
+   Context {EU : ExprUVar (expr typ func)}.
+
+  Context {RType_typOk : RTypeOk} {RsymOk_func : RSymOk RSym_func}.
 
   Context {Typ0_Prop : Typ0 _ Prop}.
   Context {Typ2_tyArr : Typ2 _ Fun}.
+  
+  Context {Typ2Ok_tyARr : Typ2Ok Typ2_tyArr}.
     
-  Context {Heqd : SemiEqDecTyp typ} {HeqdOk : SemiEqDecTypOk Heqd}.
+  Context {BFOk : BaseFuncOk typ func } {LFOk : ListFuncOk typ func}.
 
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
   Let tyProp := @typ0 typ RType_typ Prop Typ0_Prop.
@@ -39,6 +48,33 @@ Section NoDup.
         end
     end.
     
+  Lemma in_dec_true {t : typ} (e : typD t) (lst : list (typD t)) (H : in_dec e lst = Some true) : In e lst.
+  Proof.
+    induction lst.
+    + simpl in H; congruence.
+    + simpl in H. destruct_match_oneres.
+      destruct b.
+      * apply semi_eq_dec_typ_eq in Heqo. subst.
+        left; reflexivity.
+      * apply semi_eq_dec_typ_neq in Heqo.
+        right; apply IHlst; apply H.
+  Qed.
+    
+  Lemma in_dec_false {t : typ} (e : typD t) (lst : list (typD t)) (H : in_dec e lst = Some false) (HIn : In e lst) : False.
+  Proof.
+    induction lst.
+    + destruct HIn.
+    + destruct HIn as [Heq | HIn]; subst.
+      * simpl in H.
+        remember (semi_eq_dec_typ e e).
+        destruct o; [|inversion H].
+        symmetry in Heqo.
+        apply semi_eq_dec_typ_refl in Heqo; subst. inversion H.
+      * simpl in H. destruct (semi_eq_dec_typ e a); subst; [|inversion H].
+        destruct b; [inversion H|].
+        apply IHlst; assumption.
+  Qed.
+    
   Fixpoint no_dup {t : typ} (xs : list (typD t)) : option bool :=
     match xs with
       | nil => Some true
@@ -49,6 +85,17 @@ Section NoDup.
           | None => None
         end
     end.
+    
+  Lemma no_dup_sound (t : typ) (xs : list (typD t)) (H : no_dup xs = Some true) : NoDup xs.
+  Proof.
+    induction xs.
+    + constructor.
+    + simpl in H.
+      do 2 destruct_match_oneres.
+      constructor; [|apply IHxs; assumption]; subst.
+      intros HIn.
+      eapply in_dec_false; eassumption.
+  Qed.
 
   Definition NODUP : rtac typ (expr typ func) :=
     fun tus tvs nus nvs ctx s e =>
@@ -69,9 +116,9 @@ Section NoDup.
 	  | _ => Fail
     end.
     
-  Require Import Charge.Tactics.Base.DenotationTacs.
-  Require Import Charge.Tactics.Base.MirrorCoreTacs.
-  Require Import ExtLib.Tactics.
+
+  Existing Instance Expr_expr.
+  Existing Instance ExprOk_expr.
 
   Lemma NODUP_sound : rtac_sound NODUP.
   Proof.
@@ -82,6 +129,68 @@ Section NoDup.
     split; [assumption|].
     repeat destruct_match_oneres.
     split; [reflexivity|]; intros; subst.
+    SearchAbout WellFormed_ctx_subst pctxD.
+    eapply pctxD_substD'; try eassumption.
+    apply _.
+    SearchAbout ctx_substD pctxD.
+    unfold propD, exprD'_typ0 in Heqo4.
+    destruct_match_oneres; inv_all; subst.
+    simpl in Heqo5.
+    reduce.
+    unfold NoDupD.
+    rewrite Denotation.exprT_App_wrap.
+ Qed.
+
+  match goal with
+    | H1 : listS ?e = Some (pNoDup ?t) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 (tyList t) (typ0 (F := Prop))) _ =
+          Some (fun _ _ => zipD t u) |- _ => fail 3
+        | _ : ExprDsimul.ExprDenote.funcAs _ (typ2 (tyList t) (typ0 (F := Prop))) =
+   		  Some ( t) |- _ => fail 4
+		| H2 : ExprDsimul.ExprDenote.funcAs e (typ2 (tyList t) (typ0 (F := Prop))) = Some _ |- _ =>
+	 	  let H := fresh "H" in pose proof(lf_NoDup_func_eq _ H1 H2); subst
+		| H2 : ExprDsimul.ExprDenote.exprD' _ _ (typ2 (tyList t) (typ0 (F := Prop))) e = Some _ |- _ =>
+	  	  let H := fresh "H" in pose proof(lf_NoDup_eq _ H1 H2); subst
+	 end
+(*    | H : ExprDsimul.ExprDenote.exprD' _ _ (tyList ?t) (mkNoDup ?t _ _) = Some _ |- _ =>
+	  pose proof (mkNoDupD _ _ _ H); clear H; (repeat destruct_match_oneres)*)
+  end.
+
+    lf_NoDup_expr.
+  match goal with
+    | H1 : listS ?e = Some (pNoDup ?t) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e (typ2 (tyList t) (typ0 (F := Prop))) = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 (tyList t) typ0) e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (lf_NoDup_func_type_eq _ _ H1 H2) as H; try (r_inj H); try list_inj; repeat clear_eq; subst
+	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
+	      let H := fresh "H" in
+	        pose proof (lf_NoDup_type_eq _ _ H1 H2) as H; try (r_inj H); try list_inj; repeat clear_eq; subst
+	  end
+  end.
+    progress lf_NoDup_type.
+    lf_NoDup_type.
+  pose proof (bf_const_func_type_eq _ _ Heqo0 Heqo5).
+
+  match goal with
+    | H1 : baseS ?e = Some (pConst ?t ?c) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e t = Some _ |- _ => fail 3
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ t e = Some _ |- _ => fail 4
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ => 
+  	  	  let H := fresh "H" in
+	        pose proof (bf_const_func_type_eq _ _ H1 H2) as H; repeat clear_eq; subst
+	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
+	      let H := fresh "H" in
+	        pose proof (bf_const_type_eq _ _ H1 H2) as H; repeat clear_eq; subst
+	  end
+  end.
+  
+    
+    bf_const_type.
     unfold propD, exprD'_typ0 in Heqo4.
     destruct_match_oneres; inv_all; subst.
     autorewrite with exprD_rw in Heqo5.

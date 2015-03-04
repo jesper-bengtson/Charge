@@ -28,7 +28,6 @@ Section Zip.
   Context {Heqd : SemiEqDecTyp typ} {HeqdOk : SemiEqDecTypOk Heqd}.
   Context {Typ2_Fun : Typ2 RType_typ Fun}.
   Context {Typ0_Prop : Typ0 RType_typ Prop}.
-  Check @BaseFuncOk.
   Context {BFOk : BaseFuncOk typ func} {LFOk : ListFuncOk typ func}.
 
   Context {RTypeOk_typ : RTypeOk}.
