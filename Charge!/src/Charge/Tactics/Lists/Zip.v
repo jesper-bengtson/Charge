@@ -84,26 +84,7 @@ Section Zip.
 	      | _ => mkZip t u e (mkConst (tyList u) (listR lst))
       end
     end.
-(*  
-  Fixpoint zipExprConst_lefout (t u : typ) (e : expr typ func) (lst : list (typD u)) : expr typ func :=
-    match e with
-      | App (App (Inj f) x) xs =>
-        match listS f with
-          | Some (pCons _) =>
-            match lst with
-              | nil => mkNil (tyProd t u)
-              | y :: ys => mkCons (tyProd t u) (mkPair t u x (mkConst u y)) (zipExprConst_left t u xs ys)
-            end
-          | _ => mkZip t u e (mkConst (tyList u) (listR lst))
-        end
-      | Inj f =>
-        match listS f with
-          | Some (pNil _) => mkNil (tyProd t u)
-          | _ => mkZip t u e (mkConst (tyList u) (listR lst))
-        end
-      | _ => mkZip t u e (mkConst (tyList u) (listR lst))
-    end.
-  *)
+
   Fixpoint zipExprConst_right (t u : typ) (lst : list (typD t)) (e : expr typ func) : expr typ func :=
     match lst with
       | nil => mkNil (tyProd t u)
@@ -336,6 +317,6 @@ Section Zip.
 	  rewrite listDR. reflexivity.
   Qed.
   
-Definition ZIP := SIMPLIFY (typ := typ) (fun _ _ _ _ => (beta_all zipTac)).
+Definition ZIP := SIMPLIFY (typ := typ) (fun _ _ _ _ => beta_all zipTac).
 
 End Zip.

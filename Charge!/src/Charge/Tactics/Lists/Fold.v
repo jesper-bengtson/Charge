@@ -66,27 +66,26 @@ Section Fold.
     end.
 
   Definition FOLD := SIMPLIFY (typ := typ) (fun _ _ _ _ => (beta_all (fun _ => foldTac))).
-
+Locate exprD'.
+Print exprD'.
  Context {Expr_typ : Expr RType_typ (expr typ func)}.
  
- 
-
 Local Opaque beta.
 
-Require Import FunctionalExtensionality.
 Opaque baseS listS.
   Lemma exprD_fold_const tus tvs (t u : typ) (f acc : expr typ func) (lst : list (typD u))
     (fD : exprT tus tvs (typD (typ2 u (typ2 t t)))) (accD : exprT tus tvs (typD t)) 
-    (Hf : ExprDsimul.ExprDenote.exprD' tus tvs (typ2 u (typ2 t t)) f = Some fD)
-    (Hacc : ExprDsimul.ExprDenote.exprD' tus tvs t acc = Some accD) :
-    ExprDsimul.ExprDenote.exprD' tus tvs t
-      (fold_right (fun x acc => beta (beta (App (App f (mkConst u x)) acc))) acc lst) =
+    (Hf : exprD' tus tvs f (typ2 u (typ2 t t)) = Some fD)
+    (Hacc : exprD' tus tvs acc t = Some accD) :
+    exprD' tus tvs
+      (fold_right (fun x acc => beta (beta (App (App f (mkConst u x)) acc))) acc lst) t =
     Some
       (fun us vs => fold_right (typ_to_fun2 (fD us vs)) (accD us vs) lst).
   Proof.
     induction lst; intros; subst; simpl.
     + assumption.
-    + repeat reduce; do 2 rewrite exprT_App_wrap_sym; reflexivity.
+    + apply beta_sound.
+    repeat reduce. do 2 rewrite exprT_App_wrap_sym; reflexivity.
   Qed.
 
   Lemma exprD_fold_expr_nil tus tvs (t u : typ) (f acc : expr typ func) (lst : list (expr typ func)) (xs ys g : expr typ func)

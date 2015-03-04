@@ -1,9 +1,10 @@
 (* All tactics in this file should appear in MirrorCore or ExtLib. *)
 
-Require Import MirrorCore.ExprI.
-Require Import MirrorCore.Lambda.Expr.
+Require Import MirrorCore.TypesI.
 Require Import MirrorCore.Lambda.Red.
 Require Import MirrorCore.Lambda.AppN.
+Require Import MirrorCore.Lambda.Expr.
+Require Import MirrorCore.ExprI.
 
 Require Import ExtLib.Tactics.
 
@@ -12,14 +13,17 @@ Require Import FunctionalExtensionality.
 Section Tactics.
   Context {typ func : Type} {RType_typ : RType typ} {RSym_func : RSym func}.
   Context {Typ2_Fun : Typ2 RType_typ Fun}.
-  
+    
   Context {RType_typOk : RTypeOk} {RSym_funcOk : RSymOk RSym_func} {Typ2_FunOk : Typ2Ok Typ2_Fun}.
 
-  Lemma beta_sound (tus tvs : list typ) (t : typ) (e : expr typ func) (df : ExprI.exprT tus tvs (typD t))
-    (H : ExprDsimul.ExprDenote.exprD' tus tvs t e = Some df) :
-    ExprDsimul.ExprDenote.exprD' tus tvs t (beta e) = Some df.
+  Local Instance Expr_expr : Expr _ (expr typ func) := Expr_expr (RT := RType_typ).
+
+  Lemma beta_sound (tus tvs : list typ) (t : typ) (e : expr typ func) (df : exprT tus tvs (typD t))
+    (H : exprD' tus tvs e t = Some df) :
+    exprD' tus tvs (beta e) t = Some df.
   Proof.
     pose proof (beta_sound tus tvs e t).
+    simpl in *.
     rewrite H in H0.
     forward; inv_all; subst. 
     f_equal.
