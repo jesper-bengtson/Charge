@@ -3,13 +3,13 @@ Require Import MirrorCore.Lambda.Expr.
 Require Import MirrorCore.RTac.Core.
 
 Require Import Charge.ModularFunc.BaseFunc.
-Require Import Charge.ModularFunc.SemiDecEqTyp.
+Require Import Charge.ModularFunc.SemiEqDecTyp.
 
 Require Import ExtLib.Tactics.
 Require Import ExtLib.Data.HList.
 
 Section Reflexivity.
-
+(*
   Context {typ func : Type} {RType_typ : RType typ} {RSym_func : RSym (expr typ func)}.
   Context {BF : BaseFunc typ func}.
   
@@ -59,7 +59,6 @@ Section Reflexivity.
     
 	
    admit.
-
 Qed.
-
+*)
 End Reflexivity.

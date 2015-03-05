@@ -156,7 +156,7 @@ Section OpenFuncInst.
 
 	Local Notation "'tyStack'" := (tyArr tyString tyVal).
 	Local Notation "'tyExpr'" := (tyArr tyStack tyVal).
-	Local Notation "'tySubstList'" := (tyList (tyPair tyString (tyArr tyStack tyVal))).
+	Local Notation "'tySubstList'" := (tyList (tyProd tyString (tyArr tyStack tyVal))).
 
 	Definition stack := @stack (typD tyString) (typD tyVal).
 
@@ -217,7 +217,7 @@ Section OpenFuncInst.
 
 	    Definition substListD (lst : typD tySubstList) : substlist (A := typD tyString) (val := (typD tyVal)).
 	    Proof.
-	      rewrite btList, btPair, btString in lst.
+	      rewrite btList, btProd, btString in lst.
 	      unfold tyArr in lst.
 	      repeat rewrite typ2_cast in lst.
 	      rewrite btString in lst.

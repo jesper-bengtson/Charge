@@ -27,7 +27,7 @@ Set Strict Implicit.
 Section ApplySubst.
 	Context {typ func : Type} {RType_typ : RType typ} {ST : SubstType typ} {BT : BaseType typ} {LT : ListType typ}
 	        {HOF : OpenFunc typ func} {HLF : ListFunc typ func} {HBF : BaseFunc typ func}
-	        {BTD : BaseTypeD} {LTD : ListTypeD}.
+	        {BTD : BaseTypeD} {LTD : ListTypeD LT}.
 	Context {RelDec_typ : RelDec (@eq typ)}.
 	Context {RelDec_string : RelDec (@eq (typD tyString))}.
 
@@ -83,7 +83,7 @@ Section ApplySubst.
 		  	  | Some of_trunc_subst, Some (pConst t' v) => 
 		  	    match type_cast t' (tyList tyString) with
 		  	      | Some pf => applyTruncSubst e x 
-		  	        (eq_rect _ list (listD tyString (eq_rect _ typD v _ pf)) _ btString) e'
+		  	        (eq_rect _ list (listD (eq_rect _ typD v _ pf)) _ btString) e'
 		  	      | None => mkApplySubst t e f
 		  	    end
 		  (*	  | Some of_trunc_subst, Some (pString v) => applyTruncSubst e x v e'*)
@@ -98,7 +98,7 @@ End ApplySubst.
 
 Section PushSubst.
   Context {typ func : Type} {ST : SubstType typ} {BT : BaseType typ} {RType_typ : RType typ}.
-  Context {BTD : BaseTypeD} {LT : ListType typ} {LTD : ListTypeD}.
+  Context {BTD : BaseTypeD} {LT : ListType typ} {LTD : ListTypeD LT}.
   Context {OF : OpenFunc typ func} {ILF : ILogicFunc typ func} {BILF : BILogicFunc typ func} {HBF : BaseFunc typ func}.
   Context {EF : EmbedFunc typ func} {LF : ListFunc typ func}.
   Context {RelDec_string : RelDec (@eq (typD tyString))}.
@@ -160,7 +160,7 @@ End PushSubst.
 Implicit Arguments typeof_funcAs [[typ] [func] [RType_typ] [RSym_func] [f] [t] [e]].
 *)
 
-Require Import Charge.ModularFunc.SemiDecEqTyp.
+Require Import Charge.ModularFunc.SemiEqDecTyp.
 
 Section SubstTac.
   Context {typ func subst : Type} {ST : SubstType typ} {BT : BaseType typ} {RType_typ : RType typ}.
@@ -178,14 +178,14 @@ Section SubstTac.
   Context {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}.
   Context {HV : ValNull (typD tyVal)}.
   Context {HSTD : SubstTypeD}.
-  Context {HBTD : BaseTypeD} {HLTD : ListTypeD}.
+  Context {HBTD : BaseTypeD} {HLTD : ListTypeD LT}.
   Context {OFOK : OpenFuncOk typ func}.
   Context {gs : @logic_ops _ RType_typ}.
   Context {bs : @bilogic_ops _ RType_typ}.
   Context {ILFOK : ILogicFuncOk typ func gs}.
   Context {BILFOK : BILogicFuncOk typ func bs}.
-  Context {edt : eq_dec_typ typ}.
-  Context {BFOK : BaseFuncOk (RelDec_eq := RelDec_typ) (edt := edt) typ func}.
+  Context {Heqd : SemiEqDecTyp typ}.
+  Context {BFOK : BaseFuncOk (RelDec_eq := RelDec_typ) (Heqd := Heqd) typ func}.
   Context {EqDec_typ : EqDec typ eq}.
   Context {ilp : il_pointwise (typ := typ)}.
   Context {ilpOk : il_pointwiseOk _ gs ilp}.

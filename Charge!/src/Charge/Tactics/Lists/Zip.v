@@ -174,7 +174,7 @@ Section Zip.
         rewrite mkNil_sound.
         unfold zipD, fun_to_typ2.
         do 2 rewrite exprT_App_wrap.
-        rewrite listDR. simpl.
+        rewrite listDR. rewrite listD_nil. simpl.
         unfold nilD, listR, listD, eq_rect_r, eq_rect, eq_sym, id.
         generalize (btProd t t0). generalize (tyProd t t0); intros.
         generalize dependent (btList t1); intros.
@@ -194,6 +194,7 @@ Section Zip.
         f_equal.
         do 2 (apply functional_extensionality; intro).
         f_equal.
+        Check prodR.
         unfold eq_rect_r, eq_rect, eq_sym, prodR, eq_rect, eq_sym.
         generalize (btProd t t0); generalize (a, e3 x x0); intros.
         generalize dependent (typD (tyProd t t0)); intros; subst. reflexivity.

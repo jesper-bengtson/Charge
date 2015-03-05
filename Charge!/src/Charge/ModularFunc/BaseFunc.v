@@ -135,6 +135,22 @@ Section BaseFuncInst.
     Definition PropR (P : Prop) : typD tyProp :=
       eq_rect _ id P _ (eq_sym (typ0_cast (Typ0 := Typ0_tyProp))).
 
+    Lemma PropDR P : PropD (PropR P) = P.
+    Proof.
+      unfold PropD, PropR, eq_rect, eq_sym, id.
+      generalize (typ0_cast (F := Prop)); intros e.
+      generalize dependent (typ0 (F := Prop)); intros.
+      destruct e; reflexivity.
+    Qed.
+
+    Lemma PropRD P : PropR (PropD P) = P.
+    Proof.
+      unfold PropD, PropR, eq_rect, eq_sym, id.
+      generalize (typ0_cast (F := Prop)); intros e.
+      generalize dependent (typ0 (F := Prop)); intros.
+      destruct e; reflexivity.
+    Qed.
+
 	 Definition eqD (t : typ) : typD (tyArr t (tyArr t tyProp)) :=
 	   (fun_to_typ2 (fun a b => PropR (@eq (typD t) a b))).
 	   

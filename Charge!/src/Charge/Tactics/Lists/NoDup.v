@@ -27,15 +27,16 @@ Section NoDup.
 
   Context {RType_typOk : RTypeOk} {RsymOk_func : RSymOk RSym_func}.
 
-  Context {Typ0_Prop : Typ0 _ Prop}.
+  Context {Typ0_tyProp : Typ0 _ Prop}.
   Context {Typ2_tyArr : Typ2 _ Fun}.
   
-  Context {Typ2Ok_tyARr : Typ2Ok Typ2_tyArr}.
+  Context {Typ0Ok_tyProp : Typ0Ok Typ0_tyProp}.
+  Context {Typ2Ok_tyArr : Typ2Ok Typ2_tyArr}.
     
   Context {BFOk : BaseFuncOk typ func } {LFOk : ListFuncOk typ func}.
 
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
-  Let tyProp := @typ0 typ RType_typ Prop Typ0_Prop.
+  Let tyProp := @typ0 typ RType_typ Prop Typ0_tyProp.
 
   Fixpoint in_dec {t : typ} (e : typD t) (xs : list (typD t)) : option bool :=
     match xs with
@@ -120,6 +121,20 @@ Section NoDup.
   Existing Instance Expr_expr.
   Existing Instance ExprOk_expr.
 
+  Lemma propD_to_exprD tus tvs e eD (H : propD tus tvs e = Some eD) : 
+    exists eD', exprD' tus tvs tyProp e = Some eD' /\ eD = fun us vs => PropD (eD' us vs).
+  Proof.
+    unfold propD, exprD'_typ0 in H.
+    destruct_match_oneres; inv_all; subst.
+    exists e0; split; [apply Heqo|].
+    unfold PropD, eq_rect; simpl.
+    pose proof typ0_match_zeta.
+    specialize (H typ _ Prop _  _ (exprT tus tvs) (fun us vs => PropD (e0 us vs)) e0).
+    unfold exprT, OpenT.
+    generalize (typ0_cast (F := Prop)). intros.
+    destruct e1. reflexivity.
+  Qed.
+
   Lemma NODUP_sound : rtac_sound NODUP.
   Proof.
     unfold rtac_sound; intros; subst.
@@ -129,78 +144,14 @@ Section NoDup.
     split; [assumption|].
     repeat destruct_match_oneres.
     split; [reflexivity|]; intros; subst.
-    SearchAbout WellFormed_ctx_subst pctxD.
-    eapply pctxD_substD'; try eassumption.
-    apply _.
-    SearchAbout ctx_substD pctxD.
-    unfold propD, exprD'_typ0 in Heqo4.
-    destruct_match_oneres; inv_all; subst.
-    simpl in Heqo5.
+    eapply Pure_pctxD; [eassumption|]; intros.
+    apply propD_to_exprD in Heqo4.
+    destruct Heqo4 as [? [? ?]]; subst.
+    simpl in *.
     reduce.
-    unfold NoDupD.
-    rewrite Denotation.exprT_App_wrap.
- Qed.
-
-  match goal with
-    | H1 : listS ?e = Some (pNoDup ?t) |- _ =>
-      match goal with
-        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 (tyList t) (typ0 (F := Prop))) _ =
-          Some (fun _ _ => zipD t u) |- _ => fail 3
-        | _ : ExprDsimul.ExprDenote.funcAs _ (typ2 (tyList t) (typ0 (F := Prop))) =
-   		  Some ( t) |- _ => fail 4
-		| H2 : ExprDsimul.ExprDenote.funcAs e (typ2 (tyList t) (typ0 (F := Prop))) = Some _ |- _ =>
-	 	  let H := fresh "H" in pose proof(lf_NoDup_func_eq _ H1 H2); subst
-		| H2 : ExprDsimul.ExprDenote.exprD' _ _ (typ2 (tyList t) (typ0 (F := Prop))) e = Some _ |- _ =>
-	  	  let H := fresh "H" in pose proof(lf_NoDup_eq _ H1 H2); subst
-	 end
-(*    | H : ExprDsimul.ExprDenote.exprD' _ _ (tyList ?t) (mkNoDup ?t _ _) = Some _ |- _ =>
-	  pose proof (mkNoDupD _ _ _ H); clear H; (repeat destruct_match_oneres)*)
-  end.
-
-    lf_NoDup_expr.
-  match goal with
-    | H1 : listS ?e = Some (pNoDup ?t) |- _ =>
-      match goal with
-        | _ : ExprDsimul.ExprDenote.funcAs e (typ2 (tyList t) (typ0 (F := Prop))) = Some _ |- _ => fail 1
-        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 (tyList t) typ0) e = Some _ |- _ => fail 1
-        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
-  	  	  let H := fresh "H" in
-	        pose proof (lf_NoDup_func_type_eq _ _ H1 H2) as H; try (r_inj H); try list_inj; repeat clear_eq; subst
-	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
-	      let H := fresh "H" in
-	        pose proof (lf_NoDup_type_eq _ _ H1 H2) as H; try (r_inj H); try list_inj; repeat clear_eq; subst
-	  end
-  end.
-    progress lf_NoDup_type.
-    lf_NoDup_type.
-  pose proof (bf_const_func_type_eq _ _ Heqo0 Heqo5).
-
-  match goal with
-    | H1 : baseS ?e = Some (pConst ?t ?c) |- _ =>
-      match goal with
-        | _ : ExprDsimul.ExprDenote.funcAs e t = Some _ |- _ => fail 3
-        | _ : ExprDsimul.ExprDenote.exprD' _ _ t e = Some _ |- _ => fail 4
-        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ => 
-  	  	  let H := fresh "H" in
-	        pose proof (bf_const_func_type_eq _ _ H1 H2) as H; repeat clear_eq; subst
-	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
-	      let H := fresh "H" in
-	        pose proof (bf_const_type_eq _ _ H1 H2) as H; repeat clear_eq; subst
-	  end
-  end.
-  
-    
-    bf_const_type.
-    unfold propD, exprD'_typ0 in Heqo4.
-    destruct_match_oneres; inv_all; subst.
-    autorewrite with exprD_rw in Heqo5.
-    Locate exprD'.
-    rewrite exprD'_App in Heqo5.
-    unfold ExprI.exprD' in Heqo5; simpl in Heqo5.
-    forward.
-    SearchAbout typ0_cast.
-    subst.
-    destruct (typ0_cast (F := Prop) (_ = T)).
-    Print rtac_spec.
+    unfold NoDupD. rewrite Denotation.exprT_App_wrap.
+    rewrite PropDR.
+    apply no_dup_sound. assumption.
+  Qed.
 
 End NoDup.

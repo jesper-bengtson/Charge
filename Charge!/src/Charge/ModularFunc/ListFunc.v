@@ -28,6 +28,7 @@ Inductive list_func (typ : Type) :=
   | pCons : typ -> list_func typ
   | pLength : typ -> list_func typ
   | pNoDup : typ -> list_func typ
+  | pIn : typ -> list_func typ
   | pMap : typ -> typ -> list_func typ
   | pFold : typ -> typ -> list_func typ
   | pZip : typ -> typ -> list_func typ.
@@ -37,6 +38,7 @@ Class ListFunc (typ func : Type) := {
   fCons : typ -> func;
   fLength : typ -> func;
   fNoDup : typ -> func;
+  fIn : typ -> func;
   fMap : typ -> typ -> func;
   fFold : typ -> typ -> func;
   fZip : typ -> typ -> func;
@@ -53,6 +55,7 @@ Section ListFuncSum.
 	      fCons t := inl (fCons t);
 	      fLength t := inl (fLength t);
 	      fNoDup t := inl (fNoDup t);
+	      fIn t := inl (fIn t);
           fMap t1 t2 := inl (fMap t1 t2);
           fFold t1 t2 := inl (fFold t1 t2);
           fZip t1 t2 := inl (fZip t1 t2);
@@ -69,6 +72,7 @@ Section ListFuncSum.
 	      fCons t := inr (fCons t);
 	      fLength t := inr (fLength t);
 	      fNoDup t := inr (fNoDup t);
+	      fIn t := inr (fIn t);
           fMap t1 t2 := inr (fMap t1 t2);
           fFold t1 t2 := inr (fFold t1 t2);
           fZip t1 t2 := inr (fZip t1 t2);
@@ -85,6 +89,7 @@ Section ListFuncSum.
     	  fCons t := Inj (fCons t);
     	  fLength t := Inj (fLength t);
     	  fNoDup t := Inj (fNoDup t);
+    	  fIn t := Inj (fIn t);
     	  fMap t1 t2 := Inj (fMap t1 t2);
     	  fFold t1 t2 := Inj (fFold t1 t2);
     	  fZip t1 t2 := Inj (fZip t1 t2);
@@ -117,6 +122,7 @@ Section ListFuncInst.
 	  fCons := pCons;
 	  fLength := pLength;
 	  fNoDup := pNoDup;
+	  fIn := pIn;
 	  fMap := pMap;
 	  fFold := pFold;
 	  fZip := pZip;
@@ -130,6 +136,7 @@ Section ListFuncInst.
 		  | pCons t => Some (tyArr t (tyArr (tyList t) (tyList t)))
 		  | pLength t => Some (tyArr (tyList t) tyNat)
 		  | pNoDup t => Some (tyArr (tyList t) tyProp)
+		  | pIn t => Some (tyArr t (tyArr (tyList t) tyProp))
 		  | pMap t1 t2 => Some (tyArr (tyArr t1 t2) (tyArr (tyList t1) (tyList t2)))
 		  | pFold t1 t2 => Some (tyArr (tyArr t2 (tyArr t1 t1)) (tyArr t1 (tyArr (tyList t2) t1))) 
 		  | pZip t1 t2 => Some (tyArr (tyList t1) (tyArr (tyList t2) (tyList (tyProd t1 t2))))
@@ -141,6 +148,7 @@ Section ListFuncInst.
 	    | pCons t1, pCons t2 => Some (t1 ?[ eq ] t2)
 	    | pLength t1, pLength t2 => Some (t1 ?[ eq ] t2)
 	    | pNoDup t1, pNoDup t2 => Some (t1 ?[ eq ] t2)
+	    | pIn t1, pIn t2 => Some (t1 ?[ eq ] t2)
 	    | pMap t1 t2, pMap t3 t4 => Some (t1 ?[ eq ] t3 &&
 	      								    t2 ?[ eq ] t4)%bool
 	    | pFold t1 t2, pFold t3 t4 => Some (t1 ?[ eq ] t3 &&
@@ -164,6 +172,8 @@ Section ListFuncInst.
     natR (List.length (listD xs))).
   Definition NoDupD t := 
     fun_to_typ (fun (xs : typD (tyList t)) => PropR (NoDup (listD xs))).
+  Definition InD t := 
+    fun_to_typ2 (fun (x : typD t) (xs : typD (tyList t)) => PropR (In x (listD xs))).
   Definition mapD t u :=
     fun_to_typ2 (fun (f : typD (tyArr t u)) (xs : typD (tyList t)) => 
       listR (map (typ_to_fun f) (listD xs))).
@@ -202,6 +212,7 @@ Section ListFuncInst.
 	    | pCons t => consD t
 	    | pLength t => lengthD t
 	    | pNoDup t => NoDupD t
+	    | pIn t => InD t
 	    | pMap t1 t2 => mapD t1 t2
 	    | pFold t1 t2 => foldD t1 t2
 	    | pZip t1 t2 => zipD t1 t2
@@ -221,6 +232,7 @@ Section ListFuncInst.
 		+ consider (t ?[ eq ] t0); intuition congruence.
 		+ consider (t ?[ eq ] t0); intuition congruence.
 		+ consider (t ?[ eq ] t0); intuition congruence.
+		+ consider (t ?[ eq ] t0); intuition congruence.
 		+ consider (t ?[ eq ] t1 && t0 ?[ eq ] t2)%bool; intuition congruence. 
 		+ consider (t ?[ eq ] t1 && t0 ?[ eq ] t2)%bool; intuition congruence. 
 		+ consider (t ?[ eq ] t1 && t0 ?[ eq ] t2)%bool; intuition congruence. 
@@ -235,6 +247,7 @@ Section MakeList.
 	Definition mkCons (t : typ) (x xs : expr typ func) := App (App (fCons t) x) xs.
 	Definition mkLength (t : typ) (lst : expr typ func) := App (fLength t) lst.
 	Definition mkNoDup (t : typ) (lst : expr typ func) := App (fNoDup t) lst.
+	Definition mkIn (t : typ) (x lst : expr typ func) := App (App (fIn t) x) lst.
 	Definition mkMap (t u : typ) (f lst : expr typ func) :=  App (App (fMap t u) f) lst.
 	Definition mkFold (t u : typ) (f acc lst : expr typ func) :=  App (App (App (fFold t u) f) acc) lst.
 	Definition mkZip (t u : typ) (xs ys : expr typ func) := App (App (fZip t u) xs) ys.
@@ -311,6 +324,7 @@ Section ListFuncOk.
     lf_fConsOk t : listS (fCons t) = Some (pCons t);
     lf_fLengthOk t : listS (fLength t) = Some (pLength t);
     lf_fNoDupOk t : listS (fNoDup t) = Some (pNoDup t);
+    lf_fInOk t : listS (fIn t) = Some (pIn t);
     lf_fMapOk t u : listS (fMap t u) = Some (pMap t u);
     lf_fFoldOk t u : listS (fFold t u) = Some (pFold t u);
     lf_fZipOk t u : listS (fZip t u) = Some (pZip t u)
@@ -341,6 +355,7 @@ Section ListFuncBaseOk.
     lf_fConsOk t := eq_refl;
     lf_fLengthOk t := eq_refl;
     lf_fNoDupOk t := eq_refl;
+    lf_fInOk t := eq_refl;
     lf_fMapOk t u := eq_refl;
     lf_fFoldOk t u := eq_refl;
     lf_fZipOk t u := eq_refl
@@ -450,6 +465,25 @@ Section ListFuncExprOk.
     eapply lf_NoDup_func_type_eq; eassumption.
   Qed.
 
+  Lemma lf_In_func_type_eq (f : func) t t' df
+    (H1 : listS f = Some (fIn t)) (H2 : funcAs f t' = Some df) :
+    t' = tyArr t (tyArr (tyList t) tyProp).
+  Proof.
+    rewrite (lf_funcAsOk _ H1) in H2.
+    unfold funcAs in H2; simpl in *.
+    forward.
+    rewrite <- r. reflexivity.
+  Qed.
+
+  Lemma lf_In_type_eq tus tvs (e : expr typ func) t t' df
+    (H1 : listS e = Some (fIn t)) (H2 : exprD' tus tvs t' e = Some df) :
+    t' = tyArr t (tyArr (tyList t) tyProp).
+  Proof.
+    destruct e; simpl in *; try congruence.
+    autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
+    eapply lf_In_func_type_eq; eassumption.
+  Qed.
+
   Lemma lf_map_func_type_eq (f : func) t u t' df
     (H1 : listS f = Some (fMap t u)) (H2 : funcAs f t' = Some df) :
     t' = tyArr (tyArr t u) (tyArr (tyList t) (tyList u)).
@@ -520,6 +554,7 @@ Section ListFuncExprOk.
     lf_fConsOk t := lf_fConsOk (func := func) t;
     lf_fLengthOk t := lf_fLengthOk (func := func) t;
     lf_fNoDupOk t := lf_fNoDupOk (func := func) t;
+    lf_fInOk t := lf_fInOk (func := func) t;
     lf_fMapOk t u := lf_fMapOk (func := func) t u;
     lf_fFoldOk t u := lf_fFoldOk (func := func) t u;
     lf_fZipOk t u := lf_fZipOk (func := func) t u
@@ -540,6 +575,7 @@ Section ListFuncExprOk.
     lf_fConsOk t := lf_fConsOk (func := func) t;
     lf_fLengthOk t := lf_fLengthOk (func := func) t;
     lf_fNoDupOk t := lf_fNoDupOk (func := func) t;
+    lf_fInOk t := lf_fInOk (func := func) t;
     lf_fMapOk t u := lf_fMapOk (func := func) t u;
     lf_fFoldOk t u := lf_fFoldOk (func := func) t u;
     lf_fZipOk t u := lf_fZipOk (func := func) t u
@@ -646,6 +682,28 @@ Section MakeListFuncSound.
    destruct e; simpl in *; try congruence.
    autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
    erewrite <- lf_NoDup_func_eq; try eassumption; reflexivity.
+  Qed.
+
+  Lemma lf_In_func_eq (t : typ) (f : func) (df : typD (tyArr t (tyArr (tyList t) tyProp)))
+    (Ho : listS f = Some (pIn t))
+    (Hf : funcAs f (tyArr t (tyArr (tyList t) tyProp)) = Some df) :
+    df = InD t.
+  Proof.
+   rewrite (lf_funcAsOk _ Ho) in Hf.
+   unfold funcAs in Hf; simpl in *.
+   rewrite type_cast_refl in Hf; [|apply HROk].
+   unfold Rcast, Relim_refl in Hf.
+   inversion Hf. reflexivity.
+  Qed.
+
+  Lemma lf_In_eq tus tvs (t : typ) (e : expr typ func) (df : ExprI.exprT tus tvs (typD (tyArr t (tyArr (tyList t) tyProp))))
+    (Ho : listS e = Some (pIn t))
+    (Hf : exprD' tus tvs (tyArr t (tyArr (tyList t) tyProp)) e = Some df) :
+    df = fun us vs => InD t.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   erewrite <- lf_In_func_eq; try eassumption; reflexivity.
   Qed.
 
   Lemma lf_map_func_eq (t u : typ) (f : func) (df : typD (tyArr (tyArr t u) (tyArr (tyList t) (tyList u))))
@@ -812,6 +870,25 @@ Section MakeListFuncSound.
     rewrite (ExprTac.exprD_typeof_Some _ _ _ lst _ Hlst).
     autorewrite with exprD_rw; simpl; forward; inv_all; subst.
     pose proof (lf_fNoDupOk t) as Ho.
+    pose proof (lf_funcAsOk _ Ho) as H1.
+    rewrite H1. unfold funcAs; simpl.
+    rewrite type_cast_refl; [reflexivity | apply _].
+  Qed.
+
+  Lemma mkIn_sound (t : typ) (tus tvs : tenv typ) x lst
+    (xD : ExprI.exprT tus tvs (typD t)) 
+    (lstD : ExprI.exprT tus tvs (typD (tyList t))) 
+    (Hx : exprD' tus tvs t x = Some xD) 
+    (Hlst : exprD' tus tvs (tyList t) lst = Some lstD)  :
+    exprD' tus tvs tyProp (mkIn t x lst) = Some (exprT_App (exprT_App (fun _ _ => InD t) xD) lstD).
+  Proof.
+    unfold mkIn; simpl.
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    rewrite (ExprTac.exprD_typeof_Some _ _ _ lst _ Hlst).
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    rewrite (ExprTac.exprD_typeof_Some _ _ _ x _ Hx).
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    pose proof (lf_fInOk t) as Ho.
     pose proof (lf_funcAsOk _ Ho) as H1.
     rewrite H1. unfold funcAs; simpl.
     rewrite type_cast_refl; [reflexivity | apply _].
