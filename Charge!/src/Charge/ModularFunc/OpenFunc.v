@@ -141,11 +141,10 @@ Section OpenFuncInst.
 	Context {typ func : Type} {BT : BaseType typ} {LT : ListType typ}.
 	Context {RType_typ : RType typ} {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
 
-    Variable Typ2_tyArr : Typ2 _ Fun.
-    Variable Typ0_tyProp : Typ0 _ Prop.
+    Context {Typ2_tyArr : Typ2 _ Fun}.
+    Context {Typ0_tyProp : Typ0 _ Prop}.
     
     Context {ST : SubstType typ} {HV : ValNull (typD tyVal)}.
-    Context {STD : SubstTypeD}.
     Context {BTD : BaseTypeD} {LTD : ListTypeD LT}.
     
 	Context {RelDec_string : RelDec (@eq (typD tyString))}.
@@ -155,6 +154,7 @@ Section OpenFuncInst.
     Let tyProp : typ := @typ0 _ _ _ _.
 
 	Local Notation "'tyStack'" := (tyArr tyString tyVal).
+    Local Notation "'tySubst'" := (tyArr tyString (tyArr tyStack tyVal)).
 	Local Notation "'tyExpr'" := (tyArr tyStack tyVal).
 	Local Notation "'tySubstList'" := (tyList (tyProd tyString (tyArr tyStack tyVal))).
 
@@ -224,7 +224,13 @@ Section OpenFuncInst.
 	      rewrite btString.
 	      apply lst.
 	   Defined.
-    Eval cbv in typeof_open_func (fConst tyVal).
+
+	 Definition substD (s : typD tySubst) : subst := 
+	   (fun e f => (typ_to_fun2 s) e (fun_to_typ f)).
+
+	 Definition substR (s : subst) : typD tySubst :=
+	   fun_to_typ2 (fun a b => s a (typ_to_fun b)). 
+
 
 	 Definition constD t : typD (tyArr t (tyArr tyStack t)) :=
 	   fun_to_typ (fun x => (fun_to_typ (pure x))). 
@@ -239,15 +245,19 @@ Section OpenFuncInst.
 	   fun_to_typ3 (fun a b c => @ap (Fun (typD tyStack)) (Applicative_Fun _) (typD t) (typD u)
 	   	 (typ_to_fun2 a) (typ_to_fun b) c).
 
-	 Definition applySubstD (t : typ) : typD (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t))) :=
+	 Program Definition applySubstD (t : typ) : typD (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t))) :=
 	   fun_to_typ3 (fun a b c => apply_subst
-	     (fun x => typ_to_fun a (fun_to_typ x))
-	     (eq_rect (typD tySubst) id b subst stSubst)
+	     (fun x => typ_to_fun a (fun_to_typ x)) (substD b)
 	     (typ_to_fun c)).
 	 
 	 Definition singleSubstD :=
-	   fun_to_typ2 (fun a b => eq_rect_r id (subst1 (fun x => typ_to_fun a (fun_to_typ x)) b) stSubst).
+	   fun_to_typ2 (fun a b => substR (subst1 (fun x => typ_to_fun a (fun_to_typ x)) b)).
 	   
+	 Definition parSubstD :=
+	   fun_to_typ (fun a => substR (substl_aux (substListD a))).
+
+	 Definition truncSubstD :=
+	   fun_to_typ (fun a => substR (substl_trunc_aux (substListD a))).
 
 	 Definition open_func_symD f : match typeof_open_func f with
 	                                 | Some t => typD t
@@ -264,14 +274,8 @@ Section OpenFuncInst.
 	      | of_stack_set => stack_setD
 	      | of_apply_subst t => applySubstD t
 	      | of_single_subst => singleSubstD
-	      | of_subst => 
-	        fun_to_typ 
-	          (fun a => eq_rect_r id 
-	            (substl_aux (substListD a)) stSubst)
-	      | of_trunc_subst =>
-	        fun_to_typ 
-	          (fun a => eq_rect_r id 
-	            (substl_trunc_aux (substListD a)) stSubst)
+	      | of_subst => parSubstD
+	      | of_trunc_subst => truncSubstD
 	    end.
 
 	Global Program Instance RSym_OpenFunc : SymI.RSym (open_func typ) := {
@@ -295,7 +299,6 @@ Section OpenFuncOk.
   Context {RSym_func : RSym func} {Heq : RelDec (@eq (typD tyString))}.
   Context {HV : ValNull (typD tyVal)}.
 
-  Context {STD : SubstTypeD}.
   Context {BTD : BaseTypeD} {LTD : ListTypeD LT}.
 
   Context  {Typ2_tyArr : Typ2 _ Fun}.
@@ -316,7 +319,7 @@ Section OpenFuncOk.
 
 End OpenFuncOk.
 
-Implicit Arguments OpenFuncOk [[BT] [LT] [ST] [RType_typ] [HO] [Heq'] [RSym_func] [Heq] [HV] [STD] [BTD] [LTD] [Typ2_tyArr]].
+Implicit Arguments OpenFuncOk [[BT] [LT] [ST] [RType_typ] [HO] [Heq'] [RSym_func] [Heq] [HV] [BTD] [LTD] [Typ2_tyArr]].
 
 Section OpenFuncBaseOk.
   Context {typ func : Type} {BT : BaseType typ} {LT : ListType typ} {ST : SubstType typ}.
@@ -324,7 +327,6 @@ Section OpenFuncBaseOk.
   Context {RSym_func : RSym func} {Heq : RelDec (@eq (typD tyString))}.
   Context {HV : ValNull (typD tyVal)}.
 
-  Context {STD : SubstTypeD}.
   Context {BTD : BaseTypeD} {LTD : ListTypeD LT}.
 
   Context  {Typ2_tyArr : Typ2 _ Fun}.
@@ -351,7 +353,7 @@ Section OpenFuncExprOk.
 
   Lemma open_funcSome (f : func) (e : open_func typ) (t : typ)
     (H : open_funcS f = Some e) : 
-      match typeof_open_func _ e with
+      match typeof_open_func e with
         | Some t => funcAs f t <> None
         | None => False
       end.
@@ -368,7 +370,7 @@ Section OpenFuncExprOk.
   Qed.
 
   Lemma OpenFunc_typeOk (f : func) (e : open_func typ) (H : open_funcS f = Some e) :
-    typeof_sym f = typeof_open_func _ e.
+    typeof_sym f = typeof_open_func e.
   Proof.
     destruct HOK as [H1].
     specialize (H1 _ _ H).
@@ -658,7 +660,6 @@ Section MakeOpenSound.
   Context {Typ0_Prop : Typ0 _ Prop}.
   Context {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}.
   Context {HV : ValNull (typD tyVal)}.
-  Context {STD : SubstTypeD}.
   Context {BTD : BaseTypeD} {LTD : ListTypeD LT}.
   Context {OFOK : OpenFuncOk typ func}.
 
@@ -673,8 +674,11 @@ Section MakeOpenSound.
   Local Existing Instance ExprUVar_expr.
 
   Local Notation "'tyStack'" := (tyArr tyString tyVal).
+  Local Notation "'tySubst'" := (tyArr tyString (tyArr tyStack tyVal)).
+  Local Notation "'tyExpr'" := (tyArr tyStack tyVal).
+  Local Notation "'tySubstList'" := (tyList (tyProd tyString (tyArr tyStack tyVal))).
 
-  Lemma of_const_type_eq (t u : typ) (f : func) (df : typD u)
+  Lemma of_const_func_type_eq (t u : typ) (f : func) (df : typD u)
     (Ho : open_funcS f = Some (of_const t))
     (Hf : funcAs f u = Some df) :
     Rty u (tyArr t (tyArr tyStack t)).
@@ -685,7 +689,17 @@ Section MakeOpenSound.
     rewrite <- r. reflexivity.
   Qed.   
 
-  Lemma of_ap_type_eq (t u v : typ) (f : func) (df : typD v)
+  Lemma of_const_type_eq tus tvs (e : expr typ func) t u df
+    (Ho : open_funcS e = Some (of_const t)) 
+    (Hf : exprD' tus tvs u e = Some df) :
+    Rty u (tyArr t (tyArr tyStack t)).
+  Proof.
+    destruct e; simpl in *; try congruence.
+    autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+    eapply of_const_func_type_eq; eassumption.
+  Qed.
+
+  Lemma of_ap_func_type_eq (t u v : typ) (f : func) (df : typD v)
     (Ho : open_funcS f = Some (of_ap t u))
     (Hf : funcAs f v = Some df) :
     Rty v (tyArr (tyArr tyStack (tyArr t u)) (tyArr (tyArr tyStack t) (tyArr tyStack u))).
@@ -696,7 +710,17 @@ Section MakeOpenSound.
     rewrite <- r. reflexivity.
   Qed.   
 
-  Lemma of_stack_get_type_eq t (f : func) (df : typD t) 
+  Lemma of_ap_type_eq tus tvs (e : expr typ func) t u v df
+    (Ho : open_funcS e = Some (of_ap t u)) 
+    (Hf : exprD' tus tvs v e = Some df) :
+    Rty v (tyArr (tyArr tyStack (tyArr t u)) (tyArr (tyArr tyStack t) (tyArr tyStack u))).
+  Proof.
+    destruct e; simpl in *; try congruence.
+    autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+    eapply of_ap_func_type_eq; eassumption.
+  Qed.
+
+  Lemma of_stack_get_func_type_eq t (f : func) (df : typD t) 
     (Ho : open_funcS f = Some of_stack_get) 
     (Hf : funcAs f t = Some df) :
     Rty t (tyArr tyString (tyArr (tyArr tyString tyVal) tyVal)).
@@ -705,6 +729,16 @@ Section MakeOpenSound.
     unfold funcAs in Hf. simpl in Hf. 
     forward; inv_all; subst.
     rewrite <- r. reflexivity.
+  Qed.
+
+  Lemma of_stack_get_type_eq tus tvs (e : expr typ func) t df
+    (Ho : open_funcS e = Some of_stack_get) 
+    (Hf : exprD' tus tvs t e = Some df) :
+    Rty t (tyArr tyString (tyArr (tyArr tyString tyVal) tyVal)).
+  Proof.
+    destruct e; simpl in *; try congruence.
+    autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+    eapply of_stack_get_func_type_eq; eassumption.
   Qed.
 
   Lemma of_apply_subst_func_type_eq t u (f : func) (df : typD u) 
@@ -728,7 +762,7 @@ Section MakeOpenSound.
     eapply of_apply_subst_func_type_eq; eassumption.
   Qed.
 
-  Lemma of_single_subst_type_eq t (f : func) (df : typD t) 
+  Lemma of_single_subst_func_type_eq t (f : func) (df : typD t) 
     (Ho : open_funcS f = Some of_single_subst) 
     (Hf : funcAs f t = Some df) :
     Rty t (tyArr (tyArr tyStack tyVal) (tyArr tyString tySubst)).
@@ -739,10 +773,20 @@ Section MakeOpenSound.
     rewrite <- r. reflexivity.
   Qed.
   
+  Lemma of_single_subst_type_eq tus tvs (e : expr typ func) t df
+    (Ho : open_funcS e = Some of_single_subst) 
+    (Hf : exprD' tus tvs t e = Some df) :
+    Rty t (tyArr (tyArr tyStack tyVal) (tyArr tyString tySubst)).
+  Proof.
+    destruct e; simpl in *; try congruence.
+    autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+    eapply of_single_subst_func_type_eq; eassumption.
+  Qed.
+
   Lemma of_apply_subst_func_eq (t : typ) (f : func) (df : typD (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t))))
     (Ho : open_funcS f = Some (of_apply_subst t))
     (Hf : funcAs f (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t))) = Some df) :
-    df = applySubstD _ t.
+    df = applySubstD t.
   Proof.
    rewrite (of_funcAsOk _ Ho) in Hf.
    unfold funcAs in Hf; simpl in *.
@@ -755,7 +799,7 @@ Section MakeOpenSound.
     (df : ExprI.exprT tus tvs (typD  (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t)))))
     (Ho : open_funcS e = Some (of_apply_subst t))
     (Hf : exprD' tus tvs (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t))) e = Some df) :
-    df = fun us vs => applySubstD _ t.
+    df = fun us vs => applySubstD t.
   Proof.
    destruct e; simpl in *; try congruence.
    autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
@@ -776,7 +820,7 @@ Section MakeOpenSound.
   
   Lemma mkConst_sound (tus tvs : tenv typ) (t : typ) (c : expr typ func)
     (dc : ExprI.exprT tus tvs (typD t)) (Hc : exprD' tus tvs t c = Some dc) : 
-    exprD' tus tvs (tyArr tyStack t) (mkConst t c) = Some (exprT_App (fun _ _ => constD _ t) dc).
+    exprD' tus tvs (tyArr tyStack t) (mkConst t c) = Some (exprT_App (fun _ _ => constD t) dc).
   Proof.
     unfold mkConst; simpl.
     pose proof (exprD_typeof_Some _ _ _ _ _ Hc) as Htc.
@@ -795,7 +839,7 @@ Section MakeOpenSound.
     (Hp : exprD' tus tvs (tyArr tyStack (tyArr t u)) p = Some dp)
     (Hq : exprD' tus tvs (tyArr tyStack t) q = Some dq) : 
     exprD' tus tvs (tyArr tyStack u) (mkAp t u p q) =
-      Some (exprT_App (exprT_App (fun _ _ => apD _ t u) dp) dq).
+      Some (exprT_App (exprT_App (fun _ _ => apD t u) dp) dq).
   Proof.
     unfold mkAp; simpl.
     pose proof (exprD_typeof_Some _ _ _ _ _ Hp) as Htp.
@@ -814,7 +858,7 @@ Section MakeOpenSound.
     (Hs : exprD' tus tvs tySubst s = Some ds)
     (He : exprD' tus tvs (tyArr tyStack t) e = Some de) : 
     exprD' tus tvs (tyArr tyStack t) (mkApplySubst t e s) =
-      Some (exprT_App (exprT_App (fun _ _ => applySubstD _ t) de) ds).
+      Some (exprT_App (exprT_App (fun _ _ => applySubstD t) de) ds).
   Proof.
     unfold mkApplySubst; simpl.
     pose proof (exprD_typeof_Some _ _ _ _ _ Hs) as Hts.

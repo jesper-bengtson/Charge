@@ -14,17 +14,5 @@ Set Strict Implicit.
 Set Maximal Implicit Insertion.
 
 Class SubstType (typ : Type) := {
-  tyVal : typ;
-  tySubst : typ
+  tyVal : typ
 }.
-
-Section SubstTypeD.
-	Context {typ : Type} {HT : SubstType typ} {HR : RType typ}.
-	Context {VN : ValNull (typD tyVal)}.
-	Context {BT : BaseType typ}.
-
-	Class SubstTypeD := {
-	  stSubst : typD tySubst = @subst (typD tyString) (typD tyVal)
-	}.
-	
-End SubstTypeD.

@@ -1,5 +1,6 @@
 Require Import Charge.Tactics.Base.BaseTacs.
 Require Import Charge.Tactics.Lists.ListTacs.
+Require Import Charge.Tactics.Open.OpenTacs.
 Require Import Charge.Tactics.Base.MirrorCoreTacs.
 Require Import Charge.ModularFunc.BaseFunc.
 Require Import Charge.ModularFunc.ListFunc.
@@ -8,6 +9,7 @@ Require Import Charge.ModularFunc.Denotation.
 Ltac forward_step :=
   first [
     lf_forward_step | 
+    of_forward_step | 
     bf_forward_step
   ].
 

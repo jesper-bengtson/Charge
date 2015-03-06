@@ -105,7 +105,7 @@ Section PushSubst.
   Context {RelDec_type : RelDec (@eq typ)}.
   Context {ilp : il_pointwise (typ := typ)}.
   Context {bilp : bil_pointwise (typ := typ)}.
-  Variable Typ2_tyArr : Typ2 _ Fun.
+  Context {Typ2_tyArr : Typ2 _ Fun}.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
   Variable f : expr typ func.
@@ -172,11 +172,10 @@ Section SubstTac.
   Context {RTypeOk_typ : RTypeOk}.
   Context {RSym_func : RSym func}.
   Context {RSym_funcOk : RSymOk RSym_func}.
-  Variable Typ2_tyArr : Typ2 _ Fun.
-  Variable Typ0_Prop : Typ0 _ Prop.
+  Context {Typ2_tyArr : Typ2 _ Fun}.
+  Context {Typ0_Prop : Typ0 _ Prop}.
   Context {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}.
   Context {HV : ValNull (typD tyVal)}.
-  Context {HSTD : SubstTypeD}.
   Context {HBTD : BaseTypeD} {HLTD : ListTypeD LT}.
   Context {OFOK : OpenFuncOk typ func}.
   Context {gs : @logic_ops _ RType_typ}.
@@ -187,7 +186,7 @@ Section SubstTac.
   Context {BFOK : BaseFuncOk (RelDec_eq := RelDec_typ) (Heqd := Heqd) typ func}.
   Context {EqDec_typ : EqDec typ eq}.
   Context {ilp : il_pointwise (typ := typ)}.
-  Context {ilpOk : il_pointwiseOk _ gs ilp}.
+  Context {ilpOk : il_pointwiseOk gs ilp}.
   Context {bilp : bil_pointwise (typ := typ)}.
   Context {bilpOk : bil_pointwiseOk _ bs bilp}.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
@@ -206,7 +205,7 @@ Section SubstTac.
 	  | Some (of_apply_subst t) =>
 	    match args with
 	      | e :: f :: nil =>
-	        pushSubst (ilp := ilp) (bilp := bilp) Typ2_tyArr f e t
+	        pushSubst (ilp := ilp) (bilp := bilp) f e t
 	      | _ => apps e args
 	    end
 	  | _ => apps e args
@@ -245,7 +244,7 @@ Require Import FunctionalExtensionality.
         let H1 := fresh "H" in let H2 := fresh "H" in
           apply typ2_inj in H as [H1 H2]; [unfold Rty in H1, H2; r_inj H1; r_inj H2 | apply _] |
         repeat subst].
-    
+    (*
 Ltac forward_step :=
   match goal with 
     | H : Some _ = baseS _ |- _ =>  symmetry in H
@@ -375,19 +374,110 @@ Ltac forward_step :=
       rewrite H in H2; clear H ;
       unfold funcAs in H2; simpl in H2; forward; inv_all; subst
   end.
-
+*)
 Require Import Charge.Tactics.Lists.ListTacs.
 Require Import Charge.Tactics.Base.DenotationTacs.
 Require Import Charge.Tactics.Base.MirrorCoreTacs.
+Require Import MirrorCore.Lambda.Expr.
 
-Lemma substTac_ok : partial_reducer_ok (substTac nil).
+Local Notation "'tyStack'" := (typ2 tyString tyVal).
+Local Notation "'tySubst'" := (typ2 tyString (typ2 tyStack tyVal)).
+Local Notation "'tyExpr'" := (typ2 tyStack tyVal).
+Local Notation "'tySubstList'" := (tyList (tyProd tyString (typ2 tyStack tyVal))).
+
+Ltac ilf_true_type :=
+  match goal with
+    | H1 : ilogicS ?e = Some (ilf_true ?t) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e t = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ t e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (ilf_true_func_type_eq _ _ H1 H2) as H; repeat clear_eq; subst
+	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
+	      let H := fresh "H" in
+	        pose proof (ilf_true_type_eq _ _ H1 H2) as H; repeat clear_eq; subst
+	  end
+  end.
+
+Ltac ilf_true_expr :=
+  match goal with
+    | H1 : ilogicS ?e = Some (ilf_true ?t), gs : logic_ops, H2 : gs ?t = Some _ |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ t _ =
+          Some (fun _ _ => trueD t) |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.funcAs _ t =
+   		  Some (trueD t) |- _ => fail 1
+		| H3 : ExprDsimul.ExprDenote.funcAs e t = Some _ |- _ =>
+	 	  let H := fresh "H" in pose proof(ilf_true_func_eq _ H2 H1 H3); subst
+		| H3 : ExprDsimul.ExprDenote.exprD' _ _ t e = Some _ |- _ =>
+	  	  let H := fresh "H" in pose proof(ilf_true_eq _ H2 H1 H3); subst
+	 end
+  end.
+
+
+Lemma pushSubst_sound tus tvs (t : typ) (e s : expr typ func)
+  (eD : exprT tus tvs (typD (tyArr tyStack t))) (sD : exprT tus tvs (typD tySubst))
+  (He : ExprDsimul.ExprDenote.exprD' tus tvs (tyArr tyStack t) e = Some eD)
+  (Hs : ExprDsimul.ExprDenote.exprD' tus tvs tySubst s = Some sD) :
+  ExprDsimul.ExprDenote.exprD' tus tvs (tyArr tyStack t) (pushSubst (ilp := ilp) (bilp := bilp) s e t) = Some (exprT_App (exprT_App (fun _ _ => applySubstD t) eD) sD).
+Proof.
+  generalize dependent eD.
+  induction e using expr_strong_ind; intros; 
+    try (simpl; eapply mkApplySubst_sound; eassumption). {
+    simpl. do 2 destruct_exprs; try (simpl; eapply mkApplySubst_sound; eassumption).
+    + destruct_exprs; [|simpl; eapply mkApplySubst_sound; eassumption].
+      reduce.
+      ilf_true_type.
+      destruct (il_pointwise_ilogic ilpOk _ _ Heqb).
+      ilf_true_expr.
+      rewrite mkTrue_sound with (Hgs := H0).
+      unfold applySubstD, fun_to_typ3.
+      do 2 rewrite exprT_App_wrap.
+      unfold trueD.
+      destruct (il_pointwise_ilogic_range ilpOk _ _ Heqb).
+      rewriteD (il_pointwise_true_eq ilpOk _ _ Heqb H0 H1).
+      unfold apply_subst.
+      unfold fun_to_typ, eq_rect_r, eq_rect, eq_sym, id.
+      clear.
+      revert x x0.
+      generalize dependent (typ2_cast tyStack t).
+      generalize dependent (typD tyStack).
+      generalize dependent (typD t).
+      intros.
+      unfold Fun in e.
+      f_equal.
+      do 2 (apply functional_extensionality; intro).
+      subst.
+      revert e x.
+      generalize dependent ((typ2 tyStack t)).
+      unfold fun_to_typ, typ_to_fun, eq_rect_r, eq_rect, eq_sym.
+      generalize (typ2_cast tyStack t)
+      clear.
+      generalize dependent (typ2 tyStack t). intro.
+      generalize dependent (typD t0); intros. subst.
+      apply functional_extensionality. intro. simpl.
+      generalize (typ2_cast tyString tyVal).
+      generalize dependent (typD tyStack); intros; subst.
+      unfold apply_subst.
+      
+      generalize dependent (typD (typ2 (tyStack t))).
+      rewrite exprT_App_wrap_sym.
+  }
+
+Qed.
+
+
+Lemma substTac_sound : partial_reducer_ok (substTac nil).
   Proof.
     unfold partial_reducer_ok. intros.
     eexists; split; [|reflexivity].
     unfold substTac.
     do 5 (destruct_exprs; try assumption).
     simpl in H.
-    reduce.
+    reduce.   
+    eapply pushSubst_sound; try eassumption.
+Qed.
     of_apply_subst_type.
     of_apply_subst_expr.
     Print RSym.

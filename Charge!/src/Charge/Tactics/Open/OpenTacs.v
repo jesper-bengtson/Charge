@@ -1,5 +1,6 @@
 Require Import Charge.ModularFunc.OpenFunc.
 Require Import Charge.ModularFunc.BaseType.
+Require Import Charge.ModularFunc.ListType.
 Require Import Charge.ModularFunc.SubstType.
 
 Require Import Charge.Tactics.Base.MirrorCoreTacs.
@@ -8,6 +9,9 @@ Require Import MirrorCore.TypesI.
 Require Import MirrorCore.ExprI.
 
 Local Notation "'tyStack'" := (typ2 tyString tyVal).
+Local Notation "'tySubst'" := (typ2 tyString (typ2 tyStack tyVal)).
+Local Notation "'tyExpr'" := (typ2 tyStack tyVal).
+Local Notation "'tySubstList'" := (tyList (tyProd tyString (typ2 tyStack tyVal))).
 
 Ltac of_apply_subst_type :=
   match goal with
@@ -29,9 +33,9 @@ Ltac of_apply_subst_expr :=
     | H1 : open_funcS ?e = Some (of_apply_subst ?t) |- _ => 
       match goal with
         | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 (typ2 tyStack t) (typ2 tySubst (typ2 tyStack t))) _ =
-          Some (fun _ _ => applySubstD _ t) |- _ => fail 1
+          Some (fun _ _ => applySubstD t) |- _ => fail 1
         | _ : ExprDsimul.ExprDenote.funcAs _ (typ2 (typ2 tyStack t) (typ2 tySubst (typ2 tyStack t))) =
-   		  Some (applySubstD _ t) |- _ => fail 1
+   		  Some (applySubstD t) |- _ => fail 1
 		| H2 : ExprDsimul.ExprDenote.funcAs e (typ2 (typ2 tyStack t) (typ2 tySubst (typ2 tyStack t))) = Some _ |- _ =>
 	 	  let H := fresh "H" in pose proof(of_apply_subst_func_eq _ H1 H2); subst
 		| H2 : ExprDsimul.ExprDenote.exprD' _ _ (typ2 (typ2 tyStack t) (typ2 tySubst (typ2 tyStack t))) e = Some _ |- _ =>
@@ -41,7 +45,7 @@ Ltac of_apply_subst_expr :=
 	  pose proof (mkNoDupD _ _ _ H); clear H; (repeat destruct_match_oneres)*)
   end.
 
-Ltac bf_forward_step :=
+Ltac of_forward_step :=
   match goal with 
     | H : Some _ = open_funcS _ |- _ =>  symmetry in H
     | _ => 
@@ -55,6 +59,6 @@ Ltac bf_rewrite_in_match :=
   match goal with 
   (*  | |- context [typeof_sym (fConst ?t ?c)] =>
         rewrite (BaseFunc_typeOk _ (bf_fConstOk _ _)); simpl     *)
-    | |- context [ExprDsimul.ExprDenote.exprD' _ _ (typ2 (typ2 tyStack t) (typ2 tySubst (typ2 tyStack t))) (mkApplySubst ?t)] =>
+    | |- context [ExprDsimul.ExprDenote.exprD' _ _ (typ2 (typ2 tyStack ?t) (typ2 tySubst (typ2 tyStack ?t))) (mkApplySubst ?t)] =>
       rewrite mkApplySubst_sound      
   end.
