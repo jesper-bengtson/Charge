@@ -109,8 +109,7 @@ Section PushSubst.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
   Variable f : expr typ func.
-Check @stringD.
-Check @applySubst.
+
   Fixpoint pushSubst (e : expr typ func) (t : typ) : expr typ func :=
     match e with
     	| App (App g p) q =>
@@ -377,11 +376,29 @@ Ltac forward_step :=
       unfold funcAs in H2; simpl in H2; forward; inv_all; subst
   end.
 
-  Lemma substTac_ok : partial_reducer_ok (substTac nil).
+Require Import Charge.Tactics.Lists.ListTacs.
+Require Import Charge.Tactics.Base.DenotationTacs.
+Require Import Charge.Tactics.Base.MirrorCoreTacs.
+
+Lemma substTac_ok : partial_reducer_ok (substTac nil).
   Proof.
-    admit.
-    (*
     unfold partial_reducer_ok. intros.
+    eexists; split; [|reflexivity].
+    unfold substTac.
+    do 5 (destruct_exprs; try assumption).
+    simpl in H.
+    reduce.
+    of_apply_subst_type.
+    of_apply_subst_expr.
+    Print RSym.
+    unfold applySubstD, fun_to_typ3.
+    do 2 rewrite exprT_App_wrap.
+    do 6 (destruct_exprs; try assumption).
+    destruct_exprs; (try (reduce; apply zipExprOk; [reduce | eassumption])).
+    destruct_exprs. destruct e1; try congruence.
+    destruct_exprs; (try (reduce; apply zipExprOk; reduce)).
+    destruct_exprs; try assumption.
+    destruct_exprs; try assumption.
     unfold substTac; simpl.
     destruct e; try (exists val; tauto).
     remember (open_funcS f). destruct o; try (exists val; tauto).

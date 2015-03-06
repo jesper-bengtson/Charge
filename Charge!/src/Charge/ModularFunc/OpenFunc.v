@@ -707,7 +707,7 @@ Section MakeOpenSound.
     rewrite <- r. reflexivity.
   Qed.
 
-  Lemma of_apply_subst_type_eq t u (f : func) (df : typD u) 
+  Lemma of_apply_subst_func_type_eq t u (f : func) (df : typD u) 
     (Ho : open_funcS f = Some (of_apply_subst t)) 
     (Hf : funcAs f u = Some df) :
     Rty u (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t))).
@@ -716,6 +716,16 @@ Section MakeOpenSound.
     unfold funcAs in Hf. simpl in Hf. 
     forward; inv_all; subst.
     rewrite <- r. reflexivity.
+  Qed.
+
+  Lemma of_apply_subst_type_eq tus tvs (e : expr typ func) t u df
+    (Ho : open_funcS e = Some (of_apply_subst t)) 
+    (Hf : exprD' tus tvs u e = Some df) :
+    Rty u (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t))).
+  Proof.
+    destruct e; simpl in *; try congruence.
+    autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+    eapply of_apply_subst_func_type_eq; eassumption.
   Qed.
 
   Lemma of_single_subst_type_eq t (f : func) (df : typD t) 
@@ -727,6 +737,29 @@ Section MakeOpenSound.
     unfold funcAs in Hf. simpl in Hf. 
     forward; inv_all; subst.
     rewrite <- r. reflexivity.
+  Qed.
+  
+  Lemma of_apply_subst_func_eq (t : typ) (f : func) (df : typD (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t))))
+    (Ho : open_funcS f = Some (of_apply_subst t))
+    (Hf : funcAs f (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t))) = Some df) :
+    df = applySubstD _ t.
+  Proof.
+   rewrite (of_funcAsOk _ Ho) in Hf.
+   unfold funcAs in Hf; simpl in *.
+   rewrite type_cast_refl in Hf; [| apply _].
+   unfold Rcast, Relim_refl in Hf.
+   inversion Hf. reflexivity.
+  Qed.
+
+  Lemma of_apply_subst_eq tus tvs (t : typ) (e : expr typ func)
+    (df : ExprI.exprT tus tvs (typD  (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t)))))
+    (Ho : open_funcS e = Some (of_apply_subst t))
+    (Hf : exprD' tus tvs (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t))) e = Some df) :
+    df = fun us vs => applySubstD _ t.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   erewrite <- of_apply_subst_func_eq; try eassumption; reflexivity.
   Qed.
 
   Lemma mkNull_sound (tus tvs : tenv typ) :
