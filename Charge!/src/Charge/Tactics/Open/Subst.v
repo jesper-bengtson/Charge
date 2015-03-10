@@ -188,7 +188,7 @@ Section SubstTac.
   Context {ilp : il_pointwise (typ := typ)}.
   Context {ilpOk : il_pointwiseOk gs ilp}.
   Context {bilp : bil_pointwise (typ := typ)}.
-  Context {bilpOk : bil_pointwiseOk _ bs bilp}.
+  Context {bilpOk : bil_pointwiseOk bs bilp}.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
   Let Expr_expr := Expr_expr (typ := typ) (func := func).
@@ -405,9 +405,9 @@ Ltac ilf_true_expr :=
     | H1 : ilogicS ?e = Some (ilf_true ?t), gs : logic_ops, H2 : gs ?t = Some _ |- _ =>
       match goal with
         | _ : ExprDsimul.ExprDenote.exprD' _ _ t _ =
-          Some (fun _ _ => trueD t) |- _ => fail 1
+          Some (fun _ _ => trueD _ H2) |- _ => fail 1
         | _ : ExprDsimul.ExprDenote.funcAs _ t =
-   		  Some (trueD t) |- _ => fail 1
+   		  Some (trueD _ H2) |- _ => fail 1
 		| H3 : ExprDsimul.ExprDenote.funcAs e t = Some _ |- _ =>
 	 	  let H := fresh "H" in pose proof(ilf_true_func_eq _ H2 H1 H3); subst
 		| H3 : ExprDsimul.ExprDenote.exprD' _ _ t e = Some _ |- _ =>
@@ -415,6 +415,231 @@ Ltac ilf_true_expr :=
 	 end
   end.
 
+Ltac ilf_false_type :=
+  match goal with
+    | H1 : ilogicS ?e = Some (ilf_false ?t) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e t = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ t e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (ilf_false_func_type_eq _ _ H1 H2) as H; repeat clear_eq; subst
+	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
+	      let H := fresh "H" in
+	        pose proof (ilf_false_type_eq _ _ H1 H2) as H; repeat clear_eq; subst
+	  end
+  end.
+
+Ltac ilf_false_expr :=
+  match goal with
+    | H1 : ilogicS ?e = Some (ilf_false ?t), gs : logic_ops, H2 : gs ?t = Some _ |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ t _ =
+          Some (fun _ _ => falseD _ H2) |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.funcAs _ t =
+   		  Some (falseD _ H2) |- _ => fail 1
+		| H3 : ExprDsimul.ExprDenote.funcAs e t = Some _ |- _ =>
+	 	  let H := fresh "H" in pose proof(ilf_false_func_eq _ H2 H1 H3); subst
+		| H3 : ExprDsimul.ExprDenote.exprD' _ _ t e = Some _ |- _ =>
+	  	  let H := fresh "H" in pose proof(ilf_false_eq _ H2 H1 H3); subst
+	 end
+  end.
+
+Ltac ilf_and_type :=
+  match goal with
+    | H1 : ilogicS ?e = Some (ilf_and ?t) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e (typ2 t (typ2 t t)) = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (ilf_and_func_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
+	      let H := fresh "H" in
+	        pose proof (ilf_and_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	  end
+  end.
+
+Ltac ilf_and_expr :=
+  match goal with
+    | H1 : ilogicS ?e = Some (ilf_and ?t), gs : logic_ops, H2 : gs ?t = Some _ |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) _ =
+          Some (fun _ _ => andD _ H2) |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.funcAs _ (typ2 t (typ2 t t)) =
+   		  Some (andD _ H2) |- _ => fail 1
+		| H3 : ExprDsimul.ExprDenote.funcAs e (typ2 t (typ2 t t)) = Some _ |- _ =>
+	 	  let H := fresh "H" in pose proof(ilf_and_func_eq _ H2 H1 H3); subst
+		| H3 : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) e = Some _ |- _ =>
+	  	  let H := fresh "H" in pose proof(ilf_and_eq _ H2 H1 H3); subst
+	 end
+  end.
+
+Ltac ilf_or_type :=
+  match goal with
+    | H1 : ilogicS ?e = Some (ilf_or ?t) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e (typ2 t (typ2 t t)) = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (ilf_or_func_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
+	      let H := fresh "H" in
+	        pose proof (ilf_or_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	  end
+  end.
+
+Ltac ilf_or_expr :=
+  match goal with
+    | H1 : ilogicS ?e = Some (ilf_or ?t), gs : logic_ops, H2 : gs ?t = Some _ |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) _ =
+          Some (fun _ _ => orD _ H2) |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.funcAs _ (typ2 t (typ2 t t)) =
+   		  Some (orD _ H2) |- _ => fail 1
+		| H3 : ExprDsimul.ExprDenote.funcAs e (typ2 t (typ2 t t)) = Some _ |- _ =>
+	 	  let H := fresh "H" in pose proof(ilf_or_func_eq _ H2 H1 H3); subst
+		| H3 : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) e = Some _ |- _ =>
+	  	  let H := fresh "H" in pose proof(ilf_or_eq _ H2 H1 H3); subst
+	 end
+  end.
+
+Ltac ilf_impl_type :=
+  match goal with
+    | H1 : ilogicS ?e = Some (ilf_impl ?t) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e (typ2 t (typ2 t t)) = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (ilf_impl_func_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
+	      let H := fresh "H" in
+	        pose proof (ilf_impl_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	  end
+  end.
+
+Ltac ilf_impl_expr :=
+  match goal with
+    | H1 : ilogicS ?e = Some (ilf_impl ?t), gs : logic_ops, H2 : gs ?t = Some _ |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) _ =
+          Some (fun _ _ => implD _ H2) |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.funcAs _ (typ2 t (typ2 t t)) =
+   		  Some (implD _ H2) |- _ => fail 1
+		| H3 : ExprDsimul.ExprDenote.funcAs e (typ2 t (typ2 t t)) = Some _ |- _ =>
+	 	  let H := fresh "H" in pose proof(ilf_impl_func_eq _ H2 H1 H3); subst
+		| H3 : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) e = Some _ |- _ =>
+	  	  let H := fresh "H" in pose proof(ilf_impl_eq _ H2 H1 H3); subst
+	 end
+  end.
+  
+Ltac bilf_emp_type :=
+  match goal with
+    | H1 : bilogicS ?e = Some (bilf_emp ?t) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e t = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ t e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (bilf_emp_func_type_eq _ _ H1 H2) as H; repeat clear_eq; subst
+	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
+	      let H := fresh "H" in
+	        pose proof (bilf_emp_type_eq _ _ H1 H2) as H; repeat clear_eq; subst
+	  end
+  end.
+
+Ltac bilf_emp_expr :=
+  match goal with
+    | H1 : bilogicS ?e = Some (bilf_emp ?t), gs : bilogic_ops |- _ =>
+      match goal with
+        |  H2 : gs ?t = Some _ |- _ =>
+	      match goal with
+	        | _ : ExprDsimul.ExprDenote.exprD' _ _ t _ =
+	          Some (fun _ _ => empD t _) |- _ => fail 1
+	        | _ : ExprDsimul.ExprDenote.funcAs _ t =
+	   		  Some (empD t _) |- _ => fail 1
+			| H3 : ExprDsimul.ExprDenote.funcAs e t = Some _ |- _ =>
+		 	  let H := fresh "H" in pose proof(bilf_emp_func_eq _ H2 H1 H3); subst
+			| H3 : ExprDsimul.ExprDenote.exprD' _ _ t e = Some _ |- _ =>
+		  	  let H := fresh "H" in pose proof(bilf_emp_eq _ H2 H1 H3); subst
+		 end
+	  end
+  end.
+
+Ltac bilf_star_type :=
+  match goal with
+    | H1 : bilogicS ?e = Some (bilf_star ?t) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e (typ2 t (typ2 t t)) = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (bilf_star_func_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
+	      let H := fresh "H" in
+	        pose proof (bilf_star_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	  end
+  end.
+(*
+Ltac bilf_star_expr :=
+  match goal with
+    | H1 : ilogicS ?e = Some (ilf_and ?t), gs : logic_ops, H2 : gs ?t = Some _ |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) _ =
+          Some (fun _ _ => andD _ H2) |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.funcAs _ (typ2 t (typ2 t t)) =
+   		  Some (andD _ H2) |- _ => fail 1
+		| H3 : ExprDsimul.ExprDenote.funcAs e (typ2 t (typ2 t t)) = Some _ |- _ =>
+	 	  let H := fresh "H" in pose proof(ilf_and_func_eq _ H2 H1 H3); subst
+		| H3 : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) e = Some _ |- _ =>
+	  	  let H := fresh "H" in pose proof(ilf_and_eq _ H2 H1 H3); subst
+	 end
+  end.
+*)
+
+Ltac of_ap_type :=
+  match goal with
+    | H1 : open_funcS ?e = Some (of_ap ?t ?u) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e
+   			  (typ2 (typ2 tyStack (typ2 t u))
+                (typ2 (typ2 tyStack t) (typ2 tyStack u))) = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _  
+              (typ2 (typ2 tyStack (typ2 t u))
+                (typ2 (typ2 tyStack t) (typ2 tyStack u))) e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (of_ap_func_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
+	      let H := fresh "H" in
+	        pose proof (of_ap_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	  end
+  end.
+
+Ltac of_ap_expr :=
+  match goal with
+    | H1 : open_funcS ?e = Some (of_ap ?t ?u) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ 
+              (typ2 (typ2 tyStack (typ2 t u))
+                (typ2 (typ2 tyStack t) (typ2 tyStack u))) e =
+          Some (fun _ _ => apD t u) |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.funcAs e 
+  			  (typ2 (typ2 tyStack (typ2 t u))
+                (typ2 (typ2 tyStack t) (typ2 tyStack u))) =
+   		  Some (apD t u) |- _ => fail 1
+		| H2 : ExprDsimul.ExprDenote.funcAs e 
+			   (typ2 (typ2 tyStack (typ2 t u))
+                (typ2 (typ2 tyStack t) (typ2 tyStack u))) = Some _ |- _ =>
+	 	  let H := fresh "H" in pose proof(of_ap_func_eq _ H1 H2); subst
+		| H2 : ExprDsimul.ExprDenote.exprD' _ _ 
+			   (typ2 (typ2 tyStack (typ2 t u))
+                (typ2 (typ2 tyStack t) (typ2 tyStack u))) e = Some _ |- _ =>
+	  	  let H := fresh "H" in pose proof(of_ap_eq _ H1 H2); subst
+	 end
+  end.
 
 Lemma pushSubst_sound tus tvs (t : typ) (e s : expr typ func)
   (eD : exprT tus tvs (typD (tyArr tyStack t))) (sD : exprT tus tvs (typD tySubst))
@@ -422,7 +647,7 @@ Lemma pushSubst_sound tus tvs (t : typ) (e s : expr typ func)
   (Hs : ExprDsimul.ExprDenote.exprD' tus tvs tySubst s = Some sD) :
   ExprDsimul.ExprDenote.exprD' tus tvs (tyArr tyStack t) (pushSubst (ilp := ilp) (bilp := bilp) s e t) = Some (exprT_App (exprT_App (fun _ _ => applySubstD t) eD) sD).
 Proof.
-  generalize dependent eD.
+  generalize dependent eD. generalize dependent t.
   induction e using expr_strong_ind; intros; 
     try (simpl; eapply mkApplySubst_sound; eassumption). {
     simpl. do 2 destruct_exprs; try (simpl; eapply mkApplySubst_sound; eassumption).
@@ -431,42 +656,128 @@ Proof.
       ilf_true_type.
       destruct (il_pointwise_ilogic ilpOk _ _ Heqb).
       ilf_true_expr.
-      rewrite mkTrue_sound with (Hgs := H0).
+      erewrite mkTrue_sound; [|assumption].
       unfold applySubstD, fun_to_typ3.
       do 2 rewrite exprT_App_wrap.
       unfold trueD.
       destruct (il_pointwise_ilogic_range ilpOk _ _ Heqb).
       rewriteD (il_pointwise_true_eq ilpOk _ _ Heqb H0 H1).
       unfold apply_subst.
-      unfold fun_to_typ, eq_rect_r, eq_rect, eq_sym, id.
-      clear.
-      revert x x0.
-      generalize dependent (typ2_cast tyStack t).
-      generalize dependent (typD tyStack).
-      generalize dependent (typD t).
-      intros.
-      unfold Fun in e.
-      f_equal.
-      do 2 (apply functional_extensionality; intro).
-      subst.
-      revert e x.
-      generalize dependent ((typ2 tyStack t)).
-      unfold fun_to_typ, typ_to_fun, eq_rect_r, eq_rect, eq_sym.
-      generalize (typ2_cast tyStack t)
-      clear.
-      generalize dependent (typ2 tyStack t). intro.
-      generalize dependent (typD t0); intros. subst.
-      apply functional_extensionality. intro. simpl.
-      generalize (typ2_cast tyString tyVal).
-      generalize dependent (typD tyStack); intros; subst.
+      rewrite (il_pointwise_true_eq2 ilpOk _ _ Heqb H0 H1). reflexivity.
+    + destruct_exprs; [|simpl; eapply mkApplySubst_sound; eassumption].
+      reduce.
+      ilf_false_type. 
+      destruct (il_pointwise_ilogic ilpOk _ _ Heqb).
+      ilf_false_expr. 
+      erewrite mkFalse_sound; [|assumption].
+      unfold applySubstD, fun_to_typ3.
+      do 2 rewrite exprT_App_wrap.
+      unfold falseD.
+      destruct (il_pointwise_ilogic_range ilpOk _ _ Heqb).
+      rewriteD (il_pointwise_false_eq ilpOk _ _ Heqb H0 H1).
       unfold apply_subst.
-      
-      generalize dependent (typD (typ2 (tyStack t))).
-      rewrite exprT_App_wrap_sym.
-  }
+      rewrite (il_pointwise_false_eq2 ilpOk _ _ Heqb H0 H1). reflexivity.
+    + do 2 (destruct_exprs; try (solve [simpl; eapply mkApplySubst_sound; eassumption])).
+      reduce.
+      bilf_emp_type.
+      destruct (bil_pointwise_bilogic bilpOk _ _ Heqb).
+	  unfold tyArr in *.
+      bilf_emp_expr.
+      erewrite mkEmp_sound; [|assumption].
+      unfold applySubstD, fun_to_typ3.
+      do 2 rewrite exprT_App_wrap.
+      unfold empD.
+      destruct (bil_pointwise_bilogic_range bilpOk _ _ Heqb).
+      rewriteD (bil_pointwise_emp_eq bilpOk _ _ Heqb H0 H1).
+      unfold apply_subst.
+      rewrite (bil_pointwise_emp_eq2 bilpOk _ _ Heqb H0 H1). reflexivity.
+  } {
+    simpl.
+    destruct_exprs; try (solve [simpl; eapply mkApplySubst_sound; eassumption]).
+    + admit.
+    + do 3 (destruct_exprs; try (solve [simpl; eapply mkApplySubst_sound; eassumption])).
+      * reduce.
+        ilf_and_type.
+        destruct (il_pointwise_ilogic ilpOk _ _ Heqb). 
+        ilf_and_expr.
+		erewrite mkAnd_sound with (Hgs := H1); [ |
+		  eapply H; [| eassumption] |
+		  eapply H; [repeat constructor | eassumption]
+		].
+		unfold andD, applySubstD, substD, fun_to_typ3, fun_to_typ2.
+	    repeat rewrite exprT_App_wrap.
+        destruct (il_pointwise_ilogic_range ilpOk _ _ Heqb).
+        rewriteD (il_pointwise_and_eq ilpOk _ _ Heqb H1 H2).
+        unfold apply_subst.
+        rewriteD (il_pointwise_and_eq2 ilpOk _ _ Heqb H1 H2).
+        reflexivity.
 
-Qed.
+		eapply TransitiveClosure.LTStep.
+		eapply acc_App_r.
+		constructor.
+		apply acc_App_l.
+      * reduce.
+        ilf_or_type.
+        destruct (il_pointwise_ilogic ilpOk _ _ Heqb). 
+        ilf_or_expr.
+		erewrite mkOr_sound with (Hgs := H1); [ |
+		  eapply H; [| eassumption] |
+		  eapply H; [repeat constructor | eassumption]
+		].
+		unfold orD, applySubstD, substD, fun_to_typ3, fun_to_typ2.
+	    repeat rewrite exprT_App_wrap.
+        destruct (il_pointwise_ilogic_range ilpOk _ _ Heqb).
+        rewriteD (il_pointwise_or_eq ilpOk _ _ Heqb H1 H2).
+        unfold apply_subst.
+        rewriteD (il_pointwise_or_eq2 ilpOk _ _ Heqb H1 H2).
+        reflexivity.
 
+		eapply TransitiveClosure.LTStep.
+		eapply acc_App_r.
+		constructor.
+		apply acc_App_l.
+      * reduce.
+        ilf_impl_type.
+        destruct (il_pointwise_ilogic ilpOk _ _ Heqb). 
+        ilf_impl_expr.
+		erewrite mkImpl_sound with (Hgs := H1); [ |
+		  eapply H; [| eassumption] |
+		  eapply H; [repeat constructor | eassumption]
+		].
+		unfold implD, applySubstD, substD, fun_to_typ3, fun_to_typ2.
+	    repeat rewrite exprT_App_wrap.
+        destruct (il_pointwise_ilogic_range ilpOk _ _ Heqb).
+        rewriteD (il_pointwise_impl_eq ilpOk _ _ Heqb H1 H2).
+        unfold apply_subst.
+        rewriteD (il_pointwise_impl_eq2 ilpOk _ _ Heqb H1 H2).
+        reflexivity.
+
+		eapply TransitiveClosure.LTStep.
+		eapply acc_App_r.
+		constructor.
+		apply acc_App_l.
+      * reduce.
+        of_ap_type.
+        unfold tyArr in *.
+		of_ap_expr.
+		erewrite mkAp_sound; [|
+		  eapply H; [|eassumption] |
+		  eapply H; [repeat constructor | eassumption]
+		].
+		unfold apD, applySubstD, substD, fun_to_typ3, fun_to_typ2, typ_to_fun2.
+		repeat rewrite exprT_App_wrap.
+		repeat rewriteD fun_to_typ_inv.
+		reflexivity.
+		eapply TransitiveClosure.LTStep.
+		eapply acc_App_r.
+		constructor.
+		apply acc_App_l.
+
+      * do 2 (destruct_exprs; try (solve [simpl; eapply mkApplySubst_sound; eassumption])).
+        - reduce.
+          bilf_star_type.
+    }
+Qed. 
 
 Lemma substTac_sound : partial_reducer_ok (substTac nil).
   Proof.

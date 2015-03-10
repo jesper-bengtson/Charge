@@ -806,6 +806,30 @@ Section MakeOpenSound.
    erewrite <- of_apply_subst_func_eq; try eassumption; reflexivity.
   Qed.
 
+  Lemma of_ap_func_eq (t u : typ) (f : func) 
+    (df : typD (tyArr (tyArr tyStack (tyArr t u)) (tyArr (tyArr tyStack t) (tyArr tyStack u))))
+    (Ho : open_funcS f = Some (of_ap t u))
+    (Hf : funcAs f (tyArr (tyArr tyStack (tyArr t u)) (tyArr (tyArr tyStack t) (tyArr tyStack u))) = Some df) :
+    df = apD t u.
+  Proof.
+   rewrite (of_funcAsOk _ Ho) in Hf.
+   unfold funcAs in Hf; simpl in *.
+   rewrite type_cast_refl in Hf; [| apply _].
+   unfold Rcast, Relim_refl in Hf.
+   inversion Hf. reflexivity.
+  Qed.
+
+  Lemma of_ap_eq tus tvs (t u : typ) (e : expr typ func)
+    (df : ExprI.exprT tus tvs (typD  (tyArr (tyArr tyStack (tyArr t u)) (tyArr (tyArr tyStack t) (tyArr tyStack u)))))
+    (Ho : open_funcS e = Some (of_ap t u))
+    (Hf : exprD' tus tvs (tyArr (tyArr tyStack (tyArr t u)) (tyArr (tyArr tyStack t) (tyArr tyStack u))) e = Some df) :
+    df = fun us vs => apD t u.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   erewrite <- of_ap_func_eq; try eassumption; reflexivity.
+  Qed.
+
   Lemma mkNull_sound (tus tvs : tenv typ) :
     exprD' tus tvs tyVal mkNull = Some (fun _ _ => null).
   Proof.

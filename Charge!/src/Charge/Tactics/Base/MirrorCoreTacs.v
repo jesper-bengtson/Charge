@@ -139,10 +139,13 @@ Ltac rewriteD tac :=
     	  let t := type of P in evar (H : t);
     	  let x := eval unfold H in H in 
     	  let H1 := fresh "H" in 
-    	    assert (P = x) as H1 
-    	      by (apply functional_extensionality; intro; rewriteD tac; reflexivity);
-    	    rewrite H1; clear H1 H
+    	    assert (P = x) as H1;
+    	      [ (let y := fresh "y" in 
+    	         let z := fresh "z" in
+    	          let Heq := fresh "Heq" z in
+    	            apply functional_extensionality; intro y; 
+    	            remember (x y) as z; rewriteD tac; rewrite Heq; reflexivity)|
+    	    rewrite H1; clear H1 H]
     end
   ].
-  
   

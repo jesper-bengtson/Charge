@@ -19,6 +19,7 @@ Require Import Charge.ModularFunc.ILogicFunc.
 
 Require Import Coq.Strings.String.
 Require Import Coq.Bool.Bool.
+Require Import FunctionalExtensionality.
 
 Set Implicit Arguments.
 Set Strict Implicit.
@@ -86,8 +87,10 @@ Section BILogicFuncInst.
 	Context {typ func : Type}.
 	Context {HR : RType typ} {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
 
-    Variable Typ2_tyArr : Typ2 _ Fun.
-    Variable Typ0_tyProp : Typ0 _ Prop.
+    Context {Typ2_tyArr : Typ2 _ Fun}.
+    Context {Typ0_tyProp : Typ0 _ Prop}.
+    
+    Context {Typ2Ok_tyArr : Typ2Ok Typ2_tyArr}.
 
     Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
     Let tyProp : typ := @typ0 _ _ _ _.
@@ -132,6 +135,197 @@ Section BILogicFuncInst.
         end
       | false => True
     end) True.
+
+  Lemma bil_pointwise_bilogic (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ)
+    (H : bilp (tyArr t u) = true) : exists BIL, gs (tyArr t u) = Some BIL. 
+  Proof.
+    specialize (bilpOk (tyArr t u)).
+    rewrite typ2_match_zeta in bilpOk; [|apply _].
+    rewrite H in bilpOk.
+    unfold eq_sym in bilpOk.
+    revert bilpOk H. unfold tyArr. 
+    generalize (typ2_cast t u).
+    generalize (typ2 t u).
+    generalize dependent (typD t).
+    generalize dependent (gs u).
+    generalize dependent (typD u).
+    intros ? ? ? ?.
+    generalize dependent (gs t0).
+    generalize (typD t0).
+    intros; subst. 
+    forward. eexists. subst. reflexivity.
+  Qed.
+
+  Lemma bil_pointwise_bilogic_range (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ)
+    (H : bilp (tyArr t u) = true) : exists BIL, gs u = Some BIL. 
+  Proof.
+    specialize (bilpOk (tyArr t u)).
+    rewrite typ2_match_zeta in bilpOk; [|apply _].
+    rewrite H in bilpOk.
+    unfold eq_sym in bilpOk.
+    revert bilpOk H. unfold tyArr. 
+    generalize (typ2_cast t u).
+    generalize (typ2 t u).
+    generalize dependent (typD t).
+    generalize dependent (gs u).
+    generalize dependent (typD u).
+    intros ? ? ? ?.
+    generalize dependent (gs t0).
+    generalize (typD t0).
+    intros; subst. 
+    forward. eexists. subst. reflexivity.
+  Qed.
+  
+  Lemma bil_pointwise_emp_eq (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ) 
+    (H : bilp (tyArr t u) = true) BIL1 BIL2
+    (gstu : gs (tyArr t u) = Some BIL1) (gsu : gs u = Some BIL2) a :
+    (typ_to_fun empSP) a = empSP.
+  Proof.
+    unfold typ_to_fun, eq_rect, id.
+    specialize (bilpOk (tyArr t u)).
+    rewrite typ2_match_zeta in bilpOk; [|apply _].
+    rewrite H in bilpOk.
+    unfold eq_sym in bilpOk.
+    revert bilpOk.
+    rewrite gstu.
+    rewrite gsu.
+    clear.
+    generalize (typ2_cast t u).
+    revert BIL1 BIL2.
+    unfold tyArr.
+    generalize dependent (typD (typ2 t u)).
+    generalize dependent (typD t).
+    generalize dependent (typD u).
+    intros; subst.
+    destruct bilpOk as [HEmp _].
+    apply HEmp.
+  Qed.    
+
+  Lemma bil_pointwise_emp_eq2 (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ) 
+    (H : bilp (tyArr t u) = true) BIL1 BIL2
+    (gstu : gs (tyArr t u) = Some BIL1) (gsu : gs u = Some BIL2) :
+    fun_to_typ (fun _ => empSP) = empSP.
+  Proof.
+    unfold fun_to_typ, eq_rect_r, eq_rect, eq_sym, id.
+    specialize (bilpOk (tyArr t u)).
+    rewrite typ2_match_zeta in bilpOk; [|apply _].
+    rewrite H in bilpOk.
+    unfold eq_sym in bilpOk.
+    revert bilpOk.
+    rewrite gstu.
+    rewrite gsu.
+    clear.
+    generalize (typ2_cast t u).
+    revert BIL1 BIL2.
+    unfold tyArr.
+    generalize dependent (typD (typ2 t u)).
+    generalize dependent (typD t).
+    generalize dependent (typD u).
+    intros; subst.
+    destruct bilpOk as [HEmp _].
+    unfold Fun in *.
+	apply functional_extensionality; setoid_rewrite HEmp; reflexivity.
+  Qed.    
+
+  Lemma bil_pointwise_star_eq (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ)
+    (H : bilp (tyArr t u) = true) BIL1 BIL2
+    (gstu : gs (tyArr t u) = Some BIL1) (gsu : gs u = Some BIL2) (a b : typD (tyArr t u)) s :
+    (typ_to_fun (sepSP a b)) s = sepSP (typ_to_fun a s) (typ_to_fun b s).
+  Proof.
+    unfold typ_to_fun, eq_rect, id.
+    specialize (bilpOk (tyArr t u)).
+    rewrite typ2_match_zeta in bilpOk; [|apply _].
+    rewrite H in bilpOk.
+    unfold eq_sym in bilpOk.
+    revert bilpOk.
+    rewrite gstu.
+    rewrite gsu.
+    clear.
+    generalize (typ2_cast t u).
+    revert BIL1 BIL2 a b.
+    unfold tyArr.
+    generalize dependent (typD (typ2 t u)).
+    generalize dependent (typD t).
+    generalize dependent (typD u).
+    intros; subst.
+    destruct bilpOk as [_ [HStar _]].
+    apply HStar.
+  Qed.    
+
+  Lemma bil_pointwise_star_eq2 (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ) 
+    (H : bilp (tyArr t u) = true) BIL1 BIL2
+    (gstu : gs (tyArr t u) = Some BIL1) (gsu : gs u = Some BIL2) (a b : typD t -> typD u) :
+    (fun_to_typ (fun s => sepSP (a s) (b s))) = sepSP (fun_to_typ a) (fun_to_typ b).
+  Proof.
+    unfold fun_to_typ, eq_rect_r, eq_rect, eq_sym, id.
+    specialize (bilpOk (tyArr t u)).
+    rewrite typ2_match_zeta in bilpOk; [|apply _].
+    rewrite H in bilpOk.
+    unfold eq_sym in bilpOk.
+    revert bilpOk.
+    rewrite gstu.
+    rewrite gsu.
+    clear.
+    generalize (typ2_cast t u).
+    revert BIL1 BIL2.
+    unfold tyArr.
+    generalize dependent (typD (typ2 t u)).
+    generalize dependent (typD t).
+    generalize dependent (typD u).
+    intros; subst.
+    destruct bilpOk as [_ [HStar _]].
+	apply functional_extensionality; setoid_rewrite HStar; reflexivity.
+  Qed.    
+
+  Lemma bil_pointwise_wand_eq (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ)
+    (H : bilp (tyArr t u) = true) BIL1 BIL2
+    (gstu : gs (tyArr t u) = Some BIL1) (gsu : gs u = Some BIL2) (a b : typD (tyArr t u)) s :
+    (typ_to_fun (wandSP a b)) s = wandSP (typ_to_fun a s) (typ_to_fun b s).
+  Proof.
+    unfold typ_to_fun, eq_rect, id.
+    specialize (bilpOk (tyArr t u)).
+    rewrite typ2_match_zeta in bilpOk; [|apply _].
+    rewrite H in bilpOk.
+    unfold eq_sym in bilpOk.
+    revert bilpOk.
+    rewrite gstu.
+    rewrite gsu.
+    clear.
+    generalize (typ2_cast t u).
+    revert BIL1 BIL2 a b.
+    unfold tyArr.
+    generalize dependent (typD (typ2 t u)).
+    generalize dependent (typD t).
+    generalize dependent (typD u).
+    intros; subst.
+    destruct bilpOk as [_ [_ HWand]].
+    apply HWand.
+  Qed.    
+
+  Lemma bil_pointwise_wand_eq2 (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ) 
+    (H : bilp (tyArr t u) = true) BIL1 BIL2
+    (gstu : gs (tyArr t u) = Some BIL1) (gsu : gs u = Some BIL2) (a b : typD t -> typD u) :
+    (fun_to_typ (fun s => wandSP (a s) (b s))) = wandSP (fun_to_typ a) (fun_to_typ b).
+  Proof.
+    unfold fun_to_typ, eq_rect_r, eq_rect, eq_sym, id.
+    specialize (bilpOk (tyArr t u)).
+    rewrite typ2_match_zeta in bilpOk; [|apply _].
+    rewrite H in bilpOk.
+    unfold eq_sym in bilpOk.
+    revert bilpOk.
+    rewrite gstu.
+    rewrite gsu.
+    clear.
+    generalize (typ2_cast t u).
+    revert BIL1 BIL2.
+    unfold tyArr.
+    generalize dependent (typD (typ2 t u)).
+    generalize dependent (typD t).
+    generalize dependent (typD u).
+    intros; subst.
+    destruct bilpOk as [_ [_ HWand]].
+	apply functional_extensionality; setoid_rewrite HWand; reflexivity.
+  Qed.    
 
   Definition typeof_bilfunc (f : bilfunc typ) : option typ :=
     match f with
@@ -251,7 +445,7 @@ Section BILogicFuncOk.
   
   Class BILogicFuncOk := {
     bilf_funcAsOk (f : func) e : bilogicS f = Some e -> 
-      forall t, funcAs f t = funcAs (RSym_func := RSym_bilfunc _ gs) e t;
+      forall t, funcAs f t = funcAs (RSym_func := RSym_bilfunc gs) e t;
     bilf_fEmpOk t : bilogicS (fEmp t) = Some (bilf_emp t);
     bilf_fStarOk t : bilogicS (fStar t) = Some (bilf_star t);
     bilf_fWandOk t : bilogicS (fWand t) = Some (bilf_wand t)
@@ -268,10 +462,10 @@ Section BILogicFuncBaseOk.
 
   Context {Typ2_tyArr : Typ2 _ Fun}.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
-  
+    
   Variable gs : bilogic_ops.
 
-  Global Program Instance BILogicFuncBaseOk : BILogicFuncOk (RSym_func := RSym_bilfunc _ gs) typ (bilfunc typ) gs := {
+  Global Program Instance BILogicFuncBaseOk : BILogicFuncOk (RSym_func := RSym_bilfunc gs) typ (bilfunc typ) gs := {
     bilf_funcAsOk := fun _ _ _ _ => eq_refl;
     bilf_fEmpOk t := eq_refl;
     bilf_fStarOk t := eq_refl;
@@ -285,8 +479,11 @@ Section BILogicFuncExprOk.
   Context {HROk : RTypeOk}.
   Context {A : Type} {RSymA : RSym A}.
 
+  Context {Typ2Ok_tyArr : Typ2Ok Typ2_tyArr}.
+  Context {RSymOk_func : RSymOk RSym_func0}.
+
   Lemma BILogicFunc_typeOk (f : func) (e : bilfunc typ) (H : bilogicS f = Some e) :
-    typeof_sym f = typeof_bilfunc _ gs e.
+    typeof_sym f = typeof_bilfunc gs e.
   Proof.
     admit.
     (*
@@ -326,7 +523,7 @@ Section BILogicFuncExprOk.
 *)
   Qed.
   
-  Lemma bilf_emp_type_eq (f : func) t u df
+  Lemma bilf_emp_func_type_eq (f : func) t u df
     (H1 : bilogicS f = Some (bilf_emp t)) (H2 : funcAs f u = Some df) :
     t = u.
   Proof.
@@ -335,7 +532,7 @@ Section BILogicFuncExprOk.
     forward.
   Qed.
 
-  Lemma bilf_wand_type_eq (f : func) t u df
+  Lemma bilf_wand_func_type_eq (f : func) t u df
     (H1 : bilogicS f = Some (bilf_wand t)) (H2 : funcAs f u = Some df) :
     u = typ2 t (typ2 t t).
   Proof.
@@ -344,13 +541,40 @@ Section BILogicFuncExprOk.
     forward.
   Qed.
 
-  Lemma bilf_star_type_eq (f : func) t u df
+  Lemma bilf_star_func_type_eq (f : func) t u df
     (H1 : bilogicS f = Some (bilf_star t)) (H2 : funcAs f u = Some df) :
     u = typ2 t (typ2 t t).
   Proof.
     rewrite (bilf_funcAsOk _ H1) in H2.
     unfold funcAs, starD in H2; simpl in *.
     forward.
+  Qed.
+	
+  Lemma bilf_emp_type_eq tus tvs (e : expr typ func) t u df
+    (H1 : bilogicS e = Some (bilf_emp t)) (H2 : exprD' tus tvs u e = Some df) :
+    t = u.
+  Proof.
+    destruct e; simpl in *; try congruence.
+    autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
+    eapply bilf_emp_func_type_eq; eassumption.
+  Qed.
+
+  Lemma bilf_wand_type_eq tus tvs (e : expr typ func) t u df
+    (H1 : bilogicS e = Some (bilf_wand t)) (H2 : exprD' tus tvs u e = Some df) :
+    u = typ2 t (typ2 t t).
+  Proof.
+    destruct e; simpl in *; try congruence.
+    autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
+    eapply bilf_wand_func_type_eq; eassumption.
+  Qed.
+
+  Lemma bilf_star_type_eq tus tvs (e : expr typ func) t u df
+    (H1 : bilogicS e = Some (bilf_star t)) (H2 : exprD' tus tvs u e = Some df) :
+    u = typ2 t (typ2 t t).
+  Proof.
+    destruct e; simpl in *; try congruence.
+    autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
+    eapply bilf_star_func_type_eq; eassumption.
   Qed.
 
   Existing Instance RSym_sum.
@@ -396,6 +620,83 @@ Section MakeBILogicSound.
 
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
+  Lemma bilf_emp_func_eq (t : typ) (f : func) (df : typD t) BIL
+    (H : gs t = Some BIL)
+    (Ho : bilogicS f = Some (bilf_emp t))
+    (Hf : funcAs f t = Some df) :
+    df = empSP.
+  Proof.
+   rewrite (bilf_funcAsOk _ Ho) in Hf.
+   unfold funcAs in Hf; simpl in *.
+   rewrite H in Hf.
+   rewrite type_cast_refl in Hf; [|apply HROk].
+   unfold Rcast, Relim_refl in Hf.
+   inversion Hf. reflexivity.
+  Qed.
+
+  Lemma bilf_emp_eq tus tvs (t : typ) (e : expr typ func) (df : ExprI.exprT tus tvs (typD t)) BIL
+    (H : gs t = Some BIL)
+    (Ho : bilogicS e = Some (bilf_emp t))
+    (Hf : exprD' tus tvs t e = Some df) :
+    df = fun us vs => empSP.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   erewrite <- bilf_emp_func_eq; try eassumption; reflexivity.
+  Qed.
+
+  Lemma bilf_star_func_eq (t : typ) (f : func) (df : typD (tyArr t (tyArr t t))) BIL
+    (H : gs t = Some BIL)
+    (Ho : bilogicS f = Some (bilf_star t))
+    (Hf : funcAs f (tyArr t (tyArr t t)) = Some df) :
+    df = fun_to_typ2 sepSP.
+  Proof.
+   rewrite (bilf_funcAsOk _ Ho) in Hf.
+   unfold funcAs in Hf; simpl in *.
+   rewrite H in Hf.
+   rewrite type_cast_refl in Hf; [|apply HROk].
+   unfold Rcast, Relim_refl in Hf.
+   inversion Hf. reflexivity.
+  Qed.
+
+  Lemma bilf_star_eq tus tvs (t : typ) (e : expr typ func) 
+    (df : ExprI.exprT tus tvs (typD (tyArr t (tyArr t t)))) BIL
+    (H : gs t = Some BIL)
+    (Ho : bilogicS e = Some (bilf_star t))
+    (Hf : exprD' tus tvs (tyArr t (tyArr t t)) e = Some df) :
+    df = fun us vs => fun_to_typ2 sepSP.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   erewrite <- bilf_star_func_eq; try eassumption; reflexivity.
+  Qed.
+  
+  Lemma bilf_wand_func_eq (t : typ) (f : func) (df : typD (tyArr t (tyArr t t))) BIL
+    (H : gs t = Some BIL)
+    (Ho : bilogicS f = Some (bilf_wand t))
+    (Hf : funcAs f (tyArr t (tyArr t t)) = Some df) :
+    df = fun_to_typ2 wandSP.
+  Proof.
+   rewrite (bilf_funcAsOk _ Ho) in Hf.
+   unfold funcAs in Hf; simpl in *.
+   rewrite H in Hf.
+   rewrite type_cast_refl in Hf; [|apply HROk].
+   unfold Rcast, Relim_refl in Hf.
+   inversion Hf. reflexivity.
+  Qed.
+
+  Lemma bilf_wand_eq tus tvs (t : typ) (e : expr typ func) 
+    (df : ExprI.exprT tus tvs (typD (tyArr t (tyArr t t)))) BIL
+    (H : gs t = Some BIL)
+    (Ho : bilogicS e = Some (bilf_wand t))
+    (Hf : exprD' tus tvs (tyArr t (tyArr t t)) e = Some df) :
+    df = fun us vs => fun_to_typ2 wandSP.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   erewrite <- bilf_wand_func_eq; try eassumption; reflexivity.
+  Qed.
+  
   Lemma mkEmp_sound (t : typ) (tus tvs : tenv typ) BIL
     (Hgs : gs t = Some BIL) :
     exprD' tus tvs t (mkEmp t) = Some (fun _ _ => empD _ BIL).
@@ -414,7 +715,7 @@ Section MakeBILogicSound.
     (Hgs : gs t = Some BIL)
     (Hp : exprD' tus tvs t p = Some dp)
     (Hq : exprD' tus tvs t q = Some dq) :
-    exprD' tus tvs t (mkStar t p q) = Some (exprT_App (exprT_App (fun _ _ => starD _ _ BIL) dp) dq).
+    exprD' tus tvs t (mkStar t p q) = Some (exprT_App (exprT_App (fun _ _ => starD _ BIL) dp) dq).
   Proof.
     unfold mkStar; simpl.
     autorewrite with exprD_rw; simpl; forward; inv_all; subst.
@@ -433,7 +734,7 @@ Section MakeBILogicSound.
     (Hgs : gs t = Some BIL)
     (Hp : exprD' tus tvs t p = Some dp)
     (Hq : exprD' tus tvs t q = Some dq) :
-    exprD' tus tvs t (mkWand t p q) = Some (exprT_App (exprT_App (fun _ _ => wandD _ _ BIL) dp) dq).
+    exprD' tus tvs t (mkWand t p q) = Some (exprT_App (exprT_App (fun _ _ => wandD _ BIL) dp) dq).
   Proof.
     unfold mkWand; simpl.
     autorewrite with exprD_rw; simpl; forward; inv_all; subst.
