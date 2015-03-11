@@ -582,22 +582,58 @@ Ltac bilf_star_type :=
 	        pose proof (bilf_star_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
 	  end
   end.
-(*
+
 Ltac bilf_star_expr :=
   match goal with
-    | H1 : ilogicS ?e = Some (ilf_and ?t), gs : logic_ops, H2 : gs ?t = Some _ |- _ =>
-      match goal with
-        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) _ =
-          Some (fun _ _ => andD _ H2) |- _ => fail 1
-        | _ : ExprDsimul.ExprDenote.funcAs _ (typ2 t (typ2 t t)) =
-   		  Some (andD _ H2) |- _ => fail 1
-		| H3 : ExprDsimul.ExprDenote.funcAs e (typ2 t (typ2 t t)) = Some _ |- _ =>
-	 	  let H := fresh "H" in pose proof(ilf_and_func_eq _ H2 H1 H3); subst
-		| H3 : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) e = Some _ |- _ =>
-	  	  let H := fresh "H" in pose proof(ilf_and_eq _ H2 H1 H3); subst
-	 end
+    | H1 : bilogicS ?e = Some (bilf_star ?t), gs : bilogic_ops |- _ =>
+      match goal with 
+        | H2 : gs t = Some _ |- _ => 
+	      match goal with
+	        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) _ =
+	          Some (fun _ _ => starD t _) |- _ => fail 1
+	        | _ : ExprDsimul.ExprDenote.funcAs _ (typ2 t (typ2 t t)) =
+	   		  Some (starD t _) |- _ => fail 1
+			| H3 : ExprDsimul.ExprDenote.funcAs e (typ2 t (typ2 t t)) = Some _ |- _ =>
+		 	  let H := fresh "H" in pose proof(bilf_star_func_eq _ H2 H1 H3); subst
+			| H3 : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) e = Some _ |- _ =>
+		  	  let H := fresh "H" in pose proof(bilf_star_eq _ H2 H1 H3); subst
+		  end
+      end
   end.
-*)
+
+Ltac bilf_wand_type :=
+  match goal with
+    | H1 : bilogicS ?e = Some (bilf_wand ?t) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e (typ2 t (typ2 t t)) = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (bilf_wand_func_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
+	      let H := fresh "H" in
+	        pose proof (bilf_wand_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	  end
+  end.
+
+Ltac bilf_wand_expr :=
+  match goal with
+    | H1 : bilogicS ?e = Some (bilf_wand ?t), gs : bilogic_ops |- _ =>
+      match goal with 
+        | H2 : gs t = Some _ |- _ => 
+	      match goal with
+	        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) _ =
+	          Some (fun _ _ => wandD t _) |- _ => fail 1
+	        | _ : ExprDsimul.ExprDenote.funcAs _ (typ2 t (typ2 t t)) =
+	   		  Some (wandD t _) |- _ => fail 1
+			| H3 : ExprDsimul.ExprDenote.funcAs e (typ2 t (typ2 t t)) = Some _ |- _ =>
+		 	  let H := fresh "H" in pose proof(bilf_wand_func_eq _ H2 H1 H3); subst
+			| H3 : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 t t)) e = Some _ |- _ =>
+		  	  let H := fresh "H" in pose proof(bilf_wand_eq _ H2 H1 H3); subst
+		  end
+      end
+  end.
+
 
 Ltac of_ap_type :=
   match goal with
@@ -700,7 +736,8 @@ Proof.
         ilf_and_type.
         destruct (il_pointwise_ilogic ilpOk _ _ Heqb). 
         ilf_and_expr.
-		erewrite mkAnd_sound with (Hgs := H1); [ |
+		erewrite mkAnd_sound; [ | 
+		  eassumption |
 		  eapply H; [| eassumption] |
 		  eapply H; [repeat constructor | eassumption]
 		].
@@ -720,7 +757,8 @@ Proof.
         ilf_or_type.
         destruct (il_pointwise_ilogic ilpOk _ _ Heqb). 
         ilf_or_expr.
-		erewrite mkOr_sound with (Hgs := H1); [ |
+		erewrite mkOr_sound; [ |
+		  eassumption |
 		  eapply H; [| eassumption] |
 		  eapply H; [repeat constructor | eassumption]
 		].
@@ -740,7 +778,8 @@ Proof.
         ilf_impl_type.
         destruct (il_pointwise_ilogic ilpOk _ _ Heqb). 
         ilf_impl_expr.
-		erewrite mkImpl_sound with (Hgs := H1); [ |
+		erewrite mkImpl_sound; [ |
+		  eassumption |
 		  eapply H; [| eassumption] |
 		  eapply H; [repeat constructor | eassumption]
 		].
@@ -776,6 +815,48 @@ Proof.
       * do 2 (destruct_exprs; try (solve [simpl; eapply mkApplySubst_sound; eassumption])).
         - reduce.
           bilf_star_type.
+          unfold tyArr in *.
+          destruct (bil_pointwise_bilogic bilpOk _ _ Heqb). 
+          bilf_star_expr.
+	      erewrite mkStar_sound; [ |
+		    eassumption |
+		    eapply H; [| eassumption] |
+		    eapply H; [repeat constructor | eassumption]
+		  ].
+		  unfold starD, applySubstD, substD, fun_to_typ3, fun_to_typ2.
+	      repeat rewrite exprT_App_wrap.
+          destruct (bil_pointwise_bilogic_range bilpOk _ _ Heqb).
+          rewriteD (bil_pointwise_star_eq bilpOk _ _ Heqb H1 H2).
+          unfold apply_subst.
+          rewriteD (bil_pointwise_star_eq2 bilpOk _ _ Heqb H1 H2).
+          reflexivity.
+
+		  eapply TransitiveClosure.LTStep.
+		  eapply acc_App_r.
+		  constructor.
+		  apply acc_App_l.
+        - reduce.
+          bilf_wand_type.
+          unfold tyArr in *.
+          destruct (bil_pointwise_bilogic bilpOk _ _ Heqb). 
+          bilf_wand_expr. (* Can be run twice *)
+	      erewrite mkWand_sound; [ |
+		    eassumption |
+		    eapply H; [| eassumption] |
+		    eapply H; [repeat constructor | eassumption]
+		  ].
+		  unfold wandD, applySubstD, substD, fun_to_typ3, fun_to_typ2.
+	      repeat rewrite exprT_App_wrap.
+          destruct (bil_pointwise_bilogic_range bilpOk _ _ Heqb).
+          rewriteD (bil_pointwise_wand_eq bilpOk _ _ Heqb H1 H2).
+          unfold apply_subst.
+          rewriteD (bil_pointwise_wand_eq2 bilpOk _ _ Heqb H1 H2).
+          reflexivity.
+
+		  eapply TransitiveClosure.LTStep.
+		  eapply acc_App_r.
+		  constructor.
+		  apply acc_App_l.
     }
 Qed. 
 
