@@ -65,16 +65,58 @@ Section EmbedFuncSum.
 
 End EmbedFuncSum.
 
+Section Typ2Cases.
+  Context {typ : Type} {RType_typ : RType typ}.
+  Context {F : Type -> Type -> Type} {Typ2_tyArr : Typ2 RType_typ F}.
+  Context {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}.
+  
+  Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
+
+  Definition typ2_simple_match (A : Type) (t : typ) (tr : typ -> typ -> A) (fr : A) := typ2_match (fun _ : Type => A) t tr fr.
+
+  Lemma typ2_simple_match_cases (A : Type) (t : typ) (tr : typ -> typ -> A) (fr : A) (P : A -> Prop) 
+    (HFail : P fr) 
+    (HSuc : forall (d r : typ) (pf : t = tyArr d r), P (tr d r)) :
+    P (typ2_simple_match t tr fr).
+  Proof.
+    destruct (typ2_match_case t) as [[d [r [pf H]]] | H].
+    + unfold typ2_simple_match.
+      rewrite H; clear H.
+      unfold Relim. unfold Rty in pf; subst.
+      unfold eq_sym.
+      generalize (typ2_cast d r).
+      generalize dependent (typD (typ2 d r)).
+      intros; subst. apply HSuc.
+      reflexivity.
+    + unfold typ2_simple_match.
+      rewrite H. apply HFail.
+  Qed.
+
+  Lemma typ2_simple_match_zeta (A : Type) (t u : typ) (tr : typ -> typ -> A) (fr : A) :
+    typ2_simple_match (tyArr t u) tr fr = tr t u.
+  Proof.
+    unfold typ2_simple_match.
+    rewrite typ2_match_zeta; [|apply _].
+    generalize (typ2_cast t u).
+    generalize dependent (typD (typ2 t u)); intros; subst.
+    reflexivity.
+  Qed.
+
+End Typ2Cases.
+
 Section EmbedFuncInst.
 
-	Context {typ func : Type} {H : EmbedFunc typ func}.
-	Context {HR : RType typ} {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
+	Context {typ func : Type} {EF : EmbedFunc typ func}.
+	Context {RType_typ : RType typ} {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
+	Context {RType_typOk : RTypeOk}.
 
-    Variable Typ2_tyArr : Typ2 _ Fun.
-    Variable Typ0_tyProp : Typ0 _ Prop.
+    Context {Typ2_tyArr : Typ2 _ Fun}.
+    Context {Typ0_tyProp : Typ0 _ Prop}.
 
     Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
     Let tyProp : typ := @typ0 _ _ _ _.
+    
+    Context {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}.
 
 	Global Instance EmbedFuncInst : EmbedFunc typ (embed_func typ) := {
 	  fEmbed := eilf_embed;
@@ -83,7 +125,6 @@ Section EmbedFuncInst.
 	
   Variable is : logic_ops.
 
- 
   Definition embed_ops := forall (t u : typ),
     option (EmbedOp (typD t) (typD u)).
   Definition embed_opsOk (es : embed_ops) : Prop :=
@@ -157,6 +198,75 @@ Section EmbedFuncInst.
     consider (a ?[ eq ] b); auto.
   Qed.
 
+  Definition eil_pointwise := typ -> typ -> bool.
+
+  Definition eil_pointwiseOk (eilp : eil_pointwise) :=
+    forall t u,
+      typ2_simple_match t
+        (fun dt rt : typ =>
+          typ2_simple_match u
+            (fun du ru : typ =>
+              match type_cast dt du with
+                | Some pf =>
+                  match gs (tyArr dt rt) (tyArr dt ru), gs rt ru with
+                    | Some EOps1, Some EOps2 =>
+                      forall (P : typD dt -> typD rt) (a : typD dt),
+                        typ_to_fun (embed (fun_to_typ P)) a = embed (P a)
+                    | _, _ => False
+                  end
+                | _ => False
+              end)
+            True)
+        True.
+ 
+  Lemma eil_pointwise_embed (eilp : eil_pointwise) (eilpOk : eil_pointwiseOk eilp) (t u v w : typ) 
+  	(H : eilp (tyArr t u) (tyArr v w) = true) : exists EIL, gs (tyArr t u) (tyArr v w) = Some EIL. 
+  Proof.
+    specialize (eilpOk (tyArr t u) (tyArr v w)).
+    unfold tyArr in eilpOk.
+    do 2 rewrite typ2_simple_match_zeta in eilpOk.
+    forward.
+    unfold Rty in r. subst.
+    exists e. assumption.
+  Qed.
+
+  Lemma eil_pointwise_embed_range (eilp : eil_pointwise) (eilpOk : eil_pointwiseOk eilp) (t u v w : typ) (H : eilp (tyArr t u) (tyArr v w) = true) : exists EIL, gs u w = Some EIL. 
+  Proof.
+    specialize (eilpOk (tyArr t u) (tyArr v w)).
+    unfold tyArr in *.
+    do 2 rewrite typ2_simple_match_zeta in eilpOk.
+    forward.
+    exists e0. reflexivity.
+  Qed.
+  
+  Lemma eilf_pointwise_embed_eq (eilp : eil_pointwise) (eilpOk : eil_pointwiseOk eilp) (t u v : typ) (H : eilp (tyArr t u) (tyArr t v) = true) EIL1 EIL2
+    (gstu : gs (tyArr t u) (tyArr t v) = Some EIL1) (gsu : gs u v = Some EIL2) (a : typD (tyArr t u)) s :
+    (typ_to_fun (embed a)) s = embed (typ_to_fun a s).
+  Proof.
+    specialize (eilpOk (tyArr t u) (tyArr t v)).
+    unfold tyArr in *.
+    do 2 rewrite typ2_simple_match_zeta in eilpOk.
+    rewrite type_cast_refl in eilpOk.
+    rewrite gstu, gsu in eilpOk.
+    rewrite <- eilpOk, typ_to_fun_inv. reflexivity.
+    apply _.
+  Qed.    
+  
+  Lemma eilf_pointwise_embed_eq2 (eilp : eil_pointwise) (eilpOk : eil_pointwiseOk eilp) (t u v : typ) (H : eilp (tyArr t u) (tyArr t v) = true) EIL1 EIL2
+    (gstu : gs (tyArr t u) (tyArr t v) = Some EIL1) (gsu : gs u v = Some EIL2) (a : typD t -> typD u) :
+    fun_to_typ (fun s => embed (a s)) = embed (fun_to_typ a).
+  Proof.
+    specialize (eilpOk (tyArr t u) (tyArr t v)).
+    unfold tyArr in *.
+    do 2 rewrite typ2_simple_match_zeta in eilpOk.
+    rewrite type_cast_refl in eilpOk; [|apply _].
+    rewrite gstu, gsu in eilpOk.
+    symmetry in eilpOk.
+    Require Import Charge.Tactics.Base.MirrorCoreTacs.
+    rewriteD eilpOk.
+    rewrite typ_to_fun_inv. reflexivity.
+  Qed.    
+
 End EmbedFuncInst.
 
 Section MakeEmbed.
@@ -178,7 +288,7 @@ Section EmbedFuncOk.
   
   Class EmbedFuncOk := {
     eilf_funcAsOk (f : func) e : embedS f = Some e -> 
-      forall t, funcAs f t = funcAs (RSym_func := RSym_embed_func _ gs) e t;
+      forall t, funcAs f t = funcAs (RSym_func := RSym_embed_func gs) e t;
     eilf_fEmbedOk t u : embedS (fEmbed t u) = Some (eilf_embed t u)
   }.
 
@@ -196,7 +306,7 @@ Section EmbedFuncBaseOk.
   
   Variable gs : embed_ops.
 
-  Global Program Instance EmbedFuncBaseOk : EmbedFuncOk (RSym_func := RSym_embed_func _ gs) typ (embed_func typ) gs := {
+  Global Program Instance EmbedFuncBaseOk : EmbedFuncOk (RSym_func := RSym_embed_func gs) typ (embed_func typ) gs := {
     eilf_funcAsOk := fun _ _ _ _ => eq_refl;
     eilf_fEmbedOk t u := eq_refl
   }.
@@ -208,8 +318,13 @@ Section EmbedFuncExprOk.
   Context {HROk : RTypeOk}.
   Context {A : Type} {RSymA : RSym A}.
 
+  Context {Typ2Ok_tyArr : Typ2Ok Typ2_tyArr}.
+  Context {RSymOk_func : RSymOk RSym_func0}.
+
+  Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
+
   Lemma BILogicFunc_typeOk (f : func) (e : embed_func typ) (H : embedS f = Some e) :
-    typeof_sym f = typeof_embed_func _ gs e.
+    typeof_sym f = typeof_embed_func gs e.
   Proof.
     admit.
     (*
@@ -249,15 +364,22 @@ Section EmbedFuncExprOk.
 *)
   Qed.
   *)
-  Lemma eilf_embed_type_eq (f : func) t u v df
+  Lemma eilf_embed_func_type_eq (f : func) t u v df
     (H1 : embedS f = Some (eilf_embed t u)) (H2 : funcAs f v = Some df) :
-    v = typ2 t u.
+    v = tyArr t u.
   Proof.
     rewrite (eilf_funcAsOk _ H1) in H2.
-    unfold funcAs in H2. simpl in *.
-    
-    
+    unfold funcAs in H2. simpl in *. unfold tyArr in *.
     forward. 
+  Qed.
+
+  Lemma eilf_embed_type_eq tus tvs (e : expr typ func) t u v df
+    (H1 : embedS e = Some (eilf_embed t u)) (H2 : exprD' tus tvs v e = Some (fun _ _ => df)) :
+    v = tyArr t u.
+  Proof.
+    destruct e; simpl in *; try congruence.
+    autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
+    eapply eilf_embed_func_type_eq; eassumption.
   Qed.
 
   Existing Instance RSym_sum.
@@ -299,11 +421,37 @@ Section MakeEmbedSound.
 
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
+  Lemma eilf_embed_func_eq (t u : typ) (f : func) (df : typD (tyArr t u)) EIL
+    (H : gs t u = Some EIL)
+    (Ho : embedS f = Some (eilf_embed t u))
+    (Hf : funcAs f (tyArr t u) = Some df) :
+    df = embedD t u EIL.
+  Proof.
+   rewrite (eilf_funcAsOk _ Ho) in Hf.
+   unfold funcAs in Hf; simpl in *.
+   rewrite H in Hf.
+   rewrite type_cast_refl in Hf; [|apply HROk].
+   unfold Rcast, Relim_refl in Hf.
+   inversion Hf. reflexivity.
+  Qed.
+
+  Lemma eilf_embed_eq tus tvs (t u : typ) (e : expr typ func) 
+    (df : ExprI.exprT tus tvs (typD (tyArr t u))) EIL
+    (H : gs t u = Some EIL)
+    (Ho : embedS e = Some (eilf_embed t u))
+    (Hf : exprD' tus tvs (tyArr t u) e = Some df) :
+    df = fun us vs => embedD t u EIL.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   erewrite <- eilf_embed_func_eq; try eassumption; reflexivity.
+  Qed.
+
   Lemma mkEmbed_sound (t u : typ) (tus tvs : tenv typ) p EIL
     (dp: ExprI.exprT tus tvs (typD t))
     (Hgs : gs t u = Some EIL)
     (Hp : exprD' tus tvs t p = Some dp) :
-    exprD' tus tvs u (mkEmbed t u p) = Some (exprT_App (fun _ _ => embedD _ _ _ EIL) dp).
+    exprD' tus tvs u (mkEmbed t u p) = Some (exprT_App (fun _ _ => embedD _ _ EIL) dp).
   Proof.
     unfold mkEmbed; simpl.
     autorewrite with exprD_rw; simpl; forward; inv_all; subst.

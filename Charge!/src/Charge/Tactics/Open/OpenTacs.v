@@ -45,13 +45,45 @@ Ltac of_apply_subst_expr :=
 	  pose proof (mkNoDupD _ _ _ H); clear H; (repeat destruct_match_oneres)*)
   end.
 
+Ltac of_const_type :=
+  match goal with
+    | H1 : open_funcS ?e = Some (of_const ?t) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e (typ2 t (typ2 tyStack t)) = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 tyStack t)) e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (of_const_func_type_eq _ _ H1 H2) as H; try (r_inj H); repeat clear_eq; subst
+	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
+	      let H := fresh "H" in
+	        pose proof (of_const_type_eq _ _ H1 H2) as H; try (r_inj H); repeat clear_eq; subst
+	  end
+  end.
+
+Ltac of_const_expr :=
+  match goal with
+    | H1 : open_funcS ?e = Some (of_const ?t) |- _ => 
+      match goal with
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 tyStack t)) _ =
+          Some (fun _ _ => constD t) |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.funcAs _ (typ2 t (typ2 tyStack t)) =
+   		  Some (constD t) |- _ => fail 1
+		| H2 : ExprDsimul.ExprDenote.funcAs e (typ2 t (typ2 tyStack t)) = Some _ |- _ =>
+	 	  let H := fresh "H" in pose proof(of_const_func_eq _ H1 H2); subst
+		| H2 : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 tyStack t)) e = Some _ |- _ =>
+	  	  let H := fresh "H" in pose proof(of_const_eq _ H1 H2); subst
+	 end
+  end.
+
 Ltac of_forward_step :=
   match goal with 
     | H : Some _ = open_funcS _ |- _ =>  symmetry in H
     | _ => 
        first [
         of_apply_subst_type |
-        of_apply_subst_expr
+        of_const_type |
+        of_apply_subst_expr |
+        of_const_expr
       ]
   end.
     

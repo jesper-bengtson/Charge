@@ -105,11 +105,16 @@ Section PushSubst.
   Context {RelDec_type : RelDec (@eq typ)}.
   Context {ilp : il_pointwise (typ := typ)}.
   Context {bilp : bil_pointwise (typ := typ)}.
+  Context {eilp : eil_pointwise (typ := typ)}.
   Context {Typ2_tyArr : Typ2 _ Fun}.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
   Variable f : expr typ func.
-
+Check typ2_match.
+SearchAbout typ2_match.
+Print Charge.Logics.ILEmbed.EmbedOp.
+Check typ2_cast.
+SearchAbout typ2_cast.
   Fixpoint pushSubst (e : expr typ func) (t : typ) : expr typ func :=
     match e with
     	| App (App g p) q =>
@@ -139,7 +144,13 @@ Section PushSubst.
     			| Some (of_const t), _ => OpenFunc.mkConst t p
     			| Some _, _ => mkApplySubst t e f
     			| None, _ => match embedS g with
-    					    | Some (eilf_embed u v) => mkEmbed u v (pushSubst p u)
+    					    | Some (eilf_embed u v) => 
+    					      typ2_simple_match u 
+    					        (fun d r =>
+    					          match type_cast d (tyArr tyString tyVal) with
+    					            | Some _ => if eilp u v then mkEmbed u v (pushSubst p r) else mkApplySubst t e f
+    					            | _ => mkApplySubst t e f
+    					          end) (mkApplySubst t e f)
     					    | _ => mkApplySubst t e f
     					  end
     		end
@@ -180,8 +191,10 @@ Section SubstTac.
   Context {OFOK : OpenFuncOk typ func}.
   Context {gs : @logic_ops _ RType_typ}.
   Context {bs : @bilogic_ops _ RType_typ}.
+  Context {es : @embed_ops _ RType_typ}.
   Context {ILFOK : ILogicFuncOk typ func gs}.
   Context {BILFOK : BILogicFuncOk typ func bs}.
+  Context {EILFOK : EmbedFuncOk typ func es}.
   Context {Heqd : SemiEqDecTyp typ}.
   Context {BFOK : BaseFuncOk (RelDec_eq := RelDec_typ) (Heqd := Heqd) typ func}.
   Context {EqDec_typ : EqDec typ eq}.
@@ -189,6 +202,8 @@ Section SubstTac.
   Context {ilpOk : il_pointwiseOk gs ilp}.
   Context {bilp : bil_pointwise (typ := typ)}.
   Context {bilpOk : bil_pointwiseOk bs bilp}.
+  Context {eilp : eil_pointwise (typ := typ)}.
+  Context {eilpOk : eil_pointwiseOk es eilp}.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
   Let Expr_expr := Expr_expr (typ := typ) (func := func).
@@ -205,7 +220,7 @@ Section SubstTac.
 	  | Some (of_apply_subst t) =>
 	    match args with
 	      | e :: f :: nil =>
-	        pushSubst (ilp := ilp) (bilp := bilp) f e t
+	        pushSubst (ilp := ilp) (bilp := bilp) (eilp := eilp) f e t
 	      | _ => apps e args
 	    end
 	  | _ => apps e args
@@ -634,6 +649,39 @@ Ltac bilf_wand_expr :=
       end
   end.
 
+Ltac eilf_embed_type :=
+  match goal with
+    | H1 : embedS ?e = Some (eilf_embed ?t ?u) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e (typ2 t u) = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t u) e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (eilf_embed_func_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
+	      let H := fresh "H" in
+	        pose proof (eilf_embed_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	  end
+  end.
+
+Ltac eilf_embed_expr :=
+  match goal with
+    | H1 : embedS ?e = Some (eilf_embed ?t ?u), gs : embed_ops |- _ =>
+      match goal with 
+        | H2 : gs t u = Some _ |- _ => 
+	      match goal with
+	        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t u) _ =
+	          Some (fun _ _ => embedD t u _) |- _ => fail 1
+	        | _ : ExprDsimul.ExprDenote.funcAs _ (typ2 t u) =
+	   		  Some (embedD t u _) |- _ => fail 1
+			| H3 : ExprDsimul.ExprDenote.funcAs e (typ2 t u) = Some _ |- _ =>
+		 	  let H := fresh "H" in pose proof(eilf_embed_func_eq _ H2 H1 H3); subst
+			| H3 : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t u) e = Some _ |- _ =>
+		  	  let H := fresh "H" in pose proof(eilf_embed_eq _ H2 H1 H3); subst
+		  end
+      end
+  end.
+
 
 Ltac of_ap_type :=
   match goal with
@@ -681,7 +729,7 @@ Lemma pushSubst_sound tus tvs (t : typ) (e s : expr typ func)
   (eD : exprT tus tvs (typD (tyArr tyStack t))) (sD : exprT tus tvs (typD tySubst))
   (He : ExprDsimul.ExprDenote.exprD' tus tvs (tyArr tyStack t) e = Some eD)
   (Hs : ExprDsimul.ExprDenote.exprD' tus tvs tySubst s = Some sD) :
-  ExprDsimul.ExprDenote.exprD' tus tvs (tyArr tyStack t) (pushSubst (ilp := ilp) (bilp := bilp) s e t) = Some (exprT_App (exprT_App (fun _ _ => applySubstD t) eD) sD).
+  ExprDsimul.ExprDenote.exprD' tus tvs (tyArr tyStack t) (pushSubst (ilp := ilp) (bilp := bilp) (eilp := eilp) s e t) = Some (exprT_App (exprT_App (fun _ _ => applySubstD t) eD) sD).
 Proof.
   generalize dependent eD. generalize dependent t.
   induction e using expr_strong_ind; intros; 
@@ -730,7 +778,40 @@ Proof.
   } {
     simpl.
     destruct_exprs; try (solve [simpl; eapply mkApplySubst_sound; eassumption]).
-    + admit.
+    + repeat destruct_exprs; try (solve [simpl; eapply mkApplySubst_sound; eassumption]).
+      * unfold tyArr in *.
+        reduce.
+        erewrite mkConst_sound; [|eassumption].
+        unfold applySubstD, fun_to_typ3.
+        do 2 rewrite exprT_App_wrap.
+        unfold constD.
+        rewriteD exprT_App_wrap.
+        rewriteD fun_to_typ_inv.
+        reflexivity.
+      * unfold tyArr in *.
+        reduce.
+        admit.
+      * unfold tyArr in *.
+        apply typ2_simple_match_cases; [eapply mkApplySubst_sound; eassumption|]; intros.
+        destruct_exprs; [|eapply mkApplySubst_sound; eassumption]; intros.
+        reduce.
+        eilf_embed_type.
+        destruct (eil_pointwise_embed eilpOk _ _ _ _ Heqb).
+        destruct (eil_pointwise_embed_range eilpOk _ _ _ _ Heqb).
+        eilf_embed_expr.
+        erewrite mkEmbed_sound; [|
+          eassumption |
+          eapply H; [repeat constructor | eassumption]
+        ].
+        unfold applySubstD, embedD, fun_to_typ3.
+        repeat rewrite exprT_App_wrap_sym.
+        repeat rewriteD fun_to_typ_inv.
+        rewriteD (eilf_pointwise_embed_eq eilpOk _ _ _ Heqb H1 H2).
+   	    unfold apply_subst.
+        rewriteD (eilf_pointwise_embed_eq2 eilpOk _ _ _ Heqb H1 H2).
+        reflexivity.
+      * apply typ2_simple_match_cases; [eapply mkApplySubst_sound; eassumption|]; intros.
+        destruct_exprs; eapply mkApplySubst_sound; eassumption.
     + do 3 (destruct_exprs; try (solve [simpl; eapply mkApplySubst_sound; eassumption])).
       * reduce.
         ilf_and_type.

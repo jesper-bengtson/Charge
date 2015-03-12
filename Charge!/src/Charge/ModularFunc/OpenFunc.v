@@ -830,6 +830,30 @@ Section MakeOpenSound.
    erewrite <- of_ap_func_eq; try eassumption; reflexivity.
   Qed.
 
+  Lemma of_const_func_eq (t : typ) (f : func) 
+    (df : typD (tyArr t (tyArr tyStack t)))
+    (Ho : open_funcS f = Some (of_const t))
+    (Hf : funcAs f (tyArr t (tyArr tyStack t)) = Some df) :
+    df = constD t.
+  Proof.
+   rewrite (of_funcAsOk _ Ho) in Hf.
+   unfold funcAs in Hf; simpl in *.
+   rewrite type_cast_refl in Hf; [| apply _].
+   unfold Rcast, Relim_refl in Hf.
+   inversion Hf. reflexivity.
+  Qed.
+
+  Lemma of_const_eq tus tvs (t : typ) (e : expr typ func)
+    (df : ExprI.exprT tus tvs (typD (tyArr t (tyArr tyStack t))))
+    (Ho : open_funcS e = Some (of_const t))
+    (Hf : exprD' tus tvs (tyArr t (tyArr tyStack t)) e = Some df) :
+    df = fun us vs => constD t.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   erewrite <- of_const_func_eq; try eassumption; reflexivity.
+  Qed.
+
   Lemma mkNull_sound (tus tvs : tenv typ) :
     exprD' tus tvs tyVal mkNull = Some (fun _ _ => null).
   Proof.

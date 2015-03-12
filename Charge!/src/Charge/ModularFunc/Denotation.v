@@ -46,6 +46,18 @@ Section Denotation.
     generalize dependent (typD t0); intros. subst. reflexivity.
   Qed.
 
+  Lemma typ_to_fun_inv (t u : typ) (f : typD (tyArr t u)) :
+    fun_to_typ (typ_to_fun f) = f.
+  Proof.
+    unfold fun_to_typ, typ_to_fun, eq_rect_r, eq_rect, eq_sym, id.
+    generalize (typ2_cast t u); unfold Fun.
+    unfold tyArr in *.
+    revert f.
+    remember (typ2 t u).
+    generalize dependent (typ2 t u); intros; subst.
+    generalize dependent (typD t0); intros; subst. reflexivity.
+  Qed.
+
   Lemma exprT_App_wrap tus tvs (t u : typ) (f : exprT tus tvs (typD t -> typD u)) (a : exprT tus tvs (typD t)) :
     exprT_App (fun us vs => fun_to_typ (f us vs)) a = fun us vs => (f us vs) (a us vs).
   Proof.
