@@ -34,8 +34,8 @@ Section ApplySubst.
     Variable Typ2_tyArr : Typ2 _ Fun.
     Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
-	Definition applySingleSubst (p : expr typ func) (x y : String.string) e :=
-		if x ?[ eq ] y then e else p.
+	Definition applySingleSubst (x y : String.string) e s :=
+		if x ?[ eq ] y then e else mkStackGet (mkString (stringR x)) s.
 		    	
     Fixpoint applyParSubst (p : expr typ func) (x : String.string) vs es :=
     	match es with
@@ -71,25 +71,25 @@ Section ApplySubst.
     		| _ => p
     	end.				
 
-	Definition applySubst (t : typ) (f e : expr typ func) (x : String.string) :=
+	Definition applySubst (t : typ) (f : expr typ func) (x : String.string) (s : expr typ func) :=
 		match f with
 		  | App (App g e') y =>
 		  	match open_funcS g, baseS y with
 		  	  | Some of_single_subst, Some (pConst t' v) => 
 		  	    match type_cast t' tyString with
-		  	      | Some pf => applySingleSubst e x (stringD (eq_rect _ typD v _ pf)) e'
-		  	      | None => mkApplySubst t e f
-		  	    end
+		  	      | Some pf => applySingleSubst x (stringD (eq_rect_r typD v (eq_sym pf))) e' s
+		  	      | None => mkApplySubst t (mkStackGet (mkString (stringR x)) s) f
+		  	    end(*
 		  	  | Some of_trunc_subst, Some (pConst t' v) => 
 		  	    match type_cast t' (tyList tyString) with
 		  	      | Some pf => applyTruncSubst e x 
 		  	        (eq_rect _ list (listD (eq_rect _ typD v _ pf)) _ btString) e'
 		  	      | None => mkApplySubst t e f
-		  	    end
+		  	    end*)
 		  (*	  | Some of_trunc_subst, Some (pString v) => applyTruncSubst e x v e'*)
-		  	  | _, _ => mkApplySubst t e f
+		  	  | _, _ => mkApplySubst t (mkStackGet (mkString (stringR x)) s) f
 		  	end
-		  | _ => mkApplySubst t e f
+		  | _ => mkApplySubst t (mkStackGet (mkString (stringR x)) s) f
 (*		  | mkApplySubst [t, p, mkSubstList [mkVarList [vs], es]] => applyParSubst p x vs es
 		  | mkApplyTruncSubst [t, p, mkSubstList [mkVarList [vs], es]] => applyTruncSubst x vs es*)
 		end.
@@ -110,11 +110,7 @@ Section PushSubst.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
   Variable f : expr typ func.
-Check typ2_match.
-SearchAbout typ2_match.
-Print Charge.Logics.ILEmbed.EmbedOp.
-Check typ2_cast.
-SearchAbout typ2_cast.
+
   Fixpoint pushSubst (e : expr typ func) (t : typ) : expr typ func :=
     match e with
     	| App (App g p) q =>
@@ -123,36 +119,38 @@ SearchAbout typ2_cast.
     			| Some (ilf_or l) => if ilp l then mkOr l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
     			| Some (ilf_impl l) => if ilp l then mkImpl l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
     			| Some _ => mkApplySubst t e f
-    			| None => match open_funcS g with
-		    			 | Some (of_ap t1 t2) => mkAp t1 t2 (pushSubst p (tyArr t1 t2))
-		    			             									 (pushSubst q t1)
-		    			 | Some _ => mkApplySubst t e f
-		    			 | _ => match bilogicS g with
-		    			          | Some (bilf_star l) => if bilp l then mkStar l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
-		    			          | Some (bilf_wand l) => if bilp l then mkWand l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
-		    			 	      | _ => mkApplySubst t e f
-		    			 	    end
-		    		   end
+    			| None => 
+    			  match open_funcS g, baseS p with
+    			    | Some of_stack_get, Some (pConst t' x) =>
+    			      match type_cast t' tyString with
+    			        | Some pf => applySubst t f (stringD (eq_rect_r typD x (eq_sym pf))) q
+    			        | None => mkApplySubst t e f
+    			      end
+		    	    | Some (of_ap t1 t2), _ => mkAp t1 t2 (pushSubst p (tyArr t1 t2)) (pushSubst q t1)
+		    		| Some _, _ => mkApplySubst t e f
+		    	    | _, _ => 
+		    	      match bilogicS g with
+		    	        | Some (bilf_star l) => if bilp l then mkStar l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
+		    			| Some (bilf_wand l) => if bilp l then mkWand l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
+		    			| _ => mkApplySubst t e f
+		    		  end
+		    	  end
     		end
     	| App g p =>
-    		match open_funcS g, baseS p with
-    			| Some of_stack_get, Some (pConst t' x) =>
-    			  match type_cast t' tyString with
-    			    | Some pf => applySubst Typ2_tyArr t f e (stringD (eq_rect _ typD x _ pf))
-    			    | None => mkApplySubst t e f
-    			  end
-    			| Some (of_const t), _ => OpenFunc.mkConst t p
-    			| Some _, _ => mkApplySubst t e f
-    			| None, _ => match embedS g with
-    					    | Some (eilf_embed u v) => 
-    					      typ2_simple_match u 
-    					        (fun d r =>
-    					          match type_cast d (tyArr tyString tyVal) with
-    					            | Some _ => if eilp u v then mkEmbed u v (pushSubst p r) else mkApplySubst t e f
-    					            | _ => mkApplySubst t e f
-    					          end) (mkApplySubst t e f)
-    					    | _ => mkApplySubst t e f
-    					  end
+    		match open_funcS g with
+    			| Some (of_const t) => OpenFunc.mkConst t p
+    			| Some _ => mkApplySubst t e f
+    			| None => 
+    			  match embedS g with
+    		        | Some (eilf_embed u v) => 
+				      typ2_simple_match u 
+				         (fun d r =>
+				          match type_cast d (tyArr tyString tyVal) with
+				            | Some _ => if eilp u v then mkEmbed u v (pushSubst p r) else mkApplySubst t e f
+				            | _ => mkApplySubst t e f
+				          end) (mkApplySubst t e f)
+				    | _ => mkApplySubst t e f
+				end
     		end
     	| _ => match ilogicS e with
     		     | Some (ilf_true l) => if ilp l then mkTrue l else mkApplySubst t e f
@@ -725,6 +723,42 @@ Ltac of_ap_expr :=
 	 end
   end.
 
+Ltac of_stack_get_type :=
+  match goal with
+    | H1 : open_funcS ?e = Some of_stack_get |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e
+   			  (typ2 tyString (typ2 tyStack tyVal)) = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _  
+              (typ2 tyString (typ2 tyStack tyVal)) e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (of_stack_get_func_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
+	      let H := fresh "H" in
+	        pose proof (of_stack_get_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	  end
+  end.
+
+Ltac of_stack_get_expr :=
+  match goal with
+    | H1 : open_funcS ?e = Some of_stack_get |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ 
+              (typ2 tyString (typ2 tyStack tyVal)) e =
+          Some (fun _ _ => stack_getD) |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.funcAs e 
+  			  (typ2 tyString (typ2 tyStack tyVal)) =
+   		  Some stack_getD |- _ => fail 1
+		| H2 : ExprDsimul.ExprDenote.funcAs e 
+			   (typ2 tyString (typ2 tyStack tyVal)) = Some _ |- _ =>
+	 	  let H := fresh "H" in pose proof(of_stack_get_func_eq _ H1 H2); subst
+		| H2 : ExprDsimul.ExprDenote.exprD' _ _ 
+			   (typ2 tyString (typ2 tyStack tyVal)) e = Some _ |- _ =>
+	  	  let H := fresh "H" in pose proof(of_stack_get_eq _ H1 H2); subst
+	 end
+  end.
+
 Lemma pushSubst_sound tus tvs (t : typ) (e s : expr typ func)
   (eD : exprT tus tvs (typD (tyArr tyStack t))) (sD : exprT tus tvs (typD tySubst))
   (He : ExprDsimul.ExprDenote.exprD' tus tvs (tyArr tyStack t) e = Some eD)
@@ -788,9 +822,6 @@ Proof.
         rewriteD exprT_App_wrap.
         rewriteD fun_to_typ_inv.
         reflexivity.
-      * unfold tyArr in *.
-        reduce.
-        admit.
       * unfold tyArr in *.
         apply typ2_simple_match_cases; [eapply mkApplySubst_sound; eassumption|]; intros.
         destruct_exprs; [|eapply mkApplySubst_sound; eassumption]; intros.
@@ -893,6 +924,17 @@ Proof.
 		constructor.
 		apply acc_App_l.
 
+      * do 3 (destruct_exprs; try (solve [simpl; eapply mkApplySubst_sound; eassumption])).
+        reduce.
+        of_stack_get_type.
+        of_stack_get_type.
+        of_stack_get_type.
+        unfold applySubstD, fun_to_typ3. 
+        simpl.
+        Check exprT_App_wrap.
+        repeat rewriteD exprT_App_wrap.
+        rewriteD fun_to_typ_inv.
+        repeat rewrite exrpT_App_wrap.
       * do 2 (destruct_exprs; try (solve [simpl; eapply mkApplySubst_sound; eassumption])).
         - reduce.
           bilf_star_type.

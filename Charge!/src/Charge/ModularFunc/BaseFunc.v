@@ -198,9 +198,9 @@ Section MakeBase.
 
 	Definition mkConst t e : expr typ func := Inj (fConst t e).
 
-	Definition mkNat n : expr typ func := mkConst tyNat n.
-	Definition mkBool b : expr typ func := mkConst tyBool b.
-	Definition mkString s : expr typ func := mkConst tyString s.
+	Definition mkNat (n : typD tyNat) : expr typ func := mkConst tyNat n.
+	Definition mkBool (b : typD tyBool) : expr typ func := mkConst tyBool b.
+	Definition mkString (s : typD tyString) : expr typ func := mkConst tyString s.
 	Definition mkEq (t : typ) (a b : expr typ func) := App (App (fEq t) a) b.
 	Definition mkPair t u a b := App (App (fPair t u) a) b.
 
