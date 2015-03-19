@@ -81,7 +81,7 @@ End BaseFuncSum.
 
 Section BaseFuncInst.
   Context {typ : Type} {HR : RType typ} 
-          {HT : BaseType typ} {HTD: BaseTypeD}.
+          {BT : BaseType typ} {HTD : BaseTypeD BT}.
   Context {func : Type} {H : BaseFunc typ func}.
   Context {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
 
@@ -211,7 +211,7 @@ Section BaseFuncOk.
   Context {BF: BaseFunc typ func} {RSym_func : RSym func}.
   Context {RelDec_eq : RelDec (@eq typ)}.
   Context {RelDec_eqOk : RelDec_Correct RelDec_eq}.
-  Context {BT : BaseType typ} {BTD : BaseTypeD}.
+  Context {BT : BaseType typ} {BTD : BaseTypeD BT}.
   Context {Heqd : SemiEqDecTyp typ}.
 
   Context {Typ2_tyArr : Typ2 _ Fun}.
@@ -239,7 +239,7 @@ Section BaseFuncBaseOk.
   Context {RelDec_eqOk : RelDec_Correct RelDec_eq}.
   Context {Heqd : SemiEqDecTyp typ}.
   Context {BT : BaseType typ}.
-  Context {BTD : BaseTypeD}.
+  Context {BTD : BaseTypeD BT}.
 
   Context {Typ2_tyArr : Typ2 _ Fun}.
   Context {Typ0_Prop : Typ0 _ Prop}.
@@ -290,7 +290,7 @@ Section BaseFuncExprOk.
   Qed.
   
   Lemma bf_const_func_type_eq (f : func) t e t' df
-    (H1 : baseS f = Some (fConst t e)) (H2 : funcAs f t' = Some df) :
+    (H1 : baseS f = Some (pConst t e)) (H2 : funcAs f t' = Some df) :
     t = t'.
   Proof.
     rewrite (bf_funcAsOk _ H1) in H2.
@@ -299,7 +299,7 @@ Section BaseFuncExprOk.
   Qed.
 
   Lemma bf_const_type_eq (e : expr typ func) t c t' tus tvs de
-    (H1 : baseS e = Some (fConst t c)) (H2 : exprD' tus tvs t' e = Some de) :
+    (H1 : baseS e = Some (pConst t c)) (H2 : exprD' tus tvs t' e = Some de) :
     t = t'.
   Proof.
    destruct e; simpl in *; try congruence.
@@ -307,8 +307,8 @@ Section BaseFuncExprOk.
    apply (bf_const_func_type_eq _ _ H1 H).
   Qed.
 
-  Lemma bf_eq_type_eq (f : func) t u df
-    (H1 : baseS f = Some (fEq t)) (H2 : funcAs f u = Some df) :
+  Lemma bf_eq_func_type_eq (f : func) t u df
+    (H1 : baseS f = Some (pEq t)) (H2 : funcAs f u = Some df) :
     u = tyArr t (tyArr t tyProp).
   Proof.
     rewrite (bf_funcAsOk _ H1) in H2.
@@ -317,14 +317,32 @@ Section BaseFuncExprOk.
     rewrite <- r; reflexivity.
   Qed.
 
-  Lemma bf_pair_type_eq (f : func) t u v df
-    (H1 : baseS f = Some (fPair t u)) (H2 : funcAs f v = Some df) :
+  Lemma bf_eq_type_eq tus tvs (e : expr typ func) t u de
+    (H1 : baseS e = Some (pEq t)) (H2 : exprD' tus tvs u e = Some de) :
+    u = tyArr t (tyArr t tyProp).
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
+   apply (bf_eq_func_type_eq _ _ H1 H).
+  Qed.
+
+  Lemma bf_pair_func_type_eq (f : func) t u v df
+    (H1 : baseS f = Some (pPair t u)) (H2 : funcAs f v = Some df) :
     v = tyArr t (tyArr u (tyProd t u)).
   Proof.
     rewrite (bf_funcAsOk _ H1) in H2.
     unfold funcAs in H2; simpl in *.
     forward.
     rewrite <- r; reflexivity.
+  Qed.
+
+  Lemma bf_pair_type_eq tus tvs (e : expr typ func) t u v df
+    (H1 : baseS e = Some (pPair t u)) (H2 : exprD' tus tvs v e = Some df) :
+    v = tyArr t (tyArr u (tyProd t u)).
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
+   apply (bf_pair_func_type_eq _ _ H1 H).
   Qed.
 
   Existing Instance RSym_sum.
@@ -403,6 +421,7 @@ Section MakeBaseFuncSound.
   Context {HROk : RTypeOk} {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}
           {RSym_funcOk : RSymOk RSym_func0}.
 
+  Let tyProp : typ := @typ0 _ _ _ _.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
   Lemma bf_const_func_eq (t : typ) (c : typD t) (f : func) (fD : typD t)
@@ -428,6 +447,51 @@ Section MakeBaseFuncSound.
    rewrite (bf_const_func_eq _ Ho H); reflexivity.
   Qed.
 
+  Lemma bf_eq_func_eq (t : typ) (f : func) (fD : typD (tyArr t (tyArr t tyProp)))
+    (Ho : baseS f = Some (pEq t))
+    (Hf : funcAs f (tyArr t (tyArr t tyProp)) = Some fD) :
+    fD = eqD t.
+  Proof.
+   rewrite (bf_funcAsOk _ Ho) in Hf.
+   unfold funcAs in Hf; simpl in *.
+   rewrite type_cast_refl in Hf; [|apply HROk].
+   unfold Rcast, Relim_refl in Hf.
+   inversion Hf. reflexivity.
+  Qed.
+
+  Lemma bf_eq_eq tus tvs (t : typ) (e : expr typ func) 
+    (eD : ExprI.exprT tus tvs (typD (tyArr t (tyArr t tyProp))))
+    (Ho : baseS e = Some (pEq t))
+    (Hf : exprD' tus tvs (tyArr t (tyArr t tyProp)) e = Some eD) :
+    eD = (fun us vs => eqD t).
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   rewrite (bf_eq_func_eq _ Ho H); reflexivity.
+  Qed.
+ 
+  Lemma bf_pair_func_eq (t u : typ) (f : func) (fD : typD (tyArr t (tyArr u (tyProd t u))))
+    (Ho : baseS f = Some (pPair t u))
+    (Hf : funcAs f (tyArr t (tyArr u (tyProd t u))) = Some fD) :
+    fD = pairD t u.
+  Proof.
+   rewrite (bf_funcAsOk _ Ho) in Hf.
+   unfold funcAs in Hf; simpl in *.
+   rewrite type_cast_refl in Hf; [|apply HROk].
+   unfold Rcast, Relim_refl in Hf.
+   inversion Hf. reflexivity.
+  Qed.
+
+  Lemma bf_pair_eq tus tvs (t u : typ) (e : expr typ func) 
+    (eD : ExprI.exprT tus tvs (typD (tyArr t (tyArr u (tyProd t u)))))
+    (Ho : baseS e = Some (pPair t u))
+    (Hf : exprD' tus tvs (tyArr t (tyArr u (tyProd t u))) e = Some eD) :
+    eD = (fun us vs => pairD t u).
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   rewrite (bf_pair_func_eq _ Ho H); reflexivity.
+  Qed.
  
   Lemma mkConst_sound (t : typ) (c : typD t) (tus tvs : tenv typ) :
     exprD' tus tvs t (mkConst t c) = Some (fun _ _ => c).
@@ -440,6 +504,25 @@ Section MakeBaseFuncSound.
     reflexivity.
   Qed.
   
+  Lemma mkEq_sound (t : typ) (tus tvs : tenv typ) a b
+    (aD : ExprI.exprT tus tvs (typD t)) 
+    (bD : ExprI.exprT tus tvs (typD t)) 
+    (Ha : exprD' tus tvs t a = Some aD) 
+    (Hb : exprD' tus tvs t b = Some bD)  :
+    exprD' tus tvs tyProp (mkEq t a b) = Some (exprT_App (exprT_App (fun _ _ => eqD t) aD) bD).
+  Proof.
+    unfold mkEq; simpl.
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    rewrite (ExprTac.exprD_typeof_Some _ _ _ b _ Hb).
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    rewrite (ExprTac.exprD_typeof_Some _ _ _ a _ Ha).
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    pose proof (bf_fEqOk t) as Ho.
+    pose proof (bf_funcAsOk _ Ho) as H1.
+    rewrite H1. unfold funcAs; simpl.
+    rewrite type_cast_refl; [reflexivity | apply _].
+  Qed.
+
   Lemma mkPair_sound (t u : typ) (tus tvs : tenv typ) a b
     (aD : ExprI.exprT tus tvs (typD t)) 
     (bD : ExprI.exprT tus tvs (typD u)) 

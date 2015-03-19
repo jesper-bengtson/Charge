@@ -59,9 +59,6 @@ Ltac r_inj H :=
       apply typ2_inj in H as [H1 H2]; [unfold Rty in H1, H2; r_inj H1; r_inj H2 | apply _] |
     repeat subst].
   
-
-
-
 Ltac destruct_match_oneres :=
     match goal with
       | H : context[match ?x with _ => _ end] |- _ =>
@@ -145,6 +142,25 @@ Ltac rewriteD tac :=
     	          let Heq := fresh "Heq" z in
     	            apply functional_extensionality; intro y; 
     	            remember (x y) as z; rewriteD tac; rewrite Heq; reflexivity)|
+    	    rewrite H1; clear H1 H]
+    end
+  ].
+  
+Ltac rewriteD_sym tac := 
+  first [
+    rewrite <- tac |
+    match goal with
+      | |- context [fun x => @?P x] =>
+          let H := fresh "H" in 
+    	  let t := type of P in evar (H : t);
+    	  let x := eval unfold H in H in 
+    	  let H1 := fresh "H" in 
+    	    assert (P = x) as H1;
+    	      [ (let y := fresh "y" in 
+    	         let z := fresh "z" in
+    	          let Heq := fresh "Heq" z in
+    	            apply functional_extensionality; intro y; 
+    	            remember (x y) as z; rewriteD_sym tac; rewrite Heq; reflexivity)|
     	    rewrite H1; clear H1 H]
     end
   ].

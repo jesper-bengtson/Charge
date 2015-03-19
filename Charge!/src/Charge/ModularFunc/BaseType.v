@@ -26,13 +26,28 @@ Section BaseTypeD.
 	  btNat : typD tyNat = nat;
 	  btBool : typD tyBool = bool;
 	  btString : typD tyString = string;
-	  btProd : forall t1 t2, typD (tyProd t1 t2) = (typD t1 * typD t2)%type
+	  btProd : forall t1 t2, typD (tyProd t1 t2) = (typD t1 * typD t2)%type;
+
+      tyProd_inj : forall t u t' u', Rty (tyProd t u) (tyProd t' u') -> Rty t t' /\ Rty u u'
 	}.
 	
 End BaseTypeD.
 
+Implicit Arguments BaseTypeD [[typ] [HR]].
+
+Ltac prod_inj :=
+  match goal with
+    | typ : Type |- _ =>
+      match goal with
+        | BT : BaseType typ, RType_typ : RType typ |- _ =>
+          match goal with
+            | _ : BaseTypeD BT, H : tyProd _ _ = tyProd _ _ |- _ => apply tyProd_inj in H; unfold Rty in H; destruct H; subst
+          end
+      end
+  end.
+
 Section BaseTypeD'.
-  Context `{BTD : BaseTypeD}.
+  Context {typ : Type} {BT : BaseType typ} {RType_typ : RType typ} {BTD : BaseTypeD BT}.
  
   Definition natD (n : typD tyNat) : nat :=
     eq_rect _ id n _ btNat.

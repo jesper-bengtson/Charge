@@ -79,10 +79,10 @@ Ltac lf_cons_type :=
         | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 (tyList t) (tyList t))) e = Some _ |- _ => fail 1
         | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
   	  	  let H := fresh "H" in
-	        pose proof (lf_cons_func_type_eq _ _ H1 H2) as H; try (r_inj H); try list_inj; repeat clear_eq; subst
+	        pose proof (lf_cons_func_type_eq _ _ H1 H2) as H; try (r_inj H); try list_inj; try prod_inj; repeat clear_eq; subst
 	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
 	      let H := fresh "H" in
-	        pose proof (lf_cons_type_eq _ _ H1 H2) as H; try (r_inj H); try list_inj; repeat clear_eq; subst
+	        pose proof (lf_cons_type_eq _ _ H1 H2) as H; try (r_inj H); try list_inj; try prod_inj; repeat clear_eq; subst
 	  end
   end.
 	  

@@ -104,7 +104,7 @@ End ListFuncSum.
 
 Section ListFuncInst.
 	Context {typ : Type} {RType_typ : RType typ} 
-	        {HTB : BaseType typ} {HTBD : BaseTypeD}
+	        {BT : BaseType typ} {HTBD : BaseTypeD BT}
 	        {LT : ListType typ} {HTD: ListTypeD LT}.
 	Context {func : Type} {H : ListFunc typ func}.
 	Context {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
@@ -310,7 +310,7 @@ Section ListFuncOk.
   Context {typ func : Type} {RType_typ : RType typ}.
   Context {LF: ListFunc typ func} {RSym_func : RSym func}.
   Context {RelDec_eq : RelDec (@eq typ)}.
-  Context {BT : BaseType typ} {BTD : BaseTypeD}.
+  Context {BT : BaseType typ} {BTD : BaseTypeD BT}.
   Context {LT : ListType typ} {LTD : ListTypeD LT}.
   Context {Typ2_tyArr : Typ2 _ Fun}.
   Context {Typ0_Prop : Typ0 _ Prop}.
@@ -340,7 +340,7 @@ Section ListFuncBaseOk.
   Context {LF: ListFunc typ func} {RSym_func : RSym func}.
   Context {RelDec_eq : RelDec (@eq typ)}.
   Context {RelDec_eqOk : RelDec_Correct RelDec_eq}.
-  Context {BT : BaseType typ} {BTD : BaseTypeD}.
+  Context {BT : BaseType typ} {BTD : BaseTypeD BT}.
   Context {LT : ListType typ} {LTD : ListTypeD LT}.
 
   Context {Typ2_tyArr : Typ2 _ Fun}.
@@ -391,7 +391,7 @@ Section ListFuncExprOk.
   Qed.
   
   Lemma lf_nil_func_type_eq (f : func) t t' df
-    (H1 : listS f = Some (fNil t)) (H2 : funcAs f t' = Some df) :
+    (H1 : listS f = Some (pNil t)) (H2 : funcAs f t' = Some df) :
     t' = tyList t.
   Proof.
     rewrite (lf_funcAsOk _ H1) in H2.
@@ -400,7 +400,7 @@ Section ListFuncExprOk.
   Qed.
 
   Lemma lf_nil_type_eq tus tvs (e : expr typ func) t t' df
-    (H1 : listS e = Some (fNil t)) (H2 : exprD' tus tvs t' e = Some df) :
+    (H1 : listS e = Some (pNil t)) (H2 : exprD' tus tvs t' e = Some df) :
     t' = tyList t.
   Proof.
     destruct e; simpl in *; try congruence.
@@ -409,7 +409,7 @@ Section ListFuncExprOk.
   Qed.
 
   Lemma lf_cons_func_type_eq (f : func) t t' df
-    (H1 : listS f = Some (fCons t)) (H2 : funcAs f t' = Some df) :
+    (H1 : listS f = Some (pCons t)) (H2 : funcAs f t' = Some df) :
     t' = tyArr t (tyArr (tyList t) (tyList t)).
   Proof.
     rewrite (lf_funcAsOk _ H1) in H2.
@@ -419,7 +419,7 @@ Section ListFuncExprOk.
   Qed.
 
   Lemma lf_cons_type_eq tus tvs (e : expr typ func) t t' df
-    (H1 : listS e = Some (fCons t)) (H2 : exprD' tus tvs t' e = Some df) :
+    (H1 : listS e = Some (pCons t)) (H2 : exprD' tus tvs t' e = Some df) :
     t' = tyArr t (tyArr (tyList t) (tyList t)).
   Proof.
     destruct e; simpl in *; try congruence.
@@ -428,7 +428,7 @@ Section ListFuncExprOk.
   Qed.
 
   Lemma lf_length_func_type_eq (f : func) t t' df
-    (H1 : listS f = Some (fLength t)) (H2 : funcAs f t' = Some df) :
+    (H1 : listS f = Some (pLength t)) (H2 : funcAs f t' = Some df) :
     t' = tyArr (tyList t) tyNat.
   Proof.
     rewrite (lf_funcAsOk _ H1) in H2.
@@ -438,7 +438,7 @@ Section ListFuncExprOk.
   Qed.
 
   Lemma lf_length_type_eq tus tvs (e : expr typ func) t t' df
-    (H1 : listS e = Some (fLength t)) (H2 : exprD' tus tvs t' e = Some df) :
+    (H1 : listS e = Some (pLength t)) (H2 : exprD' tus tvs t' e = Some df) :
     t' = tyArr (tyList t) tyNat.
   Proof.
     destruct e; simpl in *; try congruence.
@@ -447,7 +447,7 @@ Section ListFuncExprOk.
   Qed.
 
   Lemma lf_NoDup_func_type_eq (f : func) t t' df
-    (H1 : listS f = Some (fNoDup t)) (H2 : funcAs f t' = Some df) :
+    (H1 : listS f = Some (pNoDup t)) (H2 : funcAs f t' = Some df) :
     t' = tyArr (tyList t) tyProp.
   Proof.
     rewrite (lf_funcAsOk _ H1) in H2.
@@ -457,7 +457,7 @@ Section ListFuncExprOk.
   Qed.
 
   Lemma lf_NoDup_type_eq tus tvs (e : expr typ func) t t' df
-    (H1 : listS e = Some (fNoDup t)) (H2 : exprD' tus tvs t' e = Some df) :
+    (H1 : listS e = Some (pNoDup t)) (H2 : exprD' tus tvs t' e = Some df) :
     t' = tyArr (tyList t) tyProp.
   Proof.
     destruct e; simpl in *; try congruence.
@@ -466,7 +466,7 @@ Section ListFuncExprOk.
   Qed.
 
   Lemma lf_In_func_type_eq (f : func) t t' df
-    (H1 : listS f = Some (fIn t)) (H2 : funcAs f t' = Some df) :
+    (H1 : listS f = Some (pIn t)) (H2 : funcAs f t' = Some df) :
     t' = tyArr t (tyArr (tyList t) tyProp).
   Proof.
     rewrite (lf_funcAsOk _ H1) in H2.
@@ -476,7 +476,7 @@ Section ListFuncExprOk.
   Qed.
 
   Lemma lf_In_type_eq tus tvs (e : expr typ func) t t' df
-    (H1 : listS e = Some (fIn t)) (H2 : exprD' tus tvs t' e = Some df) :
+    (H1 : listS e = Some (pIn t)) (H2 : exprD' tus tvs t' e = Some df) :
     t' = tyArr t (tyArr (tyList t) tyProp).
   Proof.
     destruct e; simpl in *; try congruence.
@@ -485,7 +485,7 @@ Section ListFuncExprOk.
   Qed.
 
   Lemma lf_map_func_type_eq (f : func) t u t' df
-    (H1 : listS f = Some (fMap t u)) (H2 : funcAs f t' = Some df) :
+    (H1 : listS f = Some (pMap t u)) (H2 : funcAs f t' = Some df) :
     t' = tyArr (tyArr t u) (tyArr (tyList t) (tyList u)).
   Proof.
     rewrite (lf_funcAsOk _ H1) in H2.
@@ -495,7 +495,7 @@ Section ListFuncExprOk.
   Qed.
 
   Lemma lf_map_type_eq tus tvs (e : expr typ func) t u t' df
-    (H1 : listS e = Some (fMap t u)) (H2 : exprD' tus tvs t' e = Some df) :
+    (H1 : listS e = Some (pMap t u)) (H2 : exprD' tus tvs t' e = Some df) :
     t' = tyArr (tyArr t u) (tyArr (tyList t) (tyList u)).
   Proof.
     destruct e; simpl in *; try congruence.
@@ -504,7 +504,7 @@ Section ListFuncExprOk.
   Qed.
 
   Lemma lf_fold_func_type_eq (f : func) t u t' df
-    (H1 : listS f = Some (fFold t u)) (H2 : funcAs f t' = Some df) :
+    (H1 : listS f = Some (pFold t u)) (H2 : funcAs f t' = Some df) :
     t' = tyArr (tyArr u (tyArr t t)) (tyArr t (tyArr (tyList u) t)).
   Proof.
     rewrite (lf_funcAsOk _ H1) in H2.
@@ -514,7 +514,7 @@ Section ListFuncExprOk.
   Qed.
 
   Lemma lf_fold_type_eq (e : expr typ func) tus tvs t u t' df
-    (H1 : listS e = Some (fFold t u)) (H2 : exprD' tus tvs t' e = Some df) :
+    (H1 : listS e = Some (pFold t u)) (H2 : exprD' tus tvs t' e = Some df) :
     t' = tyArr (tyArr u (tyArr t t)) (tyArr t (tyArr (tyList u) t)).
   Proof.
     destruct e; simpl in *; try congruence.
@@ -523,7 +523,7 @@ Section ListFuncExprOk.
   Qed.
 
   Lemma lf_zip_func_type_eq (f : func) t u t' df
-    (H1 : listS f = Some (fZip t u)) (H2 : funcAs f t' = Some df) :
+    (H1 : listS f = Some (pZip t u)) (H2 : funcAs f t' = Some df) :
     t' = tyArr (tyList t) (tyArr (tyList u) (tyList (tyProd t u))).
   Proof.
     rewrite (lf_funcAsOk _ H1) in H2.
@@ -533,7 +533,7 @@ Section ListFuncExprOk.
   Qed.
 
   Lemma lf_zip_type_eq tus tvs (e : expr typ func) t u t' df
-    (H1 : listS e = Some (fZip t u)) (H2 : exprD' tus tvs t' e = Some df) :
+    (H1 : listS e = Some (pZip t u)) (H2 : exprD' tus tvs t' e = Some df) :
     t' = tyArr (tyList t) (tyArr (tyList u) (tyList (tyProd t u))).
   Proof.
     destruct e; simpl in *; try congruence.

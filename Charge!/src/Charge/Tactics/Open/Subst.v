@@ -24,81 +24,92 @@ Require Import Charge.Open.Stack.
 Set Implicit Arguments.
 Set Strict Implicit.
 
+Local Notation "'tyStack'" := (typ2 tyString tyVal).
+Local Notation "'tySubst'" := (typ2 tyString (typ2 tyStack tyVal)).
+Local Notation "'tyExpr'" := (typ2 tyStack tyVal).
+Local Notation "'tySubstList'" := (tyList (tyProd tyString (typ2 tyStack tyVal))).
+
 Section ApplySubst.
 	Context {typ func : Type} {RType_typ : RType typ} {ST : SubstType typ} {BT : BaseType typ} {LT : ListType typ}
 	        {HOF : OpenFunc typ func} {HLF : ListFunc typ func} {HBF : BaseFunc typ func}
-	        {BTD : BaseTypeD} {LTD : ListTypeD LT}.
+	        {BTD : BaseTypeD BT} {LTD : ListTypeD LT}.
 	Context {RelDec_typ : RelDec (@eq typ)}.
 	Context {RelDec_string : RelDec (@eq (typD tyString))}.
 
-    Variable Typ2_tyArr : Typ2 _ Fun.
+    Context {Typ2_tyArr : Typ2 RType_typ Fun}.
     Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
-	Definition applySingleSubst (x y : String.string) e s :=
-		if x ?[ eq ] y then e else mkStackGet (mkString (stringR x)) s.
+	Definition applySingleSubst (x y : String.string) e :=
+		if x ?[ eq ] y then e else App fStackGet (mkString (stringR x)).
 		    	
-    Fixpoint applyParSubst (p : expr typ func) (x : String.string) vs es :=
-    	match es with
-    		| App (App f e) es =>
-    			match vs, listS f with
-    				| v :: vs, Some (pCons t) =>
-    					if t ?[ eq ] tyArr tyString tyVal then
-    						if x ?[ eq ] v then
-    							e
-    						else
-    							applyParSubst p x vs es
-    					else
-    						p
-    				| _, _ => p
-    			end
-    		| _ => p
-    	end.
-    						
-    Fixpoint applyTruncSubst (p : expr typ func) (x : String.string) vs es :=
-    	match es with
-    		| App (App f e) es =>
-    			match vs, listS f with
-    				| v :: vs, Some (pCons t) =>
-    					if t ?[ eq ] tyArr tyString tyVal then
-    						if x ?[ eq ] v then
-    							e
-    						else
-    							applyTruncSubst p x vs es
-    					else
-    						mkNull
-    				| _, _ => mkNull
-    			end
-    		| _ => p
-    	end.				
-
-	Definition applySubst (t : typ) (f : expr typ func) (x : String.string) (s : expr typ func) :=
+	Fixpoint applyTruncSubst (t : typ) (x : String.string) (lst : expr typ func) : expr typ func :=
+	  match listS lst with
+	    | Some (pNil u) => mkNull
+	    | _ => 
+	      match lst with
+	        | App (App f (App (App g y) e)) ys =>
+	          match listS f, baseS g, baseS y with
+	            | Some (pCons _), Some (pPair _ _), Some (pConst u y) =>
+	              match type_cast u tyString with
+	                | Some pf => 
+	                  if x ?[ eq ] stringD (eq_rect_r typD y (eq_sym pf)) then
+	                    e
+	                  else
+	                    applyTruncSubst t x ys
+	                | None => mkApplySubst t (App fStackGet (mkString (stringR x))) (mkTruncSubst lst)
+	              end
+	            | _, _, _ => mkApplySubst t (App fStackGet (mkString (stringR x))) (mkTruncSubst lst)
+	          end
+	        | _ => mkApplySubst t (App fStackGet (mkString (stringR x))) (mkTruncSubst lst)
+	      end
+	  end.
+	  
+	Fixpoint applyParSubst (t : typ) (x : String.string) (lst : expr typ func) : expr typ func :=
+	  match listS lst with
+	    | Some (pNil u) => App (Inj fStackGet) (BaseFunc.mkConst tyString (stringR x))
+	    | _ => 
+	      match lst with
+	        | App (App f (App (App g y) e)) ys =>
+	          match listS f, baseS g, baseS y with
+	            | Some (pCons _), Some (pPair _ _), Some (pConst u y) =>
+	              match type_cast u tyString with
+	                | Some pf => 
+	                  if x ?[ eq ] stringD (eq_rect_r typD y (eq_sym pf)) then
+	                    e
+	                  else
+	                    applyParSubst t x ys
+	                | None => mkApplySubst t (App fStackGet (mkString (stringR x))) (mkSubst lst)
+	              end
+	            | _, _, _ => mkApplySubst t (App fStackGet (mkString (stringR x))) (mkSubst lst)
+	          end
+	        | _ => mkApplySubst t (App fStackGet (mkString (stringR x))) (mkSubst lst)
+	      end
+	  end.
+	  
+	Definition applySubst (t : typ) (f : expr typ func) (x : String.string) :=
 		match f with
-		  | App (App g e') y =>
+		  | App (App g e) y =>
 		  	match open_funcS g, baseS y with
 		  	  | Some of_single_subst, Some (pConst t' v) => 
 		  	    match type_cast t' tyString with
-		  	      | Some pf => applySingleSubst x (stringD (eq_rect_r typD v (eq_sym pf))) e' s
-		  	      | None => mkApplySubst t (mkStackGet (mkString (stringR x)) s) f
-		  	    end(*
-		  	  | Some of_trunc_subst, Some (pConst t' v) => 
-		  	    match type_cast t' (tyList tyString) with
-		  	      | Some pf => applyTruncSubst e x 
-		  	        (eq_rect _ list (listD (eq_rect _ typD v _ pf)) _ btString) e'
-		  	      | None => mkApplySubst t e f
-		  	    end*)
-		  (*	  | Some of_trunc_subst, Some (pString v) => applyTruncSubst e x v e'*)
-		  	  | _, _ => mkApplySubst t (mkStackGet (mkString (stringR x)) s) f
-		  	end
-		  | _ => mkApplySubst t (mkStackGet (mkString (stringR x)) s) f
-(*		  | mkApplySubst [t, p, mkSubstList [mkVarList [vs], es]] => applyParSubst p x vs es
-		  | mkApplyTruncSubst [t, p, mkSubstList [mkVarList [vs], es]] => applyTruncSubst x vs es*)
-		end.
+		  	      | Some pf => applySingleSubst x (stringD (eq_rect_r typD v (eq_sym pf))) e
+		  	      | None => mkApplySubst t (App fStackGet (mkString (stringR x))) f
+		  	    end
+		  	  | _, _ => mkApplySubst t (App fStackGet (mkString (stringR x))) f
+		    end
+		  | App g lst =>
+		    match open_funcS g with	  
+		  	  | Some of_trunc_subst => applyTruncSubst t x lst
+		  	  | _ => mkApplySubst t (App fStackGet (mkString (stringR x))) f
+		    end
+		  | _ => mkApplySubst t (App fStackGet (mkString (stringR x))) f
+	end.
 
 End ApplySubst.
 
 Section PushSubst.
   Context {typ func : Type} {ST : SubstType typ} {BT : BaseType typ} {RType_typ : RType typ}.
-  Context {BTD : BaseTypeD} {LT : ListType typ} {LTD : ListTypeD LT}.
+  Context {BTD : BaseTypeD BT} {LT : ListType typ} {LTD : ListTypeD LT}.
   Context {OF : OpenFunc typ func} {ILF : ILogicFunc typ func} {BILF : BILogicFunc typ func} {HBF : BaseFunc typ func}.
   Context {EF : EmbedFunc typ func} {LF : ListFunc typ func}.
   Context {RelDec_string : RelDec (@eq (typD tyString))}.
@@ -119,38 +130,36 @@ Section PushSubst.
     			| Some (ilf_or l) => if ilp l then mkOr l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
     			| Some (ilf_impl l) => if ilp l then mkImpl l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
     			| Some _ => mkApplySubst t e f
-    			| None => 
-    			  match open_funcS g, baseS p with
-    			    | Some of_stack_get, Some (pConst t' x) =>
-    			      match type_cast t' tyString with
-    			        | Some pf => applySubst t f (stringD (eq_rect_r typD x (eq_sym pf))) q
-    			        | None => mkApplySubst t e f
-    			      end
-		    	    | Some (of_ap t1 t2), _ => mkAp t1 t2 (pushSubst p (tyArr t1 t2)) (pushSubst q t1)
-		    		| Some _, _ => mkApplySubst t e f
-		    	    | _, _ => 
-		    	      match bilogicS g with
-		    	        | Some (bilf_star l) => if bilp l then mkStar l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
-		    			| Some (bilf_wand l) => if bilp l then mkWand l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
-		    			| _ => mkApplySubst t e f
-		    		  end
-		    	  end
+    			| None => match open_funcS g with
+		    			 | Some (of_ap t1 t2) => mkAp t1 t2 (pushSubst p (tyArr t1 t2))
+		    			             									 (pushSubst q t1)
+		    			 | Some _ => mkApplySubst t e f
+		    			 | _ => match bilogicS g with
+		    			          | Some (bilf_star l) => if bilp l then mkStar l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
+		    			          | Some (bilf_wand l) => if bilp l then mkWand l (pushSubst p t) (pushSubst q t) else mkApplySubst t e f
+		    			 	      | _ => mkApplySubst t e f
+		    			 	    end
+		    		   end
     		end
     	| App g p =>
-    		match open_funcS g with
-    			| Some (of_const t) => OpenFunc.mkConst t p
-    			| Some _ => mkApplySubst t e f
-    			| None => 
-    			  match embedS g with
-    		        | Some (eilf_embed u v) => 
-				      typ2_simple_match u 
-				         (fun d r =>
-				          match type_cast d (tyArr tyString tyVal) with
-				            | Some _ => if eilp u v then mkEmbed u v (pushSubst p r) else mkApplySubst t e f
-				            | _ => mkApplySubst t e f
-				          end) (mkApplySubst t e f)
-				    | _ => mkApplySubst t e f
-				end
+    		match open_funcS g, baseS p with
+    			| Some of_stack_get, Some (pConst t' x) =>
+    			  match type_cast t' tyString with
+    			    | Some pf => applySubst t f (stringD (eq_rect _ typD x _ pf))
+    			    | None => mkApplySubst t e f
+    			  end
+    			| Some (of_const t), _ => OpenFunc.mkConst t p
+    			| Some _, _ => mkApplySubst t e f
+    			| None, _ => match embedS g with
+    					    | Some (eilf_embed u v) => 
+    					      typ2_simple_match u 
+    					        (fun d r =>
+    					          match type_cast d (tyArr tyString tyVal) with
+    					            | Some _ => if eilp u v then mkEmbed u v (pushSubst p r) else mkApplySubst t e f
+    					            | _ => mkApplySubst t e f
+    					          end) (mkApplySubst t e f)
+    					    | _ => mkApplySubst t e f
+    					  end
     		end
     	| _ => match ilogicS e with
     		     | Some (ilf_true l) => if ilp l then mkTrue l else mkApplySubst t e f
@@ -162,6 +171,7 @@ Section PushSubst.
     		     		end
     		   end
     end.
+    
     
 End PushSubst.
 (*
@@ -185,8 +195,9 @@ Section SubstTac.
   Context {Typ0_Prop : Typ0 _ Prop}.
   Context {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}.
   Context {HV : ValNull (typD tyVal)}.
-  Context {HBTD : BaseTypeD} {HLTD : ListTypeD LT}.
+  Context {HBTD : BaseTypeD BT} {HLTD : ListTypeD LT}.
   Context {OFOK : OpenFuncOk typ func}.
+  Context {LFOK : ListFuncOk typ func}.
   Context {gs : @logic_ops _ RType_typ}.
   Context {bs : @bilogic_ops _ RType_typ}.
   Context {es : @embed_ops _ RType_typ}.
@@ -392,11 +403,6 @@ Require Import Charge.Tactics.Lists.ListTacs.
 Require Import Charge.Tactics.Base.DenotationTacs.
 Require Import Charge.Tactics.Base.MirrorCoreTacs.
 Require Import MirrorCore.Lambda.Expr.
-
-Local Notation "'tyStack'" := (typ2 tyString tyVal).
-Local Notation "'tySubst'" := (typ2 tyString (typ2 tyStack tyVal)).
-Local Notation "'tyExpr'" := (typ2 tyStack tyVal).
-Local Notation "'tySubstList'" := (tyList (tyProd tyString (typ2 tyStack tyVal))).
 
 Ltac ilf_true_type :=
   match goal with
@@ -822,6 +828,667 @@ Proof.
         rewriteD exprT_App_wrap.
         rewriteD fun_to_typ_inv.
         reflexivity.
+      * reduce.
+        unfold tyArr in *.
+        of_stack_get_type.
+        of_stack_get_expr.
+
+  Lemma applySubst_sound tus tvs s x sD
+    (Hs : ExprDsimul.ExprDenote.exprD' tus tvs tySubst s = Some sD) :
+    ExprDsimul.ExprDenote.exprD' tus tvs tyExpr (applySubst tyVal s (stringD x)) =
+    Some (exprT_App (exprT_App (fun us vs => applySubstD tyVal) (exprT_App (fun us vs => stack_getD) (fun us vs => x))) sD).
+  Proof.
+    unfold applySubst.
+    repeat destruct_exprs;
+    try (solve [apply mkApplySubst_sound; [assumption|
+                red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+                unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]]).
+  reduce.
+  
+  Lemma of_trunc_subst_func_type_eq t (f : func) (df : typD t) 
+    (Ho : open_funcS f = Some of_trunc_subst) 
+    (Hf : funcAs f t = Some df) :
+    Rty t (typ2 (tyList (tyProd tyString tyExpr)) (typ2 tyString tyExpr)).
+  Proof.
+    pose proof (of_funcAsOk _ Ho) as H; rewrite H in Hf.
+    unfold funcAs in Hf. simpl in Hf. 
+    forward; inv_all; subst.
+  Qed.
+  
+
+Ltac of_trunc_subst_type :=
+  match goal with
+    | H1 : open_funcS ?e = Some of_trunc_subst |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e
+   			  (typ2 (tyList (tyProd tyString tyExpr)) (typ2 tyString tyExpr)) = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _  
+              (typ2 (tyList (tyProd tyString tyExpr)) (typ2 tyString tyExpr)) e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (of_trunc_subst_func_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	  end
+  end.
+
+  Lemma of_stack_get_func_eq (f : func) 
+    (df : typD (typ2 (tyList (tyProd tyString tyExpr)) (typ2 tyString tyExpr)))
+    (Ho : open_funcS f = Some of_trunc_subst)
+    (Hf : funcAs f (typ2 (tyList (tyProd tyString tyExpr)) (typ2 tyString tyExpr)) = Some df) :
+    df = truncSubstD.
+  Proof.
+   rewrite (of_funcAsOk _ Ho) in Hf.
+   unfold funcAs in Hf; simpl in *.
+   rewrite type_cast_refl in Hf; [| apply _].
+   unfold Rcast, Relim_refl in Hf.
+   inversion Hf. reflexivity.
+  Qed.
+  
+Ltac of_trunc_subst_expr :=
+  match goal with
+    | H1 : open_funcS ?e = Some of_trunc_subst |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ 
+              (typ2 (tyList (tyProd tyString tyExpr)) (typ2 tyString tyExpr)) e =
+          Some (fun _ _ => truncSubstD) |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.funcAs e 
+  			  (typ2 (tyList (tyProd tyString tyExpr)) (typ2 tyString tyExpr)) =
+   		  Some truncSubstD |- _ => fail 1
+		| H2 : ExprDsimul.ExprDenote.funcAs e 
+			   (typ2 (tyList (tyProd tyString tyExpr)) (typ2 tyString tyExpr)) = Some _ |- _ =>
+	 	  let H := fresh "H" in pose proof(of_stack_get_func_eq _ H1 H2); subst
+		(*| H2 : ExprDsimul.ExprDenote.exprD' _ _ 
+			   (typ2 tyString (typ2 tyStack tyVal)) e = Some _ |- _ =>
+	  	  let H := fresh "H" in pose proof(of_stack_get_eq _ H1 H2); subst*)
+	 end
+  end.
+
+of_trunc_subst_type.
+of_trunc_subst_expr.
+
+  Lemma mkTruncSubst_sound (tus tvs : tenv typ) (s : expr typ func)
+    (ds : ExprI.exprT tus tvs (typD tySubstList))
+    (Hs : ExprDsimul.ExprDenote.exprD' tus tvs tySubstList s = Some ds) :
+    ExprDsimul.ExprDenote.exprD' tus tvs tySubst (mkTruncSubst s) =
+      Some (exprT_App (fun _ _ => truncSubstD) ds).
+  Proof.
+    unfold mkTruncSubst; simpl.
+    pose proof (exprD_typeof_Some _ _ _ _ _ Hs) as Hts.
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    pose proof of_fTruncSubstOk as Ho.
+    pose proof (of_funcAsOk _ Ho) as H3; rewrite H3.
+    unfold funcAs; simpl; rewrite type_cast_refl; [reflexivity | apply _].
+  Qed.
+
+
+  Lemma applyTruncSubst_sound tus tvs x s sD 
+    (Hs : ExprDsimul.ExprDenote.exprD' tus tvs tySubstList s = Some sD) :
+    ExprDsimul.ExprDenote.exprD' tus tvs tyExpr (applyTruncSubst tyVal (stringD x) s) =
+      Some (exprT_App (exprT_App (fun _ _ => applySubstD tyVal)
+             (exprT_App (fun _ _ => stack_getD) (fun _ _ => x))) (exprT_App (fun _ _ => truncSubstD) sD)).
+  Proof.
+    induction s; simpl;
+    try (solve [apply mkApplySubst_sound; [apply mkTruncSubst_sound; assumption |
+                red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+                unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]]).
+    + repeat (destruct_exprs;
+      try (solve [apply mkApplySubst_sound; [apply mkTruncSubst_sound; assumption |
+                red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+                unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]])).
+      reduce.
+
+repeat rewrite exprT_App_wrap_sym.
+unfold applySubstD, truncSubstD, stack_getD, fun_to_typ3, fun_to_typ2.
+repeat rewriteD fun_to_typ_inv.
+Lemma substDR s : substD (substR s) = s.
+Proof.
+  admit.
+Qed.
+
+rewrite substDR.
+
+Lemma substListD_nil : substListD (nilD (tyProd tyString tyExpr)) = nil.
+Proof.
+  admit.
+Qed.
+
+rewrite substListD_nil. simpl.
+unfold apply_subst.
+admit.
+
+    + repeat (destruct_exprs;
+      try (solve [apply mkApplySubst_sound; [apply mkTruncSubst_sound; assumption |
+                red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+                unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]])).
+      idtac.
+      reduce.
+      repeat rewrite exprT_App_wrap_sym.
+      unfold applySubstD, stack_getD, truncSubstD, pairD, fun_to_typ3, fun_to_typ2.
+      repeat rewriteD fun_to_typ_inv.
+      rewriteD substDR.
+      clear IHs1 IHs2.
+      Check consD.
+  Lemma listR_cons x xs t :
+    listR (x :: xs) = (fun_to_typ2 (consD t)) x (listD xs).
+      Print substListD.
+     (try red_exprD_hyp).
+      Require Import  Charge.Tactics.Base.BaseTacs.
+	 forward_step.
+	 forward_step.
+	 forward_step.
+	 bf_forward_step.
+	 bf_forward_step.
+	 forward_step.
+	 forward_step.
+	 forward_step.
+     repeat bf_forward_step.
+     repeat lf_forward_step.
+repeat forward_step.
+reduce.
+ 
+      bf_forward_step.
+      bf_forward_step.
+      bf_forward_step.
+      bf_forward_step.
+      lf_forward_step.
+      lf_forward_step.
+      repeat forward_step.
+      reduce.
+      bf_forward_step.
+      lf_forward_step.
+      prod_inj.
+      repeat exprD_saturate_types.
+      repeat (first [rewrite_in_match | bf_rewrite_in_match]).
+      (try red_exprD_goal).
+      repeat (first [
+        progress (unfold foldD, fun_to_typ3) |
+        progress (unfold consD, fun_to_typ2) |
+        progress (repeat rewrite (exprT_App_wrap) in *)]).
+        forward_step.
+        forward_step.
+
+  match goal with
+    | typ : Type |- _ =>
+      match goal with
+        | BT : BaseType typ, RType_typ : RType typ |- _ => 
+          match goal with
+            | _ : BaseTypeD, H : tyProd _ _ = tyProd _ _ |- _ => apply tyProd_inj in H; unfold Rty in H; destruct H; subst
+          end
+      end
+  end.
+reduce.
+        
+        
+        prod_inj.
+        bf_forward_step.
+        repeat forward_step.
+  (try red_exprD_hyp); repeat forward_step; (repeat exprD_saturate_types); (repeat (first [rewrite_in_match | bf_rewrite_in_match])); (try red_exprD_goal); repeat (first [
+        progress (unfold foldD, fun_to_typ3) |
+        progress (unfold consD, fun_to_typ2) |
+        progress (repeat rewrite (exprT_App_wrap) in *)]).
+
+      bf_rewrite_in_match.
+      reduce.
+      bf_forward_step.
+      bf_forward_step.
+      bf_forward_step.
+      bf_forward_step.
+      bf_forward_step.
+      bf_forward_step.
+      bf_forward_step.
+      r_inj H8.
+      bf_forward_step.
+      bf_forward_step.
+      bf_forward_step.
+	  reduce.
+assert (exists LFOK : ListFuncOk typ func, True) by admit.
+destruct H as [LFOK _].
+
+  repeat rewrite exprT_App_wrap_sym.
+  reduce.
+Check pPair.
+Ltac bf_pair_type :=
+  match goal with
+    | H1 : baseS ?e = Some (pPair ?t ?u) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e
+   			  (typ2 t (typ2 u (tyProd t u))) = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _  
+              (typ2 t (typ2 u (tyProd t u))) e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (bf_pair_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	  end
+  end.
+
+  clear IHs1. clear IHs2.
+bf_pair_type.
+bf_pair_type.  
+  bf_const_expr.
+  
+  lf_cons_expr.
+
+
+pose proof (lf_cons_func_type_eq _ _ Heqo Heqo8).
+
+  match goal with
+    | H1 : listS ?e = Some (pCons ?t) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e (typ2 t (typ2 (tyList t) (tyList t))) = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 (tyList t) (tyList t))) e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (lf_cons_func_type_eq _ _ H1 H2) as H; try (r_inj H); try list_inj; repeat clear_eq; subst
+	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
+	      let H := fresh "H" in
+	        pose proof (lf_cons_type_eq _ _ H1 H2) as H; try (r_inj H); try list_inj; repeat clear_eq; subst
+	  end
+  end.
+
+
+  repeat rewrite exprT_App_wrap_sym.
+  lf_cons_type.
+unfold substListD.
+Print substListD.
+lf_nil_type.
+pose proof (@lf_nil_func_type_eq typ func RType_typ LF RSym_func RelDec_typ BT HBTD LT HLTD Typ2_tyArr Typ0_Prop LFOK RTypeOk_typ _ _ _ _ Heqo Heqo0).
+  match goal with
+    | _ : listS ?e = Some (pNil ?t), _ : ExprDsimul.ExprDenote.funcAs ?e (tyList ?t) = Some _ |- _ => fail 1
+    | _ : listS ?e = Some (pNil ?t), _ : ExprDsimul.ExprDenote.exprD' ?tus ?tvs (tyList ?t) ?e = Some _ |- _ => fail 1
+ 	| H1 : listS ?e = Some (pNil _), H2 : ExprDsimul.ExprDenote.funcAs ?e _ = Some _ |- _ => 
+	  let H := fresh "H" in idtac end.
+	  
+	  
+	     pose proof (lf_nil_func_type_eq _ _ H1 H2) as H end list_inj; repeat clear_eq; subst
+	| H1 : listS ?e = Some (pNil _), H2 : ExprDsimul.ExprDenote.exprD' _ _ _ ?e = Some _ |- _ =>
+	  let H := fresh "H" in
+	     pose proof (lf_nil_type_eq _ _ H1 H2) as H; list_inj; repeat clear_eq; subst
+  end.
+
+
+      lf_nil_type.
+  Qed.
+  
+  apply applyTruncSubst_sound.
+assumption.
+repeat rewrite exprT_App_wrap_sym.
+unfold applySubstD, stack_getD, truncSubstD, fun_to_typ2, fun_to_typ3.
+repeat rewriteD fun_to_typ_inv. 
+rewrite substDR.
+Check exprT_App_wrap_sym.
+repeat rewriteD exrpT_App_wrap_sym.
+simpl.
+pose proof (bf_pair_type_eq _ _ Heqo0 Heqo10). 
+r_inj H.
+Print substlist.
+progress reduce.
+
+of_trunc_subst_expr.
+
+
+
+  of_single_subst_func_type_eq.
+  Lemma applySingleSubst_sound tus tvs x y e sD :
+    ExprDsimul.ExprDenote.exprD' tus tvs tyExpr (applySingleSubst (stringD x) (stringD y) e) =
+      Some (exprT_App (exprT_App (fun us vs => applySubstD tyVal) (exprT_App (fun us vs => stack_getD) (fun us vs => x))) sD).
+  Proof.
+    admit.
+    
+    
+     solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+      solve [apply mkApplySubst_sound; [assumption|
+             red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+             unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+      solve [apply mkApplySubst_sound; [assumption|
+             red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+             unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+      solve [apply mkApplySubst_sound; [assumption|
+             red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+             unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+      solve [apply mkApplySubst_sound; [assumption|
+             red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+             unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+      solve [apply mkApplySubst_sound; [assumption|
+             red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+             unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+      solve [apply mkApplySubst_sound; [assumption|
+             red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+             unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+      solve [apply mkApplySubst_sound; [assumption|
+             red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+             unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+      solve [apply mkApplySubst_sound; [assumption|
+             red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+             unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+      solve [apply mkApplySubst_sound; [assumption|
+             red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+             unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+      solve [apply mkApplySubst_sound; [assumption|
+             red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+             unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+      solve [apply mkApplySubst_sound; [assumption|
+             red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+             unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+      solve [apply mkApplySubst_sound; [assumption|
+             red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+             unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+      solve [apply mkApplySubst_sound; [assumption|
+             red_exprD_hyp; red_exprD_goal; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq; 
+             unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+
+      Require Import Charge.Tactics.Open.OpenTacs.
+  pose proof (of_const_func_type_eq _ _ Heqo Heqo7).
+      of_const_type.
+      of_const_type.
+      of_forward_step.
+      of_forward_step.
+      of_forward_step.
+      of_const_type.
+      unfold tyArr in *.
+  match goal with
+    | H1 : open_funcS ?e = Some (of_const ?t) |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e (typ2 t (typ2 tyStack t)) = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ (typ2 t (typ2 tyStack t)) e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (of_const_func_type_eq _ _ H1 H2) as H; try (r_inj H); repeat clear_eq; subst
+	    | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ e = Some _ |- _ =>
+	      let H := fresh "H" in
+	        pose proof (of_const_type_eq _ _ H1 H2) as H; try (r_inj H); repeat clear_eq; subst
+	  end
+  end.
+  subst.
+  pose proof (of_const_func_type_eq _ _ Heqo Heqo7).
+  unfold Rty in H4.
+  r_inj H4.
+
+       repeat of_forward_step.
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+solve [
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+apply mkApplySubst_sound. assumption.
+reduce.
+rewrite bf_typeof_const. reduce. rewrite funcAs_fStackGet_eq. unfold mkString. rewrite BaseFunc.mkConst_sound.uuuuu
+ solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+try solve [reduce;
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+    apply mkApplySubst_sound; 
+      [assumption |
+      reduce; rewrite bf_typeof_const; reduce; rewrite funcAs_fStackGet_eq; unfold mkString; rewrite BaseFunc.mkConst_sound; rewrite stringRD; reflexivity]].
+    reduce.
+    Check bf_const_type_eq.
+    rewrite bf_typeof_const.
+    reduce.
+    rewrite funcAs_fStackGet_eq.
+    unfold mkString. rewrite BaseFunc.mkConst_sound.
+    rewrite stringRD. reflexivity.
+  Lemma fStackGet_func_eq : funcAs fStackGet tySubst = Some stack_getD.
+  Proof.
+    admit.
+  Qed.
+  
+  rewrite fStackGet_func_eq.
+  unfold mkString.
+  
+  rewrite BaseFunc.mkConst_sound.
+  rewrite stringRD. reflexivity.
+  apply mkString_sound.
+    Check
+        reduce.
+    destruct s; simpl; [admit | admit | | admit | admit].
+    do 2 destruct_exprs.
+    apply mkApplySubst_sound; try assumption.
+    reduce. rewrite stringRD. simpl.
+    assert (typeof_sym (BaseFunc.fConst tyString x) = Some tyString) by admit.
+    rewrite H0.
+    reduce.
+    assert (funcAs fStackGet tySubst = Some stack_getD) by admit.
+    rewrite H1. 
+    unfold mkString.
+    rewrite BaseFunc.mkConst_sound.
+    reflexivity.
+    apply mkApplySubst_sound.
+  Qed.
+    apply mkApplySubst_sound.
+  Qed.
+  apply applySubst_sound. assumption.
+    destruct s; simpl.
+    
+    erewrite mkApplySubst_sound; try eassumption.
+    Focus 2.
+    reduce.
+    rewrite stringRD.
+    assert (typeof_sym (BaseFunc.fConst tyString x) = Some tyString) by admit.
+    rewrite H0. reduce.
+    assert (funcAs fStackGet tySubst = Some stack_getD) by admit.
+    rewrite H1.
+    unfold mkString.
+    rewrite BaseFunc.mkConst_sound. 
+    reflexivity.
+    repeat rewrite exprT_App_wrap_sym.
+    unfold applySubstD, stack_getD, fun_to_typ2, fun_to_typ3.
+    repeat rewrite fun_to_typ_inv.
+    rewriteD fun_to_typ_inv. reflexivity.
+    unfold fStackGet.
+    apply mkApplySubst_sound.
+  Qed.
+    
+    apply applySubst_sound.
+    assumption.
+        simpl.
+        repeat rewriteD exprT_App_wrap.
+        rewriteD exprT_App_wrap_sym.
+Check @apply_subst.
+
+  Lemma applySubst_sound
+    ExprDsimul.ExprDenote.exprD' tus tvs tyExpr (applySubst Typ2_tyArr tyVal f (stringD x)) =
+      fun us vs => fun_to_typ (fun c => apply_subst (fun x => typ_to_fun (typ_to_fun fD x) (fun_to_typ
+        
+        rewriteD_sym exprT_App_wrap_sym.
+        unfold apply_subst.
+        rewriteD exprT_App_wrap_sym.
+        rewriteD fun_to_typ_inv.
+        repeat rewrite exrpT_App_wrap.
+      
       * unfold tyArr in *.
         apply typ2_simple_match_cases; [eapply mkApplySubst_sound; eassumption|]; intros.
         destruct_exprs; [|eapply mkApplySubst_sound; eassumption]; intros.
@@ -924,17 +1591,6 @@ Proof.
 		constructor.
 		apply acc_App_l.
 
-      * do 3 (destruct_exprs; try (solve [simpl; eapply mkApplySubst_sound; eassumption])).
-        reduce.
-        of_stack_get_type.
-        of_stack_get_type.
-        of_stack_get_type.
-        unfold applySubstD, fun_to_typ3. 
-        simpl.
-        Check exprT_App_wrap.
-        repeat rewriteD exprT_App_wrap.
-        rewriteD fun_to_typ_inv.
-        repeat rewrite exrpT_App_wrap.
       * do 2 (destruct_exprs; try (solve [simpl; eapply mkApplySubst_sound; eassumption])).
         - reduce.
           bilf_star_type.
