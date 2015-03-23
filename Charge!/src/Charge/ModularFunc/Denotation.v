@@ -6,70 +6,103 @@ Require Import MirrorCore.TypesI.
 Require Import MirrorCore.ExprI.
 Require Import MirrorCore.Lambda.Expr.
 
+Section TrmDR.
+  Context {typ : Type} {RType_typ : RType typ}.
+  
+  Definition trmD {A B : Type} (p : A) (e : A = B) : B :=
+    eq_rect _ id p _ e.
+    
+  Definition trmR {A B : Type} (p : B) (e : A = B) : A :=
+    eq_rect_r id p e.
+     
+  Lemma trmDR {A B : Type} (p : B) (e : A = B) : trmD (trmR p e) e = p.
+  Proof.
+    subst. reflexivity.
+  Qed.
+    
+  Lemma trmRD {A B : Type} (p : A) (e : A = B) : trmR (trmD p e) e = p.
+  Proof.
+    subst. reflexivity.
+  Qed.
+    
+End TrmDR.
+
 Section Denotation.
   Context {typ : Type} {RType_typ : RType typ}.
   Context {Typ2_tyArr : Typ2 _ Fun}.
 
   Let tyArr := @typ2 _ _ _ _.
 
-  Definition fun_to_typ {a b : typ} (f : typD a -> typD b) : typD (tyArr a b) :=
-    eq_rect_r id f (typ2_cast a b).
+  Definition funE {A B : Type} {t u : typ} (e1 : typD t = A) (e2 : typD u = B) : typD (tyArr t u) = (A -> B) :=
+    eq_ind (typD t) (fun X : Type => typD (tyArr t u) = (X -> B))
+      (eq_ind (typD u) (fun Y : Type => typD (tyArr t u) = (typD t -> Y))
+         (typ2_cast t u) B e2) A e1.
+         
+  Definition tyArrD' {a b : typ} (f : typD (tyArr a b)) e1 e2 : typD a -> typD b :=
+    trmD f (funE e1 e2).
+
+  Program Definition tyArrD2' {a b c : typ} (f : typD (tyArr a (tyArr b c))) e1 e2 e3 : 
+    typD a -> typD b -> typD c := 
+    fun a b => tyArrD' (tyArrD' f e1 e2 a) eq_refl e3 b.
+
+  Program Definition tyArrD3' {a b c d : typ} (f : typD (tyArr a (tyArr b (tyArr c d)))) 
+    e1 e2 e3 e4 : typD a -> typD b -> typD c -> typD d := 
+    fun a b c => tyArrD' (tyArrD' (tyArrD' f e1 e2 a) eq_refl e3 b) eq_refl e4 c.
+
+  Program Definition tyArrD4' {a b c d e : typ} (f : typD (tyArr a (tyArr b (tyArr c (tyArr d e))))) 
+    e1 e2 e3 e4 e5 : typD a -> typD b -> typD c -> typD d -> typD e := 
+    fun a b c d => tyArrD' (tyArrD' (tyArrD' (tyArrD' f e1 e2 a) eq_refl e3 b) eq_refl e4 c) eq_refl e5 d.
+
+  Definition tyArrD {a b : typ} (f : typD (tyArr a b)) : typD a -> typD b :=
+    tyArrD' f eq_refl eq_refl.
+
+  Program Definition tyArrD2 {a b c : typ} (f : typD (tyArr a (tyArr b c)))  : 
+    typD a -> typD b -> typD c := tyArrD2' f eq_refl eq_refl eq_refl.
     
-  Definition typ_to_fun {a b : typ} (f : typD (tyArr a b)) : typD a -> typD b :=
-  fun x => (fun g : typD a -> typD b => g x)
-    (eq_rect (typD (typ2 a b)) id f (typD a -> typD b)
-       (typ2_cast a b)).
+  Program Definition tyArrD3 {a b c d : typ} (f : typD (tyArr a (tyArr b (tyArr c d)))) 
+    : typD a -> typD b -> typD c -> typD d := tyArrD3' f eq_refl eq_refl eq_refl eq_refl.
+
+  Program Definition tyArrD4 {a b c d e : typ} (f : typD (tyArr a (tyArr b (tyArr c (tyArr d e))))) 
+    : typD a -> typD b -> typD c -> typD d -> typD e := 
+	  tyArrD4' f eq_refl eq_refl eq_refl eq_refl eq_refl.
+
+
+	  
+  Definition tyArrR' {a b : typ} (f : typD a -> typD b) e1 e2 : typD (tyArr a b) :=
+    trmR f (funE e1 e2).  
+
+  Definition tyArrR2' {a b c : typ} (f : typD a -> typD b -> typD c) e1 e2 e3 : 
+    typD (tyArr a (tyArr b c)) :=
+    tyArrR' (fun a => tyArrR' (f a) e2 e3) eq_refl e1. 
+
+  Definition tyArrR3' {a b c d : typ} (f : typD a -> typD b -> typD c -> typD d) e1 e2 e3 e4 : 
+    typD (tyArr a (tyArr b (tyArr c d))) :=
+    tyArrR' (fun a => tyArrR' (fun b => tyArrR' (f a b) e3 e4) eq_refl e2) eq_refl e1. 
+
+  Definition tyArrR4' {a b c d e : typ} (f : typD a -> typD b -> typD c -> typD d -> typD e) 
+    e1 e2 e3 e4 e5 : typD (tyArr a (tyArr b (tyArr c (tyArr d e)))) :=
+    tyArrR' (fun a => tyArrR' (fun b => tyArrR' (fun c => tyArrR' (f a b c) e5 e4) eq_refl e3) eq_refl e2) eq_refl e1. 
+
+  Definition tyArrR {a b : typ} (f : typD a -> typD b) : typD (tyArr a b) :=
+    tyArrR' f eq_refl eq_refl.
     
-  Definition fun_to_typ2 {a b c : typ} (f : typD a -> typD b -> typD c) :=
-     fun_to_typ (fun x => fun_to_typ (f x)). 
+  Definition tyArrR2 {a b c : typ} (f : typD a -> typD b -> typD c) : 
+    typD (tyArr a (tyArr b c)) :=
+    tyArrR2' f eq_refl eq_refl eq_refl.
 
-  Definition fun_to_typ3 {a b c d : typ} (f : typD a -> typD b -> typD c -> typD d) :=
-    fun_to_typ (fun x => fun_to_typ (fun y => fun_to_typ (f x y))).
+  Definition tyArrR3 {a b c d : typ} (f : typD a -> typD b -> typD c -> typD d) : 
+    typD (tyArr a (tyArr b (tyArr c d))) :=
+    tyArrR3' f eq_refl eq_refl eq_refl eq_refl.
 
-  Definition fun_to_typ4 {a b c d e : typ} (f : typD a -> typD b -> typD c -> typD d -> typD e) :=
-    fun_to_typ (fun x => fun_to_typ (fun y => fun_to_typ (fun z => fun_to_typ (f x y z)))).
+  Definition tyArrR4 {a b c d e : typ} (f : typD a -> typD b -> typD c -> typD d -> typD e) 
+    : typD (tyArr a (tyArr b (tyArr c (tyArr d e)))) :=
+    tyArrR4' f eq_refl eq_refl eq_refl eq_refl eq_refl.
 
-  Definition typ_to_fun2 {a b c : typ} (f : typD (tyArr a (tyArr b c))) : typD a -> typD b -> typD c :=
-    fun x => typ_to_fun (typ_to_fun f x).
-
-  Definition typ_to_fun3 {a b c d : typ} (f : typD (tyArr a (tyArr b (tyArr c d)))) : 
-	  typD a -> typD b -> typD c -> typD d :=
-    fun x y => typ_to_fun (typ_to_fun (typ_to_fun f x) y).
-
-  Lemma fun_to_typ_inv (t u : typ) (f : typD t -> typD u) :
-    typ_to_fun (fun_to_typ f) = f.
+  Lemma exprT_App_wrap_tyArrD tus tvs (t u : typ) (f : exprT tus tvs (typD (tyArr t u))) (a : exprT tus tvs (typD t)) :
+    exprT_App f a = fun us vs => (tyArrD (f us vs)) (a us vs).
   Proof.
-    unfold fun_to_typ, typ_to_fun, eq_rect_r, eq_rect, eq_sym, id.
-    generalize (typ2_cast t u); unfold Fun.
-    remember (typ2 t u).    
-    generalize dependent (typ2 t u); intros; subst.
-    generalize dependent (typD t0); intros. subst. reflexivity.
-  Qed.
-
-  Lemma typ_to_fun_inv (t u : typ) (f : typD (tyArr t u)) :
-    fun_to_typ (typ_to_fun f) = f.
-  Proof.
-    unfold fun_to_typ, typ_to_fun, eq_rect_r, eq_rect, eq_sym, id.
-    generalize (typ2_cast t u); unfold Fun.
+    unfold tyArrD, tyArrD', trmD, funE, exprT_App, eq_rect_r, eq_sym, eq_rect.
     unfold tyArr in *.
-    revert f.
-    remember (typ2 t u).
-    generalize dependent (typ2 t u); intros; subst.
-    generalize dependent (typD t0); intros; subst. reflexivity.
-  Qed.
-
-  Lemma exprT_App_wrap tus tvs (t u : typ) (f : exprT tus tvs (typD t -> typD u)) (a : exprT tus tvs (typD t)) :
-    exprT_App (fun us vs => fun_to_typ (f us vs)) a = fun us vs => (f us vs) (a us vs).
-  Proof.
-    unfold fun_to_typ, exprT_App, eq_rect_r, eq_sym, eq_rect.
-    forward.
-  Qed.
-
-  Lemma exprT_App_wrap_sym tus tvs (t u : typ) (f : exprT tus tvs (typD (tyArr t u))) (a : exprT tus tvs (typD t)) :
-    exprT_App f a = fun us vs => (typ_to_fun (f us vs)) (a us vs).
-  Proof.
-    unfold typ_to_fun, exprT_App, eq_rect_r, eq_sym, eq_rect.
-    unfold tyArr in f.
     generalize (typ2_cast t u).
     generalize dependent (typ2 t u).
     intros.

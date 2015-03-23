@@ -50,76 +50,33 @@ Section BaseTypeD'.
   Context {typ : Type} {BT : BaseType typ} {RType_typ : RType typ} {BTD : BaseTypeD BT}.
  
   Definition natD (n : typD tyNat) : nat :=
-    eq_rect _ id n _ btNat.
-
+    trmD n btNat.
+ 
   Definition boolD (b : typD tyBool) : bool :=
-    eq_rect _ id b _ btBool.
+    trmD b btBool.
 
   Definition stringD (s : typD tyString) : string :=
-    eq_rect _ id s _ btString.
-
-  Definition prodD (t1 t2 : typ) (p : typD (tyProd t1 t2)) : (typD t1 * typD t2)%type :=
-    eq_rect _ id p _ (btProd t1 t2).
+    trmD s btString.
+    
+  Definition pairE {A B : Type} {t u : typ} (e1 : typD t = A) (e2 : typD u = B) : typD (tyProd t u) = (A * B)%type :=
+    eq_ind (typD t) (fun X : Type => typD (tyProd t u) = (X * B)%type)
+      (eq_ind (typD u) (fun Y : Type => typD (tyProd t u) = (typD t * Y)%type)
+         (btProd t u) B e2) A e1.
+    
     
   Definition natR (n : nat) : typD tyNat :=
-    eq_rect _ id n _ (eq_sym btNat).
+    trmR n btNat.
 
   Definition boolR (b : bool) : typD tyBool :=
-    eq_rect _ id b _ (eq_sym btBool).
+    trmR b btBool.
 
   Definition stringR (s : string) : typD tyString :=
-    eq_rect _ id s _ (eq_sym btString).
+    trmR s btString.
 
-  Definition prodR (t1 t2 : typ) (p : (typD t1 * typD t2)%type) : typD (tyProd t1 t2) :=
-    eq_rect _ id p _ (eq_sym (btProd t1 t2)).
-    
-    
-  Lemma natDR n : natD (natR n) = n.
-  Proof.
-    unfold natD, natR, eq_rect_r, eq_rect, eq_sym, id.
-    destruct btNat; reflexivity.
-  Qed.
-
-  Lemma natRD n : natR (natD n) = n.
-  Proof.
-    unfold natD, natR, eq_rect_r, eq_rect, eq_sym, id.
-    destruct btNat; reflexivity.
-  Qed.
-
-  Lemma boolDR b : boolD (boolR b) = b.
-  Proof.
-    unfold boolD, boolR, eq_rect_r, eq_rect, eq_sym, id.
-    destruct btBool; reflexivity.
-  Qed.
-
-  Lemma boolRD b : boolR (boolD b) = b.
-  Proof.
-    unfold boolD, boolR, eq_rect_r, eq_rect, eq_sym, id.
-    destruct btBool; reflexivity.
-  Qed.
-  
-  Lemma stringDR s : stringD (stringR s) = s.
-  Proof.
-    unfold stringD, stringR, eq_rect_r, eq_rect, eq_sym, id.
-    destruct btString; reflexivity.
-  Qed.
-
-  Lemma stringRD s : stringR (stringD s) = s.
-  Proof.
-    unfold stringD, stringR, eq_rect_r, eq_rect, eq_sym, id.
-    destruct btString; reflexivity.
-  Qed.
-
-  Lemma prodDR t u p : prodD t u (prodR t u p) = p.
-  Proof.
-    unfold prodD, prodR, eq_rect_r, eq_rect, eq_sym, id.
-    destruct (btProd t u); reflexivity.
-  Qed.
-
-  Lemma prodRD t u p : prodR t u (prodD t u p) = p.
-  Proof.
-    unfold prodD, prodR, eq_rect_r, eq_rect, eq_sym, id.
-    destruct (btProd t u); reflexivity.
-  Qed.
+  Definition prodD t u (p : typD (tyProd t u)) : typD t * typD u :=
+    trmD p (btProd t u).
+	  
+  Definition prodR t u (p : typD t * typD u) : typD (tyProd t u) :=
+    trmR p (btProd t u).
 
 End BaseTypeD'.  

@@ -128,35 +128,19 @@ Section BaseFuncInst.
 	      								    t2 ?[ eq ] t4)%bool
 	    | _, _ => None
 	  end.
-
-    Definition PropD (P : typD tyProp) : Prop :=
-      eq_rect _ id P _ (typ0_cast (Typ0 := Typ0_tyProp)).
-
-    Definition PropR (P : Prop) : typD tyProp :=
-      eq_rect _ id P _ (eq_sym (typ0_cast (Typ0 := Typ0_tyProp))).
-
-    Lemma PropDR P : PropD (PropR P) = P.
-    Proof.
-      unfold PropD, PropR, eq_rect, eq_sym, id.
-      generalize (typ0_cast (F := Prop)); intros e.
-      generalize dependent (typ0 (F := Prop)); intros.
-      destruct e; reflexivity.
-    Qed.
-
-    Lemma PropRD P : PropR (PropD P) = P.
-    Proof.
-      unfold PropD, PropR, eq_rect, eq_sym, id.
-      generalize (typ0_cast (F := Prop)); intros e.
-      generalize dependent (typ0 (F := Prop)); intros.
-      destruct e; reflexivity.
-    Qed.
-
+	
+	Definition PropD (P : typD tyProp) : Prop :=
+	  trmD P (typ0_cast (Typ0 := Typ0_tyProp)).
+	  
+	Definition PropR (P : Prop) : typD tyProp :=
+	  trmR P (typ0_cast (Typ0 := Typ0_tyProp)).
+	  	  
 	 Definition eqD (t : typ) : typD (tyArr t (tyArr t tyProp)) :=
-	   (fun_to_typ2 (fun a b => PropR (@eq (typD t) a b))).
-	   
+	   (tyArrR2 (fun a b => PropR (@eq (typD t) a b))).
+
 	 Definition pairD (t u : typ) : typD (tyArr t (tyArr u (tyProd t u))) :=
-	   (fun_to_typ2 (fun a b => prodR t u (@pair (typD t) (typD u) a b))).
-	   
+	   (tyArrR2 (fun a b => prodR t u (a, b))).
+
 	 Definition base_func_symD bf :=
 		match bf as bf return match typeof_base_func bf with
 								| Some t => typD t

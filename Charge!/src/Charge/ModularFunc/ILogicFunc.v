@@ -224,11 +224,11 @@ Section ILogicFuncInst.
     forward. eexists. subst. reflexivity.
   Qed.
   
-  Lemma il_pointwise_true_eq (ilp : il_pointwise) (ilpOk : il_pointwiseOk ilp) (t u : typ) (H : ilp (tyArr t u) = true) IL1 IL2
+  Lemma il_pointwise_trueD (ilp : il_pointwise) (ilpOk : il_pointwiseOk ilp) (t u : typ) (H : ilp (tyArr t u) = true) IL1 IL2
     (gstu : gs (tyArr t u) = Some IL1) (gsu : gs u = Some IL2) a :
-    (typ_to_fun ltrue) a = ltrue.
+    (tyArrD ltrue eq_refl eq_refl) a = ltrue.
   Proof.
-    unfold typ_to_fun, eq_rect, id.
+    unfold tyArrD, trmD, funE, eq_rect, id.
     specialize (ilpOk (tyArr t u)).
     rewrite typ2_match_zeta in ilpOk; [|apply _].
     rewrite H in ilpOk.
@@ -246,13 +246,13 @@ Section ILogicFuncInst.
     intros; subst.
     destruct ilpOk as [HTrue _].
     apply HTrue.
-  Qed.    
+  Qed.
 
-  Lemma il_pointwise_true_eq2 (ilp : il_pointwise) (ilpOk : il_pointwiseOk ilp) (t u : typ) (H : ilp (tyArr t u) = true) IL1 IL2
+  Lemma il_pointwise_trueR (ilp : il_pointwise) (ilpOk : il_pointwiseOk ilp) (t u : typ) (H : ilp (tyArr t u) = true) IL1 IL2
     (gstu : gs (tyArr t u) = Some IL1) (gsu : gs u = Some IL2) :
-    fun_to_typ (fun _ => ltrue) = ltrue.
+    tyArrR (fun _ => ltrue) eq_refl eq_refl = ltrue.
   Proof.
-    unfold fun_to_typ, eq_rect_r, eq_rect, eq_sym, id.
+    unfold tyArrR, trmR, funE, eq_rect_r, eq_rect, eq_sym, id.
     specialize (ilpOk (tyArr t u)).
     rewrite typ2_match_zeta in ilpOk; [|apply _].
     rewrite H in ilpOk.
@@ -270,14 +270,14 @@ Section ILogicFuncInst.
     intros; subst.
     destruct ilpOk as [HTrue _].
     unfold Fun in *.
-	apply functional_extensionality; setoid_rewrite HTrue; reflexivity.
+	apply functional_extensionality; intros; rewrite HTrue; reflexivity.
   Qed.    
 
-  Lemma il_pointwise_false_eq (ilp : il_pointwise) (ilpOk : il_pointwiseOk ilp) (t u : typ) (H : ilp (tyArr t u) = true) IL1 IL2
+  Lemma il_pointwise_falseD (ilp : il_pointwise) (ilpOk : il_pointwiseOk ilp) (t u : typ) (H : ilp (tyArr t u) = true) IL1 IL2
     (gstu : gs (tyArr t u) = Some IL1) (gsu : gs u = Some IL2) a :
-    (typ_to_fun lfalse) a = lfalse.
+     (tyArrD lfalse eq_refl eq_refl) a = lfalse.
   Proof.
-    unfold typ_to_fun, eq_rect, id.
+    unfold tyArrD, trmD, funE, eq_rect, id.
     specialize (ilpOk (tyArr t u)).
     rewrite typ2_match_zeta in ilpOk; [|apply _].
     rewrite H in ilpOk.
@@ -297,11 +297,11 @@ Section ILogicFuncInst.
     apply HFalse.
   Qed.    
 
-  Lemma il_pointwise_false_eq2 (ilp : il_pointwise) (ilpOk : il_pointwiseOk ilp) (t u : typ) (H : ilp (tyArr t u) = true) IL1 IL2
+  Lemma il_pointwise_falseR (ilp : il_pointwise) (ilpOk : il_pointwiseOk ilp) (t u : typ) (H : ilp (tyArr t u) = true) IL1 IL2
     (gstu : gs (tyArr t u) = Some IL1) (gsu : gs u = Some IL2) :
-    fun_to_typ (fun _ => lfalse) = lfalse.
+    tyArrR (fun _ => lfalse) eq_refl eq_refl = lfalse.
   Proof.
-    unfold fun_to_typ, eq_rect_r, eq_rect, eq_sym, id.
+    unfold tyArrR, trmR, funE, eq_rect_r, eq_rect, eq_sym, id.
     specialize (ilpOk (tyArr t u)).
     rewrite typ2_match_zeta in ilpOk; [|apply _].
     rewrite H in ilpOk.
@@ -319,14 +319,14 @@ Section ILogicFuncInst.
     intros; subst.
     destruct ilpOk as [_ [HFalse _]].
     unfold Fun in *.
-	apply functional_extensionality; setoid_rewrite HFalse; reflexivity.
+	apply functional_extensionality; intros; rewrite HFalse; reflexivity.
   Qed.    
 
-  Lemma il_pointwise_and_eq (ilp : il_pointwise) (ilpOk : il_pointwiseOk ilp) (t u : typ) (H : ilp (tyArr t u) = true) IL1 IL2
+  Lemma il_pointwise_andD (ilp : il_pointwise) (ilpOk : il_pointwiseOk ilp) (t u : typ) (H : ilp (tyArr t u) = true) IL1 IL2
     (gstu : gs (tyArr t u) = Some IL1) (gsu : gs u = Some IL2) (a b : typD (tyArr t u)) s :
-    (typ_to_fun (land a b)) s = land (typ_to_fun a s) (typ_to_fun b s).
+    (tyArrD (land a b)) eq_refl eq_refl s = land (tyArrD a eq_refl eq_refl s) (tyArrD b eq_refl eq_refl s).
   Proof.
-    unfold typ_to_fun, eq_rect, id.
+    unfold tyArrD, trmD, funE, eq_rect, id.
     specialize (ilpOk (tyArr t u)).
     rewrite typ2_match_zeta in ilpOk; [|apply _].
     rewrite H in ilpOk.
@@ -346,11 +346,12 @@ Section ILogicFuncInst.
     apply HAnd.
   Qed.    
 
-  Lemma il_pointwise_and_eq2 (ilp : il_pointwise) (ilpOk : il_pointwiseOk ilp) (t u : typ) (H : ilp (tyArr t u) = true) IL1 IL2
+  Lemma il_pointwise_andR (ilp : il_pointwise) (ilpOk : il_pointwiseOk ilp) (t u : typ) (H : ilp (tyArr t u) = true) IL1 IL2
     (gstu : gs (tyArr t u) = Some IL1) (gsu : gs u = Some IL2) (a b : typD t -> typD u) :
-    (fun_to_typ (fun s => land (a s) (b s))) = land (fun_to_typ a) (fun_to_typ b).
+    (tyArrR (fun s => land (a s) (b s)) eq_refl eq_refl) = 
+    land (tyArrR a eq_refl eq_refl) (tyArrR b eq_refl eq_refl).
   Proof.
-    unfold fun_to_typ, eq_rect_r, eq_rect, eq_sym, id.
+    unfold tyArrR, trmR, funE, eq_rect_r, eq_rect, eq_sym, id.
     specialize (ilpOk (tyArr t u)).
     rewrite typ2_match_zeta in ilpOk; [|apply _].
     rewrite H in ilpOk.
@@ -367,14 +368,14 @@ Section ILogicFuncInst.
     generalize dependent (typD u).
     intros; subst.
     destruct ilpOk as [_ [_ [HAnd _]]].
-	apply functional_extensionality; setoid_rewrite HAnd; reflexivity.
+	apply functional_extensionality; intros; rewrite HAnd; reflexivity.
   Qed.    
 
   Lemma il_pointwise_or_eq (ilp : il_pointwise) (ilpOk : il_pointwiseOk ilp) (t u : typ) (H : ilp (tyArr t u) = true) IL1 IL2
     (gstu : gs (tyArr t u) = Some IL1) (gsu : gs u = Some IL2) (a b : typD (tyArr t u)) s :
-    (typ_to_fun (lor a b)) s = lor (typ_to_fun a s) (typ_to_fun b s).
+    (tyArrD (lor a b)) eq_refl eq_refl s = lor (tyArrD a eq_refl eq_refl s) (tyArrD b eq_refl eq_refl s).
   Proof.
-    unfold typ_to_fun, eq_rect, id.
+    unfold tyArrD, trmD, funE, eq_rect, id.
     specialize (ilpOk (tyArr t u)).
     rewrite typ2_match_zeta in ilpOk; [|apply _].
     rewrite H in ilpOk.
@@ -396,9 +397,10 @@ Section ILogicFuncInst.
 
   Lemma il_pointwise_or_eq2 (ilp : il_pointwise) (ilpOk : il_pointwiseOk ilp) (t u : typ) (H : ilp (tyArr t u) = true) IL1 IL2
     (gstu : gs (tyArr t u) = Some IL1) (gsu : gs u = Some IL2) (a b : typD t -> typD u) :
-    (fun_to_typ (fun s => lor (a s) (b s))) = lor (fun_to_typ a) (fun_to_typ b).
+    (tyArrR (fun s => lor (a s) (b s)) eq_refl eq_refl) = 
+    lor (tyArrR a eq_refl eq_refl) (tyArrR b eq_refl eq_refl).
   Proof.
-    unfold fun_to_typ, eq_rect_r, eq_rect, eq_sym, id.
+    unfold tyArrR, trmR, funE, eq_rect_r, eq_rect, eq_sym, id.
     specialize (ilpOk (tyArr t u)).
     rewrite typ2_match_zeta in ilpOk; [|apply _].
     rewrite H in ilpOk.
@@ -415,14 +417,14 @@ Section ILogicFuncInst.
     generalize dependent (typD u).
     intros; subst.
     destruct ilpOk as [_ [_ [_ [HOr _]]]].
-	apply functional_extensionality; setoid_rewrite HOr; reflexivity.
+	apply functional_extensionality; intros; rewrite HOr; reflexivity.
   Qed.    
 
   Lemma il_pointwise_impl_eq (ilp : il_pointwise) (ilpOk : il_pointwiseOk ilp) (t u : typ) (H : ilp (tyArr t u) = true) IL1 IL2
     (gstu : gs (tyArr t u) = Some IL1) (gsu : gs u = Some IL2) (a b : typD (tyArr t u)) s :
-    (typ_to_fun (limpl a b)) s = limpl (typ_to_fun a s) (typ_to_fun b s).
+    (tyArrD (limpl a b)) eq_refl eq_refl s = limpl (tyArrD a eq_refl eq_refl s) (tyArrD b eq_refl eq_refl s).
   Proof.
-    unfold typ_to_fun, eq_rect, id.
+    unfold tyArrD, trmD, funE, eq_rect, id.
     specialize (ilpOk (tyArr t u)).
     rewrite typ2_match_zeta in ilpOk; [|apply _].
     rewrite H in ilpOk.
@@ -444,9 +446,10 @@ Section ILogicFuncInst.
 
   Lemma il_pointwise_impl_eq2 (ilp : il_pointwise) (ilpOk : il_pointwiseOk ilp) (t u : typ) (H : ilp (tyArr t u) = true) IL1 IL2
     (gstu : gs (tyArr t u) = Some IL1) (gsu : gs u = Some IL2) (a b : typD t -> typD u) :
-    (fun_to_typ (fun s => limpl (a s) (b s))) = limpl (fun_to_typ a) (fun_to_typ b).
+    (tyArrR (fun s => limpl (a s) (b s)) eq_refl eq_refl) = 
+    limpl (tyArrR a eq_refl eq_refl) (tyArrR b eq_refl eq_refl).
   Proof.
-    unfold fun_to_typ, eq_rect_r, eq_rect, eq_sym, id.
+    unfold tyArrR, trmR, funE, eq_rect_r, eq_rect, eq_sym, id.
     specialize (ilpOk (tyArr t u)).
     rewrite typ2_match_zeta in ilpOk; [|apply _].
     rewrite H in ilpOk.
@@ -463,7 +466,7 @@ Section ILogicFuncInst.
     generalize dependent (typD u).
     intros; subst.
     destruct ilpOk as [_ [_ [_ [_ [HImpl _]]]]].
-	apply functional_extensionality; setoid_rewrite HImpl; reflexivity.
+	apply functional_extensionality; intros; rewrite HImpl; reflexivity.
   Qed.    
 
   Definition typeof_ilfunc (f : ilfunc typ) : option typ :=
@@ -527,9 +530,9 @@ Section ILogicFuncInst.
  
  Definition trueD {t IL} (H : gs t = Some IL) := @ltrue (typD t) IL.
  Definition falseD {t IL} (H : gs t = Some IL) := @lfalse (typD t) IL.
- Definition andD {t IL} (H : gs t = Some IL) := fun_to_typ2 (@land (typD t) IL).
- Definition orD {t IL} (H : gs t = Some IL) := fun_to_typ2 (@lor (typD t) IL).
- Definition implD {t IL} (H : gs t = Some IL) := fun_to_typ2 (@limpl (typD t) IL).
+ Definition andD {t IL} (H : gs t = Some IL) := tyArrR2 (@land (typD t) IL) eq_refl eq_refl eq_refl.
+ Definition orD {t IL} (H : gs t = Some IL) := tyArrR2 (@lor (typD t) IL) eq_refl eq_refl eq_refl.
+ Definition implD {t IL} (H : gs t = Some IL) := tyArrR2 (@limpl (typD t) IL) eq_refl eq_refl eq_refl.
  
  Implicit Arguments trueD [[t] [IL]].
  Implicit Arguments falseD [[t] [IL]].
@@ -603,7 +606,7 @@ Section ILogicFuncInst.
 			| Some t0 => typD t0
 			| None => unit
 		      end) with
-	  | Some t => fun_to_typ2 land
+	  | Some t => tyArrR2 land eq_refl eq_refl eq_refl
 	  | None => tt
         end
       | ilf_impl t =>
@@ -615,7 +618,7 @@ Section ILogicFuncInst.
 			| Some t0 => typD t0
 			| None => unit
 		      end) with
-	  | Some t => fun_to_typ2 limpl
+	  | Some t => tyArrR2 limpl eq_refl eq_refl eq_refl
 	  | None => tt
         end
       | ilf_or t =>
@@ -627,7 +630,7 @@ Section ILogicFuncInst.
 			| Some t0 => typD t0
 			| None => unit
 		      end) with
-	  | Some t => fun_to_typ2 lor
+	  | Some t => tyArrR2 lor eq_refl eq_refl eq_refl
 	  | None => tt
         end
       | ilf_exists a t =>
@@ -1126,7 +1129,7 @@ Section MakeILogicSound.
     (Hgs : gs t = Some IL)
     (Hp : exprD' tus tvs t p = Some dp)
     (Hq : exprD' tus tvs t q = Some dq) :
-    exprD' tus tvs t (mkAnd t p q) = Some (exprT_App (exprT_App (fun _ _ => fun_to_typ2 land) dp) dq).
+    exprD' tus tvs t (mkAnd t p q) = Some (exprT_App (exprT_App (fun _ _ => tyArrR2 land eq_refl eq_refl eq_refl) dp) dq).
   Proof.
     unfold mkAnd; simpl.
     autorewrite with exprD_rw; simpl; forward; inv_all; subst.
@@ -1145,7 +1148,7 @@ Section MakeILogicSound.
     (Hgs : gs t = Some IL)
     (Hp : exprD' tus tvs t p = Some dp)
     (Hq : exprD' tus tvs t q = Some dq) :
-    exprD' tus tvs t (mkOr t p q) = Some (exprT_App (exprT_App (fun _ _ => fun_to_typ2 lor) dp) dq).
+    exprD' tus tvs t (mkOr t p q) = Some (exprT_App (exprT_App (fun _ _ => tyArrR2 lor eq_refl eq_refl eq_refl) dp) dq).
   Proof.
     unfold mkOr; simpl.
     autorewrite with exprD_rw; simpl; forward; inv_all; subst.
@@ -1164,7 +1167,7 @@ Section MakeILogicSound.
     (Hgs : gs t = Some IL)
     (Hp : exprD' tus tvs t p = Some dp)
     (Hq : exprD' tus tvs t q = Some dq) :
-    exprD' tus tvs t (mkImpl t p q) = Some (exprT_App (exprT_App (fun _ _ => fun_to_typ2 limpl) dp) dq).
+    exprD' tus tvs t (mkImpl t p q) = Some (exprT_App (exprT_App (fun _ _ => tyArrR2 limpl eq_refl eq_refl eq_refl) dp) dq).
   Proof.
     unfold mkImpl; simpl.
     autorewrite with exprD_rw; simpl; forward; inv_all; subst.

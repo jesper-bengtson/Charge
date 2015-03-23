@@ -164,19 +164,24 @@ Section ListFuncInst.
     		 	       | None => false 
     			     end
     }.
+Check listE (list (typD tyProp)) (btList tyProp).
+  Definition nilD t : typD (tyList t) := trmR nil (listE (typD t) eq_refl).
+  Definition consD t : typD (tyArr t (tyArr (tyList t) (tyList t))) :=
+    tyArrR2 (fun (x : typD t) (xs : typD (tyList t)) =>
+      trmR (cons x (trmD xs (listE (typD t) eq_refl))) (listE (typD t) eq_refl)) eq_refl eq_refl eq_refl.
+  
+  Definition lengthD t := tyArrR (fun (xs : typD (tyList t)) => 
+    natR (List.length (trmD xs (listE (typD t) eq_refl)))) eq_refl eq_refl.
 
-  Definition nilD t := eq_rect_r id (@nil (typD t)) (btList t).
-  Definition consD t := fun_to_typ2 (fun x (xs : typD (tyList t)) => 
-    listR (cons x (listD xs))).
-  Definition lengthD t := fun_to_typ (fun (xs : typD (tyList t)) => 
-    natR (List.length (listD xs))).
   Definition NoDupD t := 
-    fun_to_typ (fun (xs : typD (tyList t)) => PropR (NoDup (listD xs))).
+     tyArrR (fun (xs : typD (tyList t)) => PropR (NoDup (trmD xs (listE (typD t) eq_refl))))
+            eq_refl eq_refl.
   Definition InD t := 
-    fun_to_typ2 (fun (x : typD t) (xs : typD (tyList t)) => PropR (In x (listD xs))).
+    tyArrR2 (fun (x : typD t) (xs : typD (tyList t)) => 
+      PropR (In x (trmD xs (listE (typD t) eq_refl)))) eq_refl eq_refl eq_refl.
   Definition mapD t u :=
-    fun_to_typ2 (fun (f : typD (tyArr t u)) (xs : typD (tyList t)) => 
-      listR (map (typ_to_fun f) (listD xs))).
+    tyArrR2 (fun (f : typD (tyArr t u)) (xs : typD (tyList t)) => 
+      (trmR (map (typ_to_fun f) (trmD xs (listE (typD t) eq_refl))) (listE (typD t) (eq_refl).
   Definition foldD t u := 
     fun_to_typ3 (fun (f : typD (tyArr u (tyArr t t))) (acc : typD t) (lst : typD (tyList u)) => 
       fold_right (typ_to_fun2 f) acc (listD lst)).
