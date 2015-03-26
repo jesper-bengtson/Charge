@@ -176,12 +176,12 @@ Section BILogicFuncInst.
     forward. eexists. subst. reflexivity.
   Qed.
   
-  Lemma bil_pointwise_emp_eq (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ) 
+  Lemma bil_pointwise_empD (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ) 
     (H : bilp (tyArr t u) = true) BIL1 BIL2
     (gstu : gs (tyArr t u) = Some BIL1) (gsu : gs u = Some BIL2) a :
-    (typ_to_fun empSP) a = empSP.
+    (tyArrD empSP) a = empSP.
   Proof.
-    unfold typ_to_fun, eq_rect, id.
+    unfold tyArrD, tyArrD', trmD, funE, eq_rect, id.
     specialize (bilpOk (tyArr t u)).
     rewrite typ2_match_zeta in bilpOk; [|apply _].
     rewrite H in bilpOk.
@@ -201,12 +201,12 @@ Section BILogicFuncInst.
     apply HEmp.
   Qed.    
 
-  Lemma bil_pointwise_emp_eq2 (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ) 
+  Lemma bil_pointwise_empR (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ) 
     (H : bilp (tyArr t u) = true) BIL1 BIL2
     (gstu : gs (tyArr t u) = Some BIL1) (gsu : gs u = Some BIL2) :
-    fun_to_typ (fun _ => empSP) = empSP.
+    tyArrR (fun _ => empSP) = empSP.
   Proof.
-    unfold fun_to_typ, eq_rect_r, eq_rect, eq_sym, id.
+    unfold tyArrR, tyArrR', trmR, funE, eq_rect_r, eq_rect, eq_sym, id.
     specialize (bilpOk (tyArr t u)).
     rewrite typ2_match_zeta in bilpOk; [|apply _].
     rewrite H in bilpOk.
@@ -224,15 +224,15 @@ Section BILogicFuncInst.
     intros; subst.
     destruct bilpOk as [HEmp _].
     unfold Fun in *.
-	apply functional_extensionality; setoid_rewrite HEmp; reflexivity.
+	apply functional_extensionality; intros; rewrite HEmp; reflexivity.
   Qed.    
 
-  Lemma bil_pointwise_star_eq (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ)
+  Lemma bil_pointwise_starD (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ)
     (H : bilp (tyArr t u) = true) BIL1 BIL2
     (gstu : gs (tyArr t u) = Some BIL1) (gsu : gs u = Some BIL2) (a b : typD (tyArr t u)) s :
-    (typ_to_fun (sepSP a b)) s = sepSP (typ_to_fun a s) (typ_to_fun b s).
+    (tyArrD (sepSP a b)) s = sepSP (tyArrD a s) (tyArrD b s).
   Proof.
-    unfold typ_to_fun, eq_rect, id.
+    unfold tyArrD, tyArrD', trmD, funE, eq_rect, id.
     specialize (bilpOk (tyArr t u)).
     rewrite typ2_match_zeta in bilpOk; [|apply _].
     rewrite H in bilpOk.
@@ -252,12 +252,12 @@ Section BILogicFuncInst.
     apply HStar.
   Qed.    
 
-  Lemma bil_pointwise_star_eq2 (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ) 
+  Lemma bil_pointwise_starR (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ) 
     (H : bilp (tyArr t u) = true) BIL1 BIL2
     (gstu : gs (tyArr t u) = Some BIL1) (gsu : gs u = Some BIL2) (a b : typD t -> typD u) :
-    (fun_to_typ (fun s => sepSP (a s) (b s))) = sepSP (fun_to_typ a) (fun_to_typ b).
+    (tyArrR (fun s => sepSP (a s) (b s))) = sepSP (tyArrR a) (tyArrR b).
   Proof.
-    unfold fun_to_typ, eq_rect_r, eq_rect, eq_sym, id.
+    unfold tyArrR, tyArrR', trmR, funE, eq_rect_r, eq_rect, eq_sym, id.
     specialize (bilpOk (tyArr t u)).
     rewrite typ2_match_zeta in bilpOk; [|apply _].
     rewrite H in bilpOk.
@@ -274,15 +274,15 @@ Section BILogicFuncInst.
     generalize dependent (typD u).
     intros; subst.
     destruct bilpOk as [_ [HStar _]].
-	apply functional_extensionality; setoid_rewrite HStar; reflexivity.
+	apply functional_extensionality; intros; rewrite HStar; reflexivity.
   Qed.    
 
-  Lemma bil_pointwise_wand_eq (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ)
+  Lemma bil_pointwise_wandD (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ)
     (H : bilp (tyArr t u) = true) BIL1 BIL2
     (gstu : gs (tyArr t u) = Some BIL1) (gsu : gs u = Some BIL2) (a b : typD (tyArr t u)) s :
-    (typ_to_fun (wandSP a b)) s = wandSP (typ_to_fun a s) (typ_to_fun b s).
+    (tyArrD (wandSP a b)) s = wandSP (tyArrD a s) (tyArrD b s).
   Proof.
-    unfold typ_to_fun, eq_rect, id.
+    unfold tyArrD, tyArrD', trmD, funE, eq_rect, id.
     specialize (bilpOk (tyArr t u)).
     rewrite typ2_match_zeta in bilpOk; [|apply _].
     rewrite H in bilpOk.
@@ -302,12 +302,12 @@ Section BILogicFuncInst.
     apply HWand.
   Qed.    
 
-  Lemma bil_pointwise_wand_eq2 (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ) 
+  Lemma bil_pointwise_wandR (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ) 
     (H : bilp (tyArr t u) = true) BIL1 BIL2
     (gstu : gs (tyArr t u) = Some BIL1) (gsu : gs u = Some BIL2) (a b : typD t -> typD u) :
-    (fun_to_typ (fun s => wandSP (a s) (b s))) = wandSP (fun_to_typ a) (fun_to_typ b).
+    (tyArrR (fun s => wandSP (a s) (b s))) = wandSP (tyArrR a) (tyArrR b).
   Proof.
-    unfold fun_to_typ, eq_rect_r, eq_rect, eq_sym, id.
+    unfold tyArrR, tyArrR', trmR, funE, eq_rect_r, eq_rect, eq_sym, id.
     specialize (bilpOk (tyArr t u)).
     rewrite typ2_match_zeta in bilpOk; [|apply _].
     rewrite H in bilpOk.
@@ -324,7 +324,7 @@ Section BILogicFuncInst.
     generalize dependent (typD u).
     intros; subst.
     destruct bilpOk as [_ [_ HWand]].
-	apply functional_extensionality; setoid_rewrite HWand; reflexivity.
+	apply functional_extensionality; intros; rewrite HWand; reflexivity.
   Qed.    
 
   Definition typeof_bilfunc (f : bilfunc typ) : option typ :=
@@ -358,8 +358,8 @@ Section BILogicFuncInst.
   Qed.
 
  Definition empD t BIL := @empSP (typD t) BIL.
- Definition starD t BIL := fun_to_typ2 (@sepSP (typD t) BIL).
- Definition wandD t BIL := fun_to_typ2 (@wandSP (typD t) BIL).
+ Definition starD t BIL := tyArrR2 (@sepSP (typD t) BIL).
+ Definition wandD t BIL := tyArrR2 (@wandSP (typD t) BIL).
  
  Definition funcD (f : bilfunc typ) : match typeof_bilfunc f with
 							       | Some t => typD t
@@ -649,7 +649,7 @@ Section MakeBILogicSound.
     (H : gs t = Some BIL)
     (Ho : bilogicS f = Some (bilf_star t))
     (Hf : funcAs f (tyArr t (tyArr t t)) = Some df) :
-    df = fun_to_typ2 sepSP.
+    df = tyArrR2 sepSP.
   Proof.
    rewrite (bilf_funcAsOk _ Ho) in Hf.
    unfold funcAs in Hf; simpl in *.
@@ -664,7 +664,7 @@ Section MakeBILogicSound.
     (H : gs t = Some BIL)
     (Ho : bilogicS e = Some (bilf_star t))
     (Hf : exprD' tus tvs (tyArr t (tyArr t t)) e = Some df) :
-    df = fun us vs => fun_to_typ2 sepSP.
+    df = fun us vs => tyArrR2 sepSP.
   Proof.
    destruct e; simpl in *; try congruence.
    autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
@@ -675,7 +675,7 @@ Section MakeBILogicSound.
     (H : gs t = Some BIL)
     (Ho : bilogicS f = Some (bilf_wand t))
     (Hf : funcAs f (tyArr t (tyArr t t)) = Some df) :
-    df = fun_to_typ2 wandSP.
+    df = tyArrR2 wandSP.
   Proof.
    rewrite (bilf_funcAsOk _ Ho) in Hf.
    unfold funcAs in Hf; simpl in *.
@@ -690,7 +690,7 @@ Section MakeBILogicSound.
     (H : gs t = Some BIL)
     (Ho : bilogicS e = Some (bilf_wand t))
     (Hf : exprD' tus tvs (tyArr t (tyArr t t)) e = Some df) :
-    df = fun us vs => fun_to_typ2 wandSP.
+    df = fun us vs => tyArrR2 wandSP.
   Proof.
    destruct e; simpl in *; try congruence.
    autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.

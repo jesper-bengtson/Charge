@@ -24,6 +24,23 @@ Section TrmDR.
   Proof.
     subst. reflexivity.
   Qed.
+
+ Lemma trmDR2 f g (h : forall {A : Type} {t : typ}, (typD t = A) -> typD (f t) = g A) 
+    t A B (x : forall A, g A) (e1 : typD t = A) (e2 : typD t = B) : trmD (trmR (x A) (h e1)) (h e2) = x B.
+  Proof.
+    unfold trmD, trmR, eq_rect_r, eq_rect, id, eq_sym.
+    generalize dependent (h B t e2).
+    generalize dependent (h A t e1); intros; subst.
+	generalize dependent (typD (f t)).
+	generalize dependent (typD t). intro.
+	generalize dependent (x T).
+	generalize dependent (g T).
+	clear.
+	intros; subst.
+	subst.
+	assert (e = eq_refl) by admit.
+	subst. reflexivity.
+  Qed.
     
 End TrmDR.
 
@@ -97,8 +114,19 @@ Section Denotation.
   Definition tyArrR4 {a b c d e : typ} (f : typD a -> typD b -> typD c -> typD d -> typD e) 
     : typD (tyArr a (tyArr b (tyArr c (tyArr d e)))) :=
     tyArrR4' f eq_refl eq_refl eq_refl eq_refl eq_refl.
+    
+    
+  Lemma tyArrDR {a b : typ} (f : typD a -> typD b) : tyArrD (tyArrR f) = f.
+  Proof.
+    unfold tyArrD, tyArrD', tyArrR, tyArrR'; rewrite trmDR. reflexivity.
+  Qed.
 
-  Lemma exprT_App_wrap_tyArrD tus tvs (t u : typ) (f : exprT tus tvs (typD (tyArr t u))) (a : exprT tus tvs (typD t)) :
+  Lemma tyArrRD {a b : typ} (f : typD (tyArr a b)) : tyArrR (tyArrD f) = f.
+  Proof.
+    unfold tyArrD, tyArrD', tyArrR, tyArrR'; rewrite trmRD. reflexivity.
+  Qed.
+
+  Lemma exprT_App_tyArrD tus tvs (t u : typ) (f : exprT tus tvs (typD (tyArr t u))) (a : exprT tus tvs (typD t)) :
     exprT_App f a = fun us vs => (tyArrD (f us vs)) (a us vs).
   Proof.
     unfold tyArrD, tyArrD', trmD, funE, exprT_App, eq_rect_r, eq_sym, eq_rect.

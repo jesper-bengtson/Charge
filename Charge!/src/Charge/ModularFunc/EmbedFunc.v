@@ -158,7 +158,7 @@ Section EmbedFuncInst.
     repeat rewrite rel_dec_correct; intuition congruence.
   Qed.
 
- Definition embedD t u (EIL : EmbedOp (typD t) (typD u)) := fun_to_typ (@embed _ _ EIL).
+ Definition embedD t u (EIL : EmbedOp (typD t) (typD u)) := tyArrR (@embed _ _ EIL).
 
  Definition funcD (f : embed_func typ) : match typeof_embed_func f with
 							              | Some t => typD t
@@ -211,7 +211,7 @@ Section EmbedFuncInst.
                   match gs (tyArr dt rt) (tyArr dt ru), gs rt ru with
                     | Some EOps1, Some EOps2 =>
                       forall (P : typD dt -> typD rt) (a : typD dt),
-                        typ_to_fun (embed (fun_to_typ P)) a = embed (P a)
+                        tyArrD (embed (tyArrR P)) a = embed (P a)
                     | _, _ => False
                   end
                 | _ => False
@@ -241,20 +241,19 @@ Section EmbedFuncInst.
   
   Lemma eilf_pointwise_embed_eq (eilp : eil_pointwise) (eilpOk : eil_pointwiseOk eilp) (t u v : typ) (H : eilp (tyArr t u) (tyArr t v) = true) EIL1 EIL2
     (gstu : gs (tyArr t u) (tyArr t v) = Some EIL1) (gsu : gs u v = Some EIL2) (a : typD (tyArr t u)) s :
-    (typ_to_fun (embed a)) s = embed (typ_to_fun a s).
+    (tyArrD (embed a)) s = embed (tyArrD a s).
   Proof.
     specialize (eilpOk (tyArr t u) (tyArr t v)).
     unfold tyArr in *.
     do 2 rewrite typ2_simple_match_zeta in eilpOk.
     rewrite type_cast_refl in eilpOk.
-    rewrite gstu, gsu in eilpOk.
-    rewrite <- eilpOk, typ_to_fun_inv. reflexivity.
+    rewrite gstu, gsu in eilpOk. rewrite <- eilpOk, tyArrRD. reflexivity.
     apply _.
   Qed.    
   
   Lemma eilf_pointwise_embed_eq2 (eilp : eil_pointwise) (eilpOk : eil_pointwiseOk eilp) (t u v : typ) (H : eilp (tyArr t u) (tyArr t v) = true) EIL1 EIL2
     (gstu : gs (tyArr t u) (tyArr t v) = Some EIL1) (gsu : gs u v = Some EIL2) (a : typD t -> typD u) :
-    fun_to_typ (fun s => embed (a s)) = embed (fun_to_typ a).
+    tyArrR (fun s => embed (a s)) = embed (tyArrR a).
   Proof.
     specialize (eilpOk (tyArr t u) (tyArr t v)).
     unfold tyArr in *.
@@ -263,8 +262,7 @@ Section EmbedFuncInst.
     rewrite gstu, gsu in eilpOk.
     symmetry in eilpOk.
     Require Import Charge.Tactics.Base.MirrorCoreTacs.
-    rewriteD eilpOk.
-    rewrite typ_to_fun_inv. reflexivity.
+    rewriteD eilpOk. rewrite tyArrRD. reflexivity.
   Qed.    
 
 End EmbedFuncInst.

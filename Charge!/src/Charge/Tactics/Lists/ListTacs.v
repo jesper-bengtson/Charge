@@ -167,6 +167,19 @@ Ltac lf_NoDup_expr :=
 	  pose proof (mkNoDupD _ _ _ H); clear H; (repeat destruct_match_oneres)*)
   end.
 
+Ltac list_unfold := 
+  first [
+    progress (unfold listD) |
+    progress (unfold listR) |
+    progress (unfold nilD) | 
+    progress (unfold consD) | 
+    progress (unfold zipD) |
+    progress (unfold mapD) |
+    progress (unfold foldD) |
+    progress (unfold lengthD)
+  ].
+
+
 Ltac lf_forward_step :=
   match goal with 
     | H : Some _ = listS _ |- _ =>  symmetry in H

@@ -164,48 +164,42 @@ Section ListFuncInst.
     		 	       | None => false 
     			     end
     }.
-Check listE (list (typD tyProp)) (btList tyProp).
-  Definition nilD t : typD (tyList t) := trmR nil (listE (typD t) eq_refl).
+
+  Definition nilD t : typD (tyList t) := listR nil.
   Definition consD t : typD (tyArr t (tyArr (tyList t) (tyList t))) :=
     tyArrR2 (fun (x : typD t) (xs : typD (tyList t)) =>
-      trmR (cons x (trmD xs (listE (typD t) eq_refl))) (listE (typD t) eq_refl)) eq_refl eq_refl eq_refl.
+      listR (cons x (trmD xs (listE eq_refl)))).
   
   Definition lengthD t := tyArrR (fun (xs : typD (tyList t)) => 
-    natR (List.length (trmD xs (listE (typD t) eq_refl)))) eq_refl eq_refl.
+    natR (List.length (listD xs))).
 
   Definition NoDupD t := 
-     tyArrR (fun (xs : typD (tyList t)) => PropR (NoDup (trmD xs (listE (typD t) eq_refl))))
-            eq_refl eq_refl.
+     tyArrR (fun (xs : typD (tyList t)) => PropR (NoDup (listD xs))).
+     
   Definition InD t := 
     tyArrR2 (fun (x : typD t) (xs : typD (tyList t)) => 
-      PropR (In x (trmD xs (listE (typD t) eq_refl)))) eq_refl eq_refl eq_refl.
+      PropR (In x (listD xs))).
+
   Definition mapD t u :=
     tyArrR2 (fun (f : typD (tyArr t u)) (xs : typD (tyList t)) => 
-      (trmR (map (typ_to_fun f) (trmD xs (listE (typD t) eq_refl))) (listE (typD t) (eq_refl).
-  Definition foldD t u := 
-    fun_to_typ3 (fun (f : typD (tyArr u (tyArr t t))) (acc : typD t) (lst : typD (tyList u)) => 
-      fold_right (typ_to_fun2 f) acc (listD lst)).
+      (listR (map (tyArrD f) (listD xs)))).
 
-  Definition zipD t u := 
-    fun_to_typ2 (fun (xs : typD (tyList t)) (ys : typD (tyList u)) => 
-      listR (eq_rect_r list (combine (listD xs) (listD ys)) (btProd t u))).
+  Definition foldD t u :=
+    tyArrR3 (fun (f : typD (tyArr u (tyArr t t))) (acc : typD t) (lst : typD (tyList u)) =>
+      fold_right (tyArrD2 f) acc (listD lst)).
+
+  Definition zipD t u :=
+    tyArrR2 (fun (xs : typD (tyList t)) (ys : typD (tyList u)) =>
+      trmR (combine (listD xs) (listD ys)) (listE (pairE (t := t) (u := u) eq_refl eq_refl))).
 
   Lemma listD_nil t : listD (nilD t) = nil.
   Proof.
-    unfold listD, nilD, eq_rect_r, eq_rect, eq_sym, id.
-    generalize (btList t).
-    generalize dependent (typD t).
-    generalize dependent (typD (tyList t)).
-    intros. subst. reflexivity.
+    unfold listD, nilD, listR. rewrite trmDR. reflexivity.
   Qed.
 
   Lemma listR_nil t : listR nil = nilD t.
   Proof.
-    unfold listR, nilD, eq_rect_r, eq_rect, eq_sym, id.
-    generalize (btList t).
-    generalize dependent (typD t).
-    generalize dependent (typD (tyList t)).
-    intros. subst. reflexivity.
+    reflexivity.
   Qed.
 
 	 Definition list_func_symD lf :=

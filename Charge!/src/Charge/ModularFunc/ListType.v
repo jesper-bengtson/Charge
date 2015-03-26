@@ -34,15 +34,15 @@ Section ListTypeD'.
   Definition listE {A : Type} {t : typ} (e : typD t = A) : typD (tyList t) = list A :=
     eq_ind (typD t) (fun B : Type => typD (tyList t) = list B) (btList t) A e.
 
-  Definition listD {A : Type} (t : typ) (lst : typD (tyList t)) : list (typD t) :=
+  Definition listD {t : typ} (lst : typD (tyList t)) : list (typD t) :=
     trmD lst (listE eq_refl).
 
-  Definition listR {A : Type} (t : typ) (lst : typD (tyList t)) : list (typD t) :=
-    trmR lst (eq_sym (listE eq_refl)).
+  Definition listR {t : typ} (lst : list (typD t)) : typD (tyList t) :=
+    trmR lst (listE eq_refl).
 
 End ListTypeD'.  
 
-Implicit Arguments listE [[typ] [LT] [RType_typ] [LTD] [t]].
+Implicit Arguments listE [[A] [typ] [LT] [RType_typ] [LTD] [t]].
 
 Ltac list_inj :=
   match goal with

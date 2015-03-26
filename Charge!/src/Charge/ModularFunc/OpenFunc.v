@@ -215,49 +215,42 @@ Section OpenFuncInst.
 	; ap := fun _ _ f x y => (f y) (x y)
 	}.
 
-    Definition substListD (lst : typD tySubstList) : substlist (A := typD tyString) (val := (typD tyVal)).
-    Proof.
-      unfold tyArr in lst.
-      rewrite btList, btProd, btString in lst.
-      repeat rewrite typ2_cast in lst.
-      rewrite btString.
-      rewrite btString in lst.
-      apply lst.
-   Defined.
+    Definition substListD (lst : typD tySubstList) : substlist (A := typD tyString) (val := (typD tyVal)) :=
+      trmD lst (listE (pairE eq_refl (funE (funE eq_refl eq_refl) eq_refl))).
    
 	 Definition substD (s : typD tySubst) : subst := 
-	   (fun e f => (typ_to_fun2 s) e (fun_to_typ f)).
+	   (fun e f => (tyArrD2 s) e (tyArrR f)).
 
 	 Definition substR (s : subst) : typD tySubst :=
-	   fun_to_typ2 (fun a b => s a (typ_to_fun b)). 
+	   tyArrR2 (fun a b => s a (tyArrD b)). 
 
 
 	 Definition constD t : typD (tyArr t (tyArr tyStack t)) :=
-	   fun_to_typ (fun x => (fun_to_typ (pure x))). 
+	   tyArrR (fun x => (tyArrR (pure x))). 
 	
 	 Definition stack_getD : typD (tyArr tyString (tyArr tyStack tyVal)) :=
-	   fun_to_typ2 (fun x s => (typ_to_fun s) x).
+	   tyArrR2 (fun x s => (tyArrD s) x).
 
 	 Definition stack_setD : typD (tyArr tyString (tyArr tyVal (tyArr tyStack tyStack))) :=
-	   fun_to_typ4 (fun a b c d => stack_add a b (typ_to_fun c) d).
+	   tyArrR4 (fun a b c d => stack_add a b (tyArrD c) d).
 
 	 Definition apD t u : typD (tyArr (tyArr tyStack (tyArr t u)) (tyArr (tyArr tyStack t) (tyArr tyStack u))) :=
-	   fun_to_typ3 (fun a b c => @ap (Fun (typD tyStack)) (Applicative_Fun _) (typD t) (typD u)
-	   	 (typ_to_fun2 a) (typ_to_fun b) c).
+	   tyArrR3 (fun a b c => @ap (Fun (typD tyStack)) (Applicative_Fun _) (typD t) (typD u)
+	   	 (tyArrD2 a) (tyArrD b) c).
 
 	 Program Definition applySubstD (t : typ) : typD (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t))) :=
-	   fun_to_typ3 (fun a b c => apply_subst
-	     (fun x => typ_to_fun a (fun_to_typ x)) (substD b)
-	     (typ_to_fun c)).
+	   tyArrR3 (fun a b c => apply_subst
+	     (fun x => tyArrD a (tyArrR x)) (substD b)
+	     (tyArrD c)).
 	 
 	 Definition singleSubstD :=
-	   fun_to_typ2 (fun a b => substR (subst1 (fun x => typ_to_fun a (fun_to_typ x)) b)).
+	   tyArrR2 (fun a b => substR (subst1 (fun x => tyArrD a (tyArrR x)) b)).
 	   
 	 Definition parSubstD :=
-	   fun_to_typ (fun a => substR (substl_aux (substListD a))).
+	   tyArrR (fun a => substR (substl_aux (substListD a))).
 
 	 Definition truncSubstD :=
-	   fun_to_typ (fun a => substR (substl_trunc_aux (substListD a))).
+	   tyArrR (fun a => substR (substl_trunc_aux (substListD a))).
 
 	 Definition open_func_symD f : match typeof_open_func f with
 	                                 | Some t => typD t
@@ -891,6 +884,27 @@ Section MakeOpenSound.
     eapply of_single_subst_func_type_eq; eassumption.
   Qed.
 
+  Lemma of_trunc_subst_func_type_eq t (f : func) (df : typD t) 
+    (Ho : open_funcS f = Some of_trunc_subst) 
+    (Hf : funcAs f t = Some df) :
+    Rty t (tyArr (tyList (tyProd tyString tyExpr)) (tyArr tyString tyExpr)).
+  Proof.
+    pose proof (of_funcAsOk _ Ho) as H; rewrite H in Hf.
+    unfold funcAs in Hf. simpl in Hf. 
+    forward; inv_all; subst.
+    symmetry. apply r.
+  Qed.
+  
+  Lemma of_trunc_subst_type_eq tus tvs t (e : expr typ func) df
+    (Ho : open_funcS e = Some of_trunc_subst) 
+    (Hf : exprD' tus tvs t e = Some df) :
+    Rty t (tyArr (tyList (tyProd tyString tyExpr)) (tyArr tyString tyExpr)).
+  Proof.
+    destruct e; simpl in *; try congruence.
+    autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+    eapply of_trunc_subst_func_type_eq; eassumption.
+  Qed.
+  
   Lemma of_apply_subst_func_eq (t : typ) (f : func) (df : typD (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t))))
     (Ho : open_funcS f = Some (of_apply_subst t))
     (Hf : funcAs f (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t))) = Some df) :
@@ -986,6 +1000,30 @@ Section MakeOpenSound.
    erewrite <- of_stack_get_func_eq; try eassumption; reflexivity.
   Qed.
 
+  Lemma of_trunc_subst_func_eq (f : func) 
+    (df : typD (tyArr (tyList (tyProd tyString tyExpr)) (tyArr tyString tyExpr)))
+    (Ho : open_funcS f = Some of_trunc_subst)
+    (Hf : funcAs f (tyArr (tyList (tyProd tyString tyExpr)) (tyArr tyString tyExpr)) = Some df) :
+    df = truncSubstD.
+  Proof.
+   rewrite (of_funcAsOk _ Ho) in Hf.
+   unfold funcAs in Hf; simpl in *.
+   rewrite type_cast_refl in Hf; [| apply _].
+   unfold Rcast, Relim_refl in Hf.
+   inversion Hf. reflexivity.
+  Qed.
+
+  Lemma of_trunc_subst_eq tus tvs (e : expr typ func) 
+    (df : ExprI.exprT tus tvs (typD (tyArr (tyList (tyProd tyString tyExpr)) (tyArr tyString tyExpr))))
+    (Ho : open_funcS e = Some of_trunc_subst)
+    (Hf :exprD' tus tvs (tyArr (tyList (tyProd tyString tyExpr)) (tyArr tyString tyExpr)) e = Some df) :
+    df = fun us vs => truncSubstD.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   erewrite <- of_trunc_subst_func_eq; try eassumption; reflexivity.
+  Qed.
+
   Lemma mkNull_sound (tus tvs : tenv typ) :
     exprD' tus tvs tyVal mkNull = Some (fun _ _ => null).
   Proof.
@@ -1047,6 +1085,21 @@ Section MakeOpenSound.
     autorewrite with exprD_rw; simpl; forward; inv_all; subst.
     autorewrite with exprD_rw; simpl; forward; inv_all; subst.
     pose proof (of_fApplySubstOk t) as Ho.
+    pose proof (of_funcAsOk _ Ho) as H3; rewrite H3.
+    unfold funcAs; simpl; rewrite type_cast_refl; [reflexivity | apply _].
+  Qed.
+
+  Lemma mkTruncSubst_sound (tus tvs : tenv typ) (s : expr typ func)
+    (ds : ExprI.exprT tus tvs (typD tySubstList))
+    (Hs : exprD' tus tvs tySubstList s = Some ds) :
+    exprD' tus tvs tySubst (mkTruncSubst s) =
+      Some (exprT_App (fun _ _ => truncSubstD) ds).
+  Proof.
+    unfold mkTruncSubst; simpl.
+    pose proof (exprD_typeof_Some _ _ _ _ _ Hs) as Hts.
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    pose proof (of_fTruncSubstOk) as Ho.
     pose proof (of_funcAsOk _ Ho) as H3; rewrite H3.
     unfold funcAs; simpl; rewrite type_cast_refl; [reflexivity | apply _].
   Qed.
