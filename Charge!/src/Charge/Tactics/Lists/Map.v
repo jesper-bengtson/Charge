@@ -19,7 +19,7 @@ Require Import ExtLib.Core.RelDec.
 
 Section Map.
   Context {typ func : Type} {RType_typ : RType typ} {RSym_func : RSym func}.
-  Context {BT : BaseType typ} {BTD : BaseTypeD}.
+  Context {BT : BaseType typ} {BTD : BaseTypeD BT}.
   Context {LT : ListType typ} {LTD : ListTypeD LT}. 
   Context {BF : BaseFunc typ func} {LF: ListFunc typ func}.
   Context {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
@@ -86,26 +86,18 @@ Section Map.
   Lemma mapTac_auxOk tus tvs (t u : typ) (f lst : expr typ func) fD lstD
     (Hf : ExprDsimul.ExprDenote.exprD' tus tvs (typ2 t u) f = Some fD)
     (Hlst : ExprDsimul.ExprDenote.exprD' tus tvs (tyList t) lst = Some lstD) :
-    ExprDsimul.ExprDenote.exprD' tus tvs (tyList u) (mapTac_aux t u f lst) = Some (fun us vs => typ_to_fun2 (mapD t u) (fD us vs) (lstD us vs)).
+    ExprDsimul.ExprDenote.exprD' tus tvs (tyList u) (mapTac_aux t u f lst) = Some (fun us vs => tyArrD2 (mapD t u) (fD us vs) (lstD us vs)).
   Proof.
     Transparent listS.
     generalize dependent lstD.
     induction lst using expr_strong_ind; simpl; intros;
-      try (erewrite mkMap_sound; try eassumption; do 2 rewrite exprT_App_wrap_sym; reflexivity).
-    + do 3 (destruct_exprs; try (erewrite mkMap_sound; try eassumption; do 2 rewrite exprT_App_wrap_sym; reflexivity)).
-      reduce. rewrite mkNil_sound.
-      unfold typ_to_fun2, mapD, fun_to_typ2. repeat rewriteD fun_to_typ_inv.
-      rewrite listD_nil; reflexivity.
-    + do 4 (destruct_exprs; try (erewrite mkMap_sound; try eassumption; do 2 rewrite exprT_App_wrap_sym; reflexivity)).
+      try (erewrite mkMap_sound; try eassumption; reduce; reflexivity).
+    + do 3 (destruct_exprs; try (erewrite mkMap_sound; try eassumption; do 2 rewrite exprT_App_tyArrD; reflexivity)).
+      reduce. rewrite mkNil_sound. reflexivity.
+    + do 4 (destruct_exprs; try (erewrite mkMap_sound; try eassumption; do 2 rewrite exprT_App_tyArrD; reflexivity)).
       reduce.
       erewrite mkCons_sound; [| reduce; reflexivity | apply H; [repeat constructor | eassumption]].
-      do 2 rewrite exprT_App_wrap_sym.
-      unfold consD, fun_to_typ2.
-      do 2 rewriteD fun_to_typ_inv.
-      rewriteD exprT_App_wrap_sym.
-      unfold mapD, fun_to_typ2, typ_to_fun2.
-      repeat rewriteD fun_to_typ_inv.
-      do 2 rewriteD listDR.
+      reduce.
       reflexivity.
   Qed.
 
@@ -116,20 +108,13 @@ Section Map.
     unfold mapTac.
     
     do 6 (destruct_exprs; try assumption).
-	+ do 2 (destruct_exprs; try assumption). reduce. unfold mapD, Denotation.fun_to_typ2.
-	  do 2 rewrite Denotation.exprT_App_wrap_sym.
-	  rewrite fun_to_typ_inv.
-	  rewriteD fun_to_typ_inv.
-	  remember (listD t3); clear Heql.
+	+ do 2 (destruct_exprs; try assumption). reduce. 
+	  remember (trmD t3 (listE eq_refl)) as l; clear Heql.
 	  induction l; simpl.
 	  * simpl; rewrite mkNil_sound. reflexivity.
-	  * erewrite mkCons_sound; [| do 2 reduce; reflexivity | eassumption].
-	    reduce.
-	    rewriteD listDR. 
-	    rewriteD exprT_App_wrap_sym. reflexivity.
-	+ reduce.
-	  do 2 rewriteD exprT_App_wrap_sym.
-	  apply mapTac_auxOk; assumption.
+	  * erewrite mkCons_sound; [| reduce; rewrite bf_typeof_const; rewrite mkConst_sound; reduce; reflexivity | eassumption].
+	    reduce. reflexivity.
+	+ reduce. erewrite mapTac_auxOk; try eassumption. reduce; reflexivity.
   Qed.
 
 End Map.

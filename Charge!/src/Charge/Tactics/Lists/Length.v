@@ -20,7 +20,7 @@ Require Import MirrorCore.Lambda.Expr.
 
 Section Length.
   Context {typ func : Type} {RType_typ : RType typ} {RSym_func : RSym func}
-          {BT : BaseType typ} {BTD : BaseTypeD}
+          {BT : BaseType typ} {BTD : BaseTypeD BT}
           {LT : ListType typ} {LTD: ListTypeD LT}.
   Context {BF : BaseFunc typ func} {LF : ListFunc typ func}.
   Context {RelDec_eq : RelDec (@eq typ)} {RelDecOk_eq : RelDec_Correct RelDec_eq}.

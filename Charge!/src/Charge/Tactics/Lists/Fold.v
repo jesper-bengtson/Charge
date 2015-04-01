@@ -20,7 +20,7 @@ Require Import MirrorCore.Lambda.Expr.
 Require Import MirrorCore.RTac.Simplify.
 Section Fold.
   Context {typ func : Type} {RType_typ : RType typ} {RSym_func : RSym func}.
-  Context {BT : BaseType typ} {BTD : BaseTypeD}.
+  Context {BT : BaseType typ} {BTD : BaseTypeD BT}.
   Context {LT : ListType typ} {LTD : ListTypeD LT}. 
   Context {BF : BaseFunc typ func} {LF: ListFunc typ func}.
   Context {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
@@ -78,11 +78,16 @@ Locate exprD'.
     ExprDsimul.ExprDenote.exprD' tus tvs
       t (fold_right (fun x acc => beta (beta (App (App f (mkConst u x)) acc))) acc lst) =
     Some
-      (fun us vs => fold_right (typ_to_fun2 (fD us vs)) (accD us vs) lst).
+      (fun us vs => fold_right (tyArrD2 (fD us vs)) (accD us vs) lst).
   Proof.
     induction lst; intros; subst; simpl.
     + assumption.
-    + repeat reduce. do 2 rewrite exprT_App_wrap_sym; reflexivity.
+    + repeat reduce. 
+      reduce.
+      rewrite bf_typeof_const.
+      reduce.
+      rewrite mkConst_sound.
+      reduce. reflexivity.
   Qed.
 
   Lemma exprD_fold_expr_nil tus tvs (t u : typ) (f acc : expr typ func) (lst : list (expr typ func)) (xs ys g : expr typ func)
@@ -98,19 +103,17 @@ Locate exprD'.
     ExprDsimul.ExprDenote.exprD' tus tvs t
       (fold_right (fun x acc => beta (beta (App (App f x) acc))) acc lst) =
     Some
-      (fun us vs => fold_right (typ_to_fun2 (fD us vs)) (accD us vs) (listD (ysD us vs))).
+      (fun us vs => fold_right (tyArrD2 (fD us vs)) (accD us vs) (listD (ysD us vs))).
   Proof.
     generalize dependent ys; generalize dependent ysD.
     induction lst; intros; subst; simpl.
     + apply expr_to_list_nil in Hlst; subst.
-      reduce. rewrite listD_nil; simpl; assumption.
+      reduce. simpl. assumption.
     + reduce.
       destruct (expr_to_list_cons tus tvs _ _ Hlst H) as [? [? ?]]; subst.
       reduce; subst.
       specialize (IHlst _ _ H3 Heqo0).
-      reduce.
-      do 2 (rewrite exprT_App_wrap_sym).
-      rewriteD listDR. reflexivity.
+      reduce. reflexivity.
   Qed.
    
   Lemma exprD_fold_expr tus tvs (t u : typ) (f acc : expr typ func) (lst : list (expr typ func)) (xs ys g : expr typ func)
@@ -125,7 +128,7 @@ Locate exprD'.
     ExprDsimul.ExprDenote.exprD' tus tvs t
       (fold_right (fun x acc => beta (beta (App (App f x) acc))) (App (App (App g f) acc) xs) lst) =
     Some
-      (fun us vs => fold_right (typ_to_fun2 (fD us vs)) (accD us vs) (listD (ysD us vs))).
+      (fun us vs => fold_right (tyArrD2 (fD us vs)) (accD us vs) (listD (ysD us vs))).
   Proof.
     generalize dependent ys; generalize dependent ysD.
     induction lst; intros; subst; simpl.
@@ -136,8 +139,6 @@ Locate exprD'.
       reduce; subst.
       specialize (IHlst _ _ H3 Heqo0).
       reduce.
-      do 2 (rewrite exprT_App_wrap_sym).
-      rewriteD listDR.
       reflexivity.
   Qed.
   

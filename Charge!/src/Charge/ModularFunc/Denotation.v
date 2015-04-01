@@ -179,7 +179,7 @@ Section Denotation.
 	generalize dependent (typD u).
 	intros; subst. reflexivity.
   Qed.
-
+(*
   Lemma trmR_App t u A B (f : typD (tyArr t u)) (e1 : typD t = A) (e2 : typD u = B) :
     (fun x : A => trmD f (funE e1 e2) (trmR x e1)) =
     trmR f (funE eq_refl e2).
@@ -195,6 +195,6 @@ Section Denotation.
 	generalize dependent (typD u).
 	intros; subst. reflexivity.
   Qed.
-
+*)
 
 End Denotation.

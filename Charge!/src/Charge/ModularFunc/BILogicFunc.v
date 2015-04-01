@@ -649,7 +649,7 @@ Section MakeBILogicSound.
     (H : gs t = Some BIL)
     (Ho : bilogicS f = Some (bilf_star t))
     (Hf : funcAs f (tyArr t (tyArr t t)) = Some df) :
-    df = tyArrR2 sepSP.
+    df = starD t _.
   Proof.
    rewrite (bilf_funcAsOk _ Ho) in Hf.
    unfold funcAs in Hf; simpl in *.
@@ -664,7 +664,7 @@ Section MakeBILogicSound.
     (H : gs t = Some BIL)
     (Ho : bilogicS e = Some (bilf_star t))
     (Hf : exprD' tus tvs (tyArr t (tyArr t t)) e = Some df) :
-    df = fun us vs => tyArrR2 sepSP.
+    df = fun us vs => starD t _.
   Proof.
    destruct e; simpl in *; try congruence.
    autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
@@ -675,7 +675,7 @@ Section MakeBILogicSound.
     (H : gs t = Some BIL)
     (Ho : bilogicS f = Some (bilf_wand t))
     (Hf : funcAs f (tyArr t (tyArr t t)) = Some df) :
-    df = tyArrR2 wandSP.
+    df = wandD t _.
   Proof.
    rewrite (bilf_funcAsOk _ Ho) in Hf.
    unfold funcAs in Hf; simpl in *.
@@ -690,7 +690,7 @@ Section MakeBILogicSound.
     (H : gs t = Some BIL)
     (Ho : bilogicS e = Some (bilf_wand t))
     (Hf : exprD' tus tvs (tyArr t (tyArr t t)) e = Some df) :
-    df = fun us vs => tyArrR2 wandSP.
+    df = fun us vs => wandD t _.
   Proof.
    destruct e; simpl in *; try congruence.
    autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.

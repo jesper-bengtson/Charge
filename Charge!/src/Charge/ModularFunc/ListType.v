@@ -52,6 +52,9 @@ Section ListTypeD'.
 	generalize dependent (typD t); intros; repeat subst. reflexivity.
   Qed.
     
+  Lemma trmR_nil t (A : Type) (e : typD t = A) :
+    trmR nil (listE e) = mkNil t.
+    
 End ListTypeD'.  
 
 Implicit Arguments listE [[A] [typ] [LT] [RType_typ] [LTD] [t]].

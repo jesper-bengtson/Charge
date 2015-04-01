@@ -22,7 +22,7 @@ Require Import ExtLib.Core.RelDec.
 Section Zip.
   Context {typ func : Type} {RType_typ : RType typ} {RSym_func : RSym func}.
   Context {LT : ListType typ} {LTD : ListTypeD LT}. 
-  Context {BT : BaseType typ} {BTD : BaseTypeD}.
+  Context {BT : BaseType typ} {BTD : BaseTypeD BT}.
   Context {BF : BaseFunc typ func} {LF: ListFunc typ func}.
   Context {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
   Context {Heqd : SemiEqDecTyp typ} {HeqdOk : SemiEqDecTypOk Heqd}.
@@ -103,6 +103,13 @@ Section Zip.
       end
     end.
   
+  Lemma combine_nil {A B : Type} (lst : list A) : combine lst (@nil B) = nil.
+  Proof.
+    destruct lst; reflexivity.
+  Qed.
+  Check @eq_refl.
+  Check pairE.
+   
   Lemma zipExprConst_left_sound tus tvs (t u : typ) (xs : expr typ func) (ys : list (typD u))
     (xsD : ExprI.exprT tus tvs (typD (tyList t)))
     (Hxs : ExprDsimul.ExprDenote.exprD' tus tvs (tyList t) xs = Some xsD) :
@@ -112,6 +119,19 @@ Section Zip.
     generalize dependent xs. generalize dependent xsD.
     induction ys; simpl; intros.
     + rewrite listR_nil. 
+      reduce. 
+      rewriteD @combine_nil.
+      rewrite mkNil_sound.
+      unfold nilD, listR.
+      f_equal. do 2 (apply functional_extensionality; intros).
+      f_equal.
+      unfold trmR, eq_rect_r, eq_rect, eq_sym, listE, id; simpl.
+      unfold listE, pairE, eq_ind, eq_rect. simpl.
+      assert 
+      rewrite mkNil_sound.
+      unfold nilD, listR.
+      SearchAbout combine.
+      simpl. unfold combine. simpl.
       unfold zipD, fun_to_typ2. 
       do 2 rewrite exprT_App_wrap.
       rewrite mkNil_sound.

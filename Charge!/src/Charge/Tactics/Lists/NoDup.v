@@ -17,7 +17,7 @@ Require Import MirrorCore.Lambda.Expr.
 
 Section NoDup.
   Context {typ func : Type} {RType_typ : RType typ} {RSym_func : RSym func}
-          {BT : BaseType typ} {BTD : BaseTypeD}
+          {BT : BaseType typ} {BTD : BaseTypeD BT}
           {LT : ListType typ} {LTD: ListTypeD LT}.
   Context {BF : BaseFunc typ func} {LF : ListFunc typ func}.
   Context {RelDec_eq : RelDec (@eq typ)} {RelDecOk_eq : RelDec_Correct RelDec_eq}.
@@ -149,8 +149,7 @@ Section NoDup.
     destruct Heqo4 as [? [? ?]]; subst.
     simpl in *.
     reduce.
-    unfold NoDupD. rewrite Denotation.exprT_App_wrap.
-    rewrite PropDR.
+    unfold PropD, NoDupD, PropR. reduce.
     apply no_dup_sound. assumption.
   Qed.
 
