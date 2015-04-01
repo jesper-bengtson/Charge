@@ -34,7 +34,6 @@ Section ApplySubst.
 	        {HOF : OpenFunc typ func} {HLF : ListFunc typ func} {HBF : BaseFunc typ func}
 	        {BTD : BaseTypeD BT} {LTD : ListTypeD LT}.
 	Context {RelDec_typ : RelDec (@eq typ)}.
-	Context {RelDec_string : RelDec (@eq (typD tyString))}.
 
     Context {Typ2_tyArr : Typ2 RType_typ Fun}.
     Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
@@ -112,7 +111,6 @@ Section PushSubst.
   Context {BTD : BaseTypeD BT} {LT : ListType typ} {LTD : ListTypeD LT}.
   Context {OF : OpenFunc typ func} {ILF : ILogicFunc typ func} {BILF : BILogicFunc typ func} {HBF : BaseFunc typ func}.
   Context {EF : EmbedFunc typ func} {LF : ListFunc typ func}.
-  Context {RelDec_string : RelDec (@eq (typD tyString))}.
   Context {RelDec_type : RelDec (@eq typ)}.
   Context {ilp : il_pointwise (typ := typ)}.
   Context {bilp : bil_pointwise (typ := typ)}.
@@ -185,7 +183,6 @@ Section SubstTac.
   Context {OF : OpenFunc typ func} {ILF : ILogicFunc typ func} {BILF : BILogicFunc typ func} {BF : BaseFunc typ func}.
   Context {LT : ListType typ} {LF : ListFunc typ func}.
   Context {EF : EmbedFunc typ func}.
-  Context {RelDec_string : RelDec (@eq (typD tyString))}.
   Context {RelDec_typ : RelDec (@eq typ)}.
   Context {RelDec_typOk : RelDec_Correct RelDec_typ}.
   Context {RTypeOk_typ : RTypeOk}.
@@ -407,7 +404,106 @@ Require Import MirrorCore.Lambda.Expr.
 Print Typ2.
 Print Typ2Ok.
 
+     Require Import Charge.Tactics.Base.BaseTacs.
 
+  Lemma applyTruncSubst_sound tus tvs x s sD 
+    (Hs : ExprDsimul.ExprDenote.exprD' tus tvs tySubstList s = Some sD) :
+    ExprDsimul.ExprDenote.exprD' tus tvs tyExpr (applyTruncSubst tyVal (stringD x) s) =
+      Some (exprT_App (exprT_App (fun _ _ => applySubstD tyVal)
+             (exprT_App (fun _ _ => stack_getD) (fun _ _ => x))) (exprT_App (fun _ _ => truncSubstD) sD)).
+  Proof.
+     generalize dependent sD; induction s; simpl; intros;
+     try (solve [apply mkApplySubst_sound; [apply mkTruncSubst_sound; assumption|
+       repeat reduce; repeat bf_rewrite_in_match; reduce; rewrite funcAs_fStackGet_eq;
+       reduce; reflexivity]]).
+     + repeat destruct_exprs;
+     
+       try (solve [
+	      apply mkApplySubst_sound; [apply mkTruncSubst_sound; assumption|
+	      red_exprD_goal; unfold stringR, stringD; rewrite trmRD; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq;
+	      unfold mkString; rewrite BaseFunc.mkConst_sound; reflexivity]]).
+       reduce. 
+       erewrite mkConst_sound; [|apply mkNull_sound].
+       reduce. reflexivity.
+     + repeat destruct_exprs;
+       try (solve [
+	     apply mkApplySubst_sound; [apply mkTruncSubst_sound; assumption|
+	     red_exprD_goal; unfold stringR, stringD; rewrite trmRD; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq;
+	     unfold mkString; rewrite BaseFunc.mkConst_sound; reflexivity]]).
+	   * reduce.
+	     unfold prodR.
+	     rewrite Heqo13.
+	     rewriteD trmDR_cons.
+	     rewriteD trmR_eq_refl.
+	     rewriteD prodDR.
+	     repeat rewriteD @trmR_eq_refl.
+	     repeat rewriteD @trmD_eq_refl.
+	     unfold apply_subst, stack_subst; simpl.
+	     assert (x ?[ eq ] t3 = true) by apply Heqb.
+  		 rewrite H.
+  		 rewriteD trmD_App.
+  		 reduce. reflexivity.
+       * reduce. unfold stringD in IHs2. erewrite IHs2; [|eassumption].
+         reduce.
+  		 unfold apply_subst, stack_subst.
+	     unfold prodR.
+	     rewriteD trmDR_cons.
+	     rewriteD trmR_eq_refl.
+	     rewriteD prodDR.
+	     repeat rewriteD @trmR_eq_refl.
+	     repeat rewriteD @trmD_eq_refl.
+	     simpl.
+  		 assert (x ?[ eq ] t3 = false) by (apply Heqb).
+ 		 rewrite H.
+ 		 rewriteD @trmRD.
+ 		 reflexivity.
+  Qed.
+
+  Lemma applySingleSubst_sound tus tvs x y e eD 
+    (Hs : ExprDsimul.ExprDenote.exprD' tus tvs tyExpr e = Some eD) :
+    ExprDsimul.ExprDenote.exprD' tus tvs tyExpr (applySingleSubst (stringD x) (stringD y) e) =
+      Some (exprT_App (exprT_App (fun _ _ => applySubstD tyVal)
+             (exprT_App (fun _ _ => stack_getD) (fun _ _ => x))) 
+               (exprT_App (exprT_App (fun _ _ => singleSubstD) eD) (fun _ _ => y))).
+  Proof.
+    reduce.
+    unfold apply_subst, stack_subst, applySingleSubst.
+    destruct_exprs.
+    + assert (x ?[ eq ] y = true) by (apply Heqb).
+      unfold subst1. rewrite H0.
+      reduce.
+      assumption.
+    + assert (x ?[ eq ] y = false) by (apply Heqb).
+      unfold subst1; rewrite H0.
+      reduce.
+	  repeat bf_rewrite_in_match.
+	  reduce.
+	  rewrite funcAs_fStackGet_eq.
+	  reduce.
+	  reflexivity.
+  Qed.
+
+
+  Lemma applySubst_sound tus tvs s x sD
+    (Hs : ExprDsimul.ExprDenote.exprD' tus tvs tySubst s = Some sD) :
+    ExprDsimul.ExprDenote.exprD' tus tvs tyExpr (applySubst tyVal s (stringD x)) =
+    Some (exprT_App (exprT_App (fun us vs => applySubstD tyVal) (exprT_App (fun us vs => stack_getD) (fun us vs => x))) sD).
+  Proof.
+    unfold applySubst.
+    repeat destruct_exprs; try (solve [
+	    apply mkApplySubst_sound; [assumption|
+	    red_exprD_goal; unfold stringR, stringD; rewrite trmRD; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq;
+	    unfold mkString; rewrite BaseFunc.mkConst_sound; reflexivity]]).
+    reduce.
+    pose proof applyTruncSubst_sound. unfold stringD in H. erewrite H; [|eassumption].
+    reduce. reflexivity.
+    reduce.
+    unfold eq_rect_r, eq_rect. simpl.
+    pose proof applySingleSubst_sound.
+    unfold stringD in H. erewrite H; [|eassumption].
+    reduce. reflexivity.
+  Qed.
+  
 Lemma pushSubst_sound tus tvs (t : typ) (e s : expr typ func)
   (eD : exprT tus tvs (typD (tyArr tyStack t))) (sD : exprT tus tvs (typD tySubst))
   (He : ExprDsimul.ExprDenote.exprD' tus tvs (tyArr tyStack t) e = Some eD)
@@ -445,106 +541,88 @@ Proof.
         unfold apply_subst.
         erewrite mkConst_sound; [|eassumption].
         reduce. reflexivity.
-      * unfold tyArr in *. 
+      * reduce.
+        pose proof applySubst_sound.
+        unfold stringD in H1.
+        erewrite H1; [|eassumption].
+        reduce. 
+        progress rewrite trmD_App.
+        rewrite trmD_App.
+        reflexivity.
+      rewrite applySubst_sound.
+nfold tyArr in *. 
         reduce.
-        unfold apply_subst.
+        unfold apply_subst, stack_subst.
+        rewriteD @trmRD.
+		rewriteD @trmRD.
+  erewrite applyTruncSubst_sound; reduce.
+  Focus 2.
+  eapply Heqo2.
+  reduce.
 
-  Lemma applySubst_sound tus tvs s x sD
-    (Hs : ExprDsimul.ExprDenote.exprD' tus tvs tySubst s = Some sD) :
-    ExprDsimul.ExprDenote.exprD' tus tvs tyExpr (applySubst tyVal s (stringD x)) =
-    Some (exprT_App (exprT_App (fun us vs => applySubstD tyVal) (exprT_App (fun us vs => stack_getD) (fun us vs => x))) sD).
-  Proof.
-    unfold applySubst.
-    repeat destruct_exprs; try (solve [
-	    apply mkApplySubst_sound; [assumption|
-	    red_exprD_goal; unfold stringR, stringD; rewrite trmRD; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq;
-	    unfold mkString; rewrite BaseFunc.mkConst_sound; reflexivity]]).
+  erewrite applyTruncSubst_sound; [|].
+  reflexivity.
+  rewriteD trmD_eq_refl.
+  rewriteD @trmDR.
+  rewriteD prodDR.
+  unfold applyTruncSubst. simpl.
+  rewriteD @trmRD.
+  rewriteD @trmRD.
+  Check trmDR2.
+  simpl.
+  f_equal.
+  do 2 (apply functional_extensionality; intros).
+  simpl.
+  Check trmDR2.
+  Check @trmR.
+  Check @funE.
+  Check typ2_cast tyString tyVal.
 
-  Lemma applyTruncSubst_sound tus tvs x s sD 
-    (Hs : ExprDsimul.ExprDenote.exprD' tus tvs tySubstList s = Some sD) :
-    ExprDsimul.ExprDenote.exprD' tus tvs tyExpr (applyTruncSubst tyVal (stringD x) s) =
-      Some (exprT_App (exprT_App (fun _ _ => applySubstD tyVal)
-             (exprT_App (fun _ _ => stack_getD) (fun _ _ => x))) (exprT_App (fun _ _ => truncSubstD) sD)).
+  Lemma trmR_eq_refl (A : Type) (a : A) : trmR a eq_refl = a.
+  
+  Lemma trmDR_funE (t u : typ) (A : Type) (f : typD (tyArr t u)) (e : typD t = A) :
+    trmD (trmR f eq_refl) (funE e eq_refl) = f.
+      fun x => trmD (trmR eq_refl) (funE e eq_refl).
   Proof.
-     induction s; simpl;
-     try (solve [
-	    apply mkApplySubst_sound; [apply mkTruncSubst_sound; assumption|
-	    red_exprD_goal; unfold stringR, stringD; rewrite trmRD; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq;
-	    unfold mkString; rewrite BaseFunc.mkConst_sound; reflexivity]]).
-     repeat destruct_exprs;
-     try (solve [
-	    apply mkApplySubst_sound; [apply mkTruncSubst_sound; assumption|
-	    red_exprD_goal; unfold stringR, stringD; rewrite trmRD; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq;
-	    unfold mkString; rewrite BaseFunc.mkConst_sound; reflexivity]]).
-    reduce. unfold substD, substR.
-    reduce.
-    erewrite mkConst_sound; [|apply mkNull_sound].
-    reduce.
-    unfold nilD, listR. unfold apply_subst, substListD.
-    rewriteD trmDR2. reflexivity.
-     repeat destruct_exprs;
-     try (solve [
-	    apply mkApplySubst_sound; [apply mkTruncSubst_sound; assumption|
-	    red_exprD_goal; unfold stringR, stringD; rewrite trmRD; rewrite bf_typeof_const; red_exprD_goal; rewrite funcAs_fStackGet_eq;
-	    unfold mkString; rewrite BaseFunc.mkConst_sound; reflexivity]]).
-    reduce. unfold substD, consD, pairD, prodR, listR, substR, substListD.
-    reduce.
-    Check (listE (pairE eq_refl (funE (funE eq_refl eq_refl) eq_refl))).
-    rewrite Heqo13.
-    f_equal.
-    do 2 (apply functional_extensionality; intros).
-    Check trmDR2.
-    Check ((trmD
-              (trmR
-                 (trmR (t3, e3 x0 x1) (btProd tyString tyExpr)
-                  :: trmD (e0 x0 x1) (listE eq_refl)) (listE eq_refl))
-              (listE (pairE eq_refl (funE (funE eq_refl eq_refl) eq_refl))))).  
-
-                 Check ((trmR (t3, e3 x0 x1) (btProd tyString tyExpr)
-                  :: (trmD (e0 x0 x1) (listE eq_refl)))).
-                  Check @listE.
-                  Check eq_trans.
-  Lemma trmDR_cons (t : typ) A B (x : A) (xs : list A) (e1 : typD t = A) (e2 : typD t = B) :
-    (trmD (trmR (x :: xs) (listE e1)) (listE e2)) =
-      trmD (trmR x e1) e2 :: trmD (trmR xs (listE e1)) (listE e2). 
-  Proof.
-	unfold trmD, trmR, listE, eq_ind, eq_rect_r, eq_rect, eq_sym, id.
-	clear.
-	revert e1 e2.
-	generalize (btList t).
-	generalize dependent (typD (tyList t)).
-	generalize dependent (typD t); intros; repeat subst. reflexivity.
+    admit.
   Qed.
   
-  Lemma trmR_eq_refl A t (x : A) (e : typD t = A) :
-    trmR (trmR x e) eq_refl = trmR x e.
+  progress rewrite trmDR_funE.
+  
+  rewrite @trmDR2.
+  
+fun (y : HList.hlist typD tus) (y0 : HList.hlist typD tvs) =>
+   trmR
+     (fun y1 : typD tyStack =>
+      trmD (trmR (e3 y y0) eq_refl) (funE (typ2_cast tyString tyVal) eq_refl)
+        (trmD y1 (typ2_cast tyString tyVal))) (typ2_cast tyStack tyVal)
+  red.
+  unfold funE. simpl.
+  rewriteD @trmDR2.
+  reflexivity.
+  apply Heqb.
+  simpl in Heqb.
+  Check stringD.
+  unfold eq_rect_r, eq_rect, eq_sym in Heqb.
+  Lemma stringD_inj a b r (H : stringD a ?[ eq ] stringD b = r) :
+    a ?[ eq ] b = r.
   Proof.
-    unfold trmR, eq_rect_r, eq_rect, eq_sym.
-    clear.
-    revert e.
-    generalize dependent (typD t); intros; subst. reflexivity.
-  Qed.
-  
-  rewrite trmDR_cons.
-  
-  rewrite trmR_eq_refl.
-
-  Lemma prodDR (t u : typ) A B C D (x : A) (y : B) (e1 : typD t = A) (e2 : typD u = B) (e3 : typD t = C) (e4 : typD u = D) :
-    trmD (trmR (x, y) (pairE e1 e2)) (pairE e3 e4) = 
-    (trmD (trmR x e1) e3, trmD (trmR y e2) e4).
-  Proof.
-    unfold trmD, trmR, pairE, eq_ind, eq_rect_r, eq_rect, eq_sym, id.
-    clear.
-    revert e1 e2 e3 e4.
-    generalize (btProd t u).
-    generalize dependent (tyProd t u).
-    generalize dependent (typD t).
-    generalize dependent (typD u).
-    do 3 intros.
-    generalize dependent (typD t0).
-    intros; repeat subst. reflexivity.
-  Qed.
-  
+    apply H.
+    clear -H.
+    unfold stringD, trmD, eq_rect, id in H.
+    revert H RelDec_string.
+    generalize btString.
+    generalize dependent (typD tyString).
+    Check RelDec_Correct.
+    intros; subst.
+    SearchAbout RelDec.
+    intros; subst. 
+    
+    reflexivity.
+    generalize depend
+    generalize dependent (String.string). intros; subst. reflexivity.
+  rewrite trmDR in Heqb.
+  rewrite trmDR2.
   replace (pairE (t := tyString) (u := tyExpr) eq_refl eq_refl) with (btProd tyString tyExpr). 
   
   rewriteD prodDR.

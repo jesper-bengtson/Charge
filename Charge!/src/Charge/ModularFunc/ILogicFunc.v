@@ -530,7 +530,7 @@ Section ILogicFuncInst.
  Definition trueD {t IL} (H : gs t = Some IL) := @ltrue (typD t) IL.
  Definition falseD {t IL} (H : gs t = Some IL) := @lfalse (typD t) IL.
  Definition andD {t IL} (H : gs t = Some IL) := tyArrR2 (@land (typD t) IL).
- Definition orD {t IL} (H : gs t = Some IL) := tyArrR2 (@lor (typD t) IL).i
+ Definition orD {t IL} (H : gs t = Some IL) := tyArrR2 (@lor (typD t) IL).
  Definition implD {t IL} (H : gs t = Some IL) := tyArrR2 (@limpl (typD t) IL).
  
  Implicit Arguments trueD [[t] [IL]].

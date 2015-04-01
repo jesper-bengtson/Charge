@@ -153,6 +153,42 @@ Ltac of_trunc_subst_expr :=
 	 end
   end.
 
+Ltac of_single_subst_type :=
+  match goal with
+    | H1 : open_funcS ?e = Some of_single_subst |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.funcAs e
+   			  (typ2 (typ2 tyStack tyVal) (typ2 tyString tySubst)) = Some _ |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.exprD' _ _  
+              (typ2 (typ2 tyStack tyVal) (typ2 tyString tySubst)) e = Some _ |- _ => fail 1
+        | H2 : ExprDsimul.ExprDenote.funcAs e _ = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (of_single_subst_func_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+        | H2 : ExprDsimul.ExprDenote.exprD' _ _ _ _ e = Some _ |- _ =>
+  	  	  let H := fresh "H" in
+	        pose proof (of_single_subst_type_eq _ _ H1 H2) as H; r_inj H; repeat clear_eq; subst
+	  end
+  end.
+
+Ltac of_single_subst_expr :=
+  match goal with
+    | H1 : open_funcS ?e = Some of_single_subst |- _ =>
+      match goal with
+        | _ : ExprDsimul.ExprDenote.exprD' _ _ 
+              (typ2 (typ2 tyStack tyVal) (typ2 tyString tySubst)) e =
+          Some (fun _ _ => singleSubstD) |- _ => fail 1
+        | _ : ExprDsimul.ExprDenote.funcAs e 
+  			  (typ2 (typ2 tyStack tyVal) (typ2 tyString tySubst)) =
+   		  Some singleSubstD |- _ => fail 1
+		| H2 : ExprDsimul.ExprDenote.funcAs e 
+			   (typ2 (typ2 tyStack tyVal) (typ2 tyString tySubst)) = Some _ |- _ =>
+	 	  let H := fresh "H" in pose proof(of_single_subst_func_eq _ H1 H2); subst
+		| H2 : ExprDsimul.ExprDenote.exprD' _ _ 
+			   (typ2 (typ2 tyStack tyVal) (typ2 tyString tySubst)) e = Some _ |- _ =>
+	  	  let H := fresh "H" in pose proof(of_single_subst_eq _ H1 H2); subst
+	 end
+  end.
+
 Ltac of_stack_get_type :=
   match goal with
     | H1 : open_funcS ?e = Some of_stack_get |- _ =>
@@ -195,6 +231,7 @@ Ltac of_unfold :=
     progress (unfold constD) |
     progress (unfold apD) | 
     progress (unfold truncSubstD) | 
+    progress (unfold singleSubstD) |
     progress (unfold parSubstD) |
     progress (unfold stack_getD) |
     progress (unfold substD) |
@@ -211,11 +248,13 @@ Ltac of_unfold :=
         of_const_type |
         of_ap_type |
         of_trunc_subst_type |
+        of_single_subst_type |
         of_stack_get_type |
         of_apply_subst_expr |
         of_const_expr |
         of_ap_expr |
         of_trunc_subst_expr |
+        of_single_subst_expr |
         of_stack_get_expr
       ]
   end.

@@ -110,7 +110,18 @@ Ltac bf_forward_step :=
         bf_pair_expr
       ]
   end.
-    
+
+Ltac bf_unfold := 
+  first [
+    progress (unfold stringD) |
+    progress (unfold stringR) |
+    progress (unfold boolD) | 
+    progress (unfold boolR) | 
+    progress (unfold natD) |
+    progress (unfold natR) |
+    progress (unfold pairD)
+  ].
+
 Ltac bf_rewrite_in_match :=
   match goal with 
     | |- context [typeof_sym (fConst ?t ?c)] =>

@@ -40,6 +40,18 @@ Section ListTypeD'.
   Definition listR {t : typ} (lst : list (typD t)) : typD (tyList t) :=
     trmR lst (listE eq_refl).
 
+  Lemma trmDR_cons (t : typ) A B (x : A) (xs : list A) (e1 : typD t = A) (e2 : typD t = B) :
+    (trmD (trmR (x :: xs) (listE e1)) (listE e2)) =
+      trmD (trmR x e1) e2 :: trmD (trmR xs (listE e1)) (listE e2). 
+  Proof.
+	unfold trmD, trmR, listE, eq_ind, eq_rect_r, eq_rect, eq_sym, id.
+	clear.
+	revert e1 e2.
+	generalize (btList t).
+	generalize dependent (typD (tyList t)).
+	generalize dependent (typD t); intros; repeat subst. reflexivity.
+  Qed.
+    
 End ListTypeD'.  
 
 Implicit Arguments listE [[A] [typ] [LT] [RType_typ] [LTD] [t]].

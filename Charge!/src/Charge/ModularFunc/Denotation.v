@@ -15,6 +15,32 @@ Section TrmDR.
   Definition trmR {A B : Type} (p : B) (e : A = B) : A :=
     eq_rect_r id p e.
      
+  Lemma trmD_eq_refl A (x : A) :
+    trmD x eq_refl = x.
+  Proof.
+    reflexivity.
+  Qed.
+  
+  Lemma trmR_eq_refl A (x : A) :
+    trmR x eq_refl = x.
+  Proof.
+    reflexivity.
+  Qed.
+
+  Lemma trmD_inj {A B : Type} (a b : A) (e : A = B)
+    (H : trmD a e = trmD b e) : a = b.
+  Proof.
+    unfold trmD, eq_rect, id in H.
+    destruct e; apply H.
+  Qed.
+  
+  Lemma trmR_inj {A B : Type} (a b : B) (e : A = B)
+    (H : trmR a e = trmR b e) : a = b.
+  Proof.
+    unfold trmR, eq_rect_r, eq_rect, eq_sym, id in H.
+    destruct e; apply H.
+  Qed.
+  
   Lemma trmDR {A B : Type} (p : B) (e : A = B) : trmD (trmR p e) e = p.
   Proof.
     subst. reflexivity.
@@ -137,5 +163,38 @@ Section Denotation.
     generalize dependent (typD t0).
     intros. subst. reflexivity.
   Qed.
+
+  Lemma trmD_App t u A B (f : typD (tyArr t u)) (e1 : typD t = A) (e2 : typD u = B) :
+    (fun x : typD t => trmD f (funE e1 e2) (trmD x e1)) =
+    trmD f (funE eq_refl e2).
+  Proof.
+	unfold trmD, eq_rect, id, eq_ind; simpl.
+	unfold funE.
+	unfold eq_ind, eq_rect.
+	generalize (typ2_cast t u).
+	clear.
+	revert f e1 e2. unfold tyArr.
+	generalize dependent (typD (typ2 t u)).
+	generalize dependent (typD t).
+	generalize dependent (typD u).
+	intros; subst. reflexivity.
+  Qed.
+
+  Lemma trmR_App t u A B (f : typD (tyArr t u)) (e1 : typD t = A) (e2 : typD u = B) :
+    (fun x : A => trmD f (funE e1 e2) (trmR x e1)) =
+    trmR f (funE eq_refl e2).
+  Proof.
+	unfold trmD, eq_rect, id, eq_ind; simpl.
+	unfold funE.
+	unfold eq_ind, eq_rect.
+	generalize (typ2_cast t u).
+	clear.
+	revert f e1 e2. unfold tyArr.
+	generalize dependent (typD (typ2 t u)).
+	generalize dependent (typD t).
+	generalize dependent (typD u).
+	intros; subst. reflexivity.
+  Qed.
+
 
 End Denotation.

@@ -146,10 +146,7 @@ Section OpenFuncInst.
     
     Context {ST : SubstType typ} {HV : ValNull (typD tyVal)}.
     Context {BTD : BaseTypeD BT} {LTD : ListTypeD LT}.
-    
-	Context {RelDec_string : RelDec (@eq (typD tyString))}.
-	Context {RelDec_string_Correct : RelDec_Correct RelDec_string}.
-	
+    	
     Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
     Let tyProp : typ := @typ0 _ _ _ _.
 
@@ -288,8 +285,8 @@ End OpenFuncInst.
 
 Section OpenFuncOk.
   Context {typ func : Type} {BT : BaseType typ} {LT : ListType typ} {ST : SubstType typ}.
-  Context {RType_typ : RType typ} {HO: OpenFunc typ func} {Heq' : RelDec (@eq typ)}. 
-  Context {RSym_func : RSym func} {Heq : RelDec (@eq (typD tyString))}.
+  Context {RType_typ : RType typ} {HO: OpenFunc typ func} {Heq : RelDec (@eq typ)}. 
+  Context {RSym_func : RSym func}.
   Context {HV : ValNull (typD tyVal)}.
 
   Context {BTD : BaseTypeD BT} {LTD : ListTypeD LT}.
@@ -312,12 +309,12 @@ Section OpenFuncOk.
 
 End OpenFuncOk.
 
-Implicit Arguments OpenFuncOk [[BT] [LT] [ST] [RType_typ] [HO] [Heq'] [RSym_func] [Heq] [HV] [BTD] [LTD] [Typ2_tyArr]].
+Implicit Arguments OpenFuncOk [[BT] [LT] [ST] [RType_typ] [HO] [RSym_func] [Heq] [HV] [BTD] [LTD] [Typ2_tyArr]].
 
 Section OpenFuncBaseOk.
   Context {typ func : Type} {BT : BaseType typ} {LT : ListType typ} {ST : SubstType typ}.
   Context {RType_typ : RType typ} {HO: OpenFunc typ func} {Heq' : RelDec (@eq typ)}. 
-  Context {RSym_func : RSym func} {Heq : RelDec (@eq (typD tyString))}.
+  Context {RSym_func : RSym func}.
   Context {HV : ValNull (typD tyVal)}.
 
   Context {BTD : BaseTypeD BT} {LTD : ListTypeD LT}.
@@ -644,7 +641,6 @@ Section MakeOpenSound.
   Context {OF : OpenFunc typ func} {ILF : ILogicFunc typ func} {BILF : BILogicFunc typ func} {BF : BaseFunc typ func}.
   Context {LT : ListType typ}.
   Context {EF : EmbedFunc typ func}.
-  Context {RelDec_string : RelDec (@eq (typD tyString))}.
   Context {RelDec_typ : RelDec (@eq typ)}.
   Context {RTypeOk_typ : RTypeOk}.
   Context {RSym_func : RSym func}.
@@ -1022,6 +1018,30 @@ Section MakeOpenSound.
    destruct e; simpl in *; try congruence.
    autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
    erewrite <- of_trunc_subst_func_eq; try eassumption; reflexivity.
+  Qed.
+
+  Lemma of_single_subst_func_eq (f : func) 
+    (df : typD  (tyArr (tyArr tyStack tyVal) (tyArr tyString tySubst)))
+    (Ho : open_funcS f = Some of_single_subst)
+    (Hf : funcAs f (tyArr (tyArr tyStack tyVal) (tyArr tyString tySubst)) = Some df) :
+    df = singleSubstD.
+  Proof.
+   rewrite (of_funcAsOk _ Ho) in Hf.
+   unfold funcAs in Hf; simpl in *.
+   rewrite type_cast_refl in Hf; [| apply _].
+   unfold Rcast, Relim_refl in Hf.
+   inversion Hf. reflexivity.
+  Qed.
+
+  Lemma of_single_subst_eq tus tvs (e : expr typ func) 
+    (df : ExprI.exprT tus tvs (typD (tyArr(tyArr tyStack tyVal) (tyArr tyString tySubst))))
+    (Ho : open_funcS e = Some of_single_subst)
+    (Hf :exprD' tus tvs (tyArr (tyArr tyStack tyVal) (tyArr tyString tySubst)) e = Some df) :
+    df = fun us vs => singleSubstD.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   erewrite <- of_single_subst_func_eq; try eassumption; reflexivity.
   Qed.
 
   Lemma mkNull_sound (tus tvs : tenv typ) :

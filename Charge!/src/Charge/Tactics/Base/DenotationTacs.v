@@ -25,6 +25,7 @@ Ltac tyArr_unfold :=
 
 Ltac red_unfold :=
   first [
+    bf_unfold |
     lf_unfold |
     bilf_unfold |
     of_unfold |

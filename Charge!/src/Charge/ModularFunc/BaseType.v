@@ -1,6 +1,7 @@
 Require Import ExtLib.Core.RelDec.
 Require Import ExtLib.Data.PreFun.
-
+Require Import ExtLib.Data.String.
+  
 Require Import MirrorCore.TypesI.
 
 Require Import Charge.ModularFunc.Denotation.
@@ -10,7 +11,6 @@ Require Import Coq.Strings.String.
 Set Implicit Arguments.
 Set Strict Implicit.
 Set Maximal Implicit Insertion.
-
 
 Class BaseType (typ : Type) := {
   tyNat  : typ;
@@ -74,9 +74,48 @@ Section BaseTypeD'.
     trmR s btString.
 
   Definition prodD t u (p : typD (tyProd t u)) : typD t * typD u :=
-    trmD p (btProd t u).
+    trmD p (pairE (t := t) (u := u) eq_refl eq_refl).
 	  
   Definition prodR t u (p : typD t * typD u) : typD (tyProd t u) :=
-    trmR p (btProd t u).
+    trmR p (pairE (t := t) (u := u) eq_refl eq_refl).
+
+  Lemma prodDR (t u : typ) A B C D (x : A) (y : B) (e1 : typD t = A) (e2 : typD u = B) (e3 : typD t = C) (e4 : typD u = D) :
+    trmD (trmR (x, y) (pairE e1 e2)) (pairE e3 e4) = 
+    (trmD (trmR x e1) e3, trmD (trmR y e2) e4).
+  Proof.
+    unfold trmD, trmR, pairE, eq_ind, eq_rect_r, eq_rect, eq_sym, id.
+    clear.
+    revert e1 e2 e3 e4.
+    generalize (btProd t u).
+    generalize dependent (tyProd t u).
+    generalize dependent (typD t).
+    generalize dependent (typD u).
+    do 3 intros.
+    generalize dependent (typD t0).
+    intros; repeat subst. reflexivity.
+  Qed.
 
 End BaseTypeD'.  
+
+Section BaseTypeRelDec.
+  Context {typ : Type} {BT : BaseType typ} {RType_typ : RType typ} {BTD : BaseTypeD BT}.
+  
+  Global Instance RelDec_tyString : RelDec (@eq (typD tyString)) := {
+    rel_dec a b := stringD a ?[ eq ] stringD b
+  }.
+
+  Lemma rel_dec_tyString_correct (a b : typD tyString) :
+    a ?[ eq ] b = true <-> a = b.
+  Proof.
+    split; intros.
+    + unfold rel_dec in H; simpl in H.
+      rewrite rel_dec_correct in H.
+      apply trmD_inj in H. apply H.
+    + subst; unfold rel_dec; simpl; apply rel_dec_eq_true; [apply _| reflexivity].
+  Qed.
+
+  Global Instance RelDec_Correct_tyString : RelDec_Correct RelDec_tyString := {
+    rel_dec_correct := rel_dec_tyString_correct
+  }.
+
+End BaseTypeRelDec.
