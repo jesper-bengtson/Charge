@@ -13,7 +13,7 @@ Section SemiEqDecTyp.
         match semi_eq_dec_typ t a b with
           | Some true => a = b
           | Some false => a <> b
-          | None => False
+          | None => True
         end
   }.
 

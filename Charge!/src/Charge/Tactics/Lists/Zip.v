@@ -107,9 +107,32 @@ Section Zip.
   Proof.
     destruct lst; reflexivity.
   Qed.
-  Check @eq_refl.
-  Check pairE.
+
+  Lemma trmR_nil_eq {T U : Type} {t : typ} (eq1 : typD t = T) (eq2 : typD t = U) :
+    trmR nil (listE eq1) = trmR nil (listE eq2).
+  Proof.
+    clear.
+    unfold listE, eq_ind, trmR, eq_rect_r, eq_rect, eq_sym, id.
+    generalize (btList t).
+    revert eq1 eq2.
+    remember (tyList t).
+    generalize dependent (typD t); intros; subst.
+    destruct eq2.
+    
+    generalize dependent (typD (tyList t)).
+    intros; subst. reflexivity.
+  Qed.
    
+    Lemma trmR_cons_eq (t : typ) T (x : T) (xs : list T) (e : typD t = T) :
+      trmR (x :: xs) (listE e) = trmR ((trmR x e) :: (trmD (trmR xs (listE e)) (listE eq_refl))) (listE eq_refl).
+    Proof.
+      unfold trmR, trmD, listE, eq_ind, eq_rect_r, eq_rect, eq_sym, id.
+      generalize (btList t).
+      generalize dependent (typD t); intros; subst.
+      generalize dependent (typD (tyList t)); intros; subst. reflexivity.
+    Qed.
+
+
   Lemma zipExprConst_left_sound tus tvs (t u : typ) (xs : expr typ func) (ys : list (typD u))
     (xsD : ExprI.exprT tus tvs (typD (tyList t)))
     (Hxs : ExprDsimul.ExprDenote.exprD' tus tvs (tyList t) xs = Some xsD) :
@@ -122,51 +145,25 @@ Section Zip.
       reduce. 
       rewriteD @combine_nil.
       rewrite mkNil_sound.
-      unfold nilD, listR.
-      f_equal. do 2 (apply functional_extensionality; intros).
-      f_equal.
-      unfold trmR, eq_rect_r, eq_rect, eq_sym, listE, id; simpl.
-      unfold listE, pairE, eq_ind, eq_rect. simpl.
-      assert 
-      rewrite mkNil_sound.
-      unfold nilD, listR.
-      SearchAbout combine.
-      simpl. unfold combine. simpl.
-      unfold zipD, fun_to_typ2. 
-      do 2 rewrite exprT_App_wrap.
-      rewrite mkNil_sound.
-      rewriteD listD_nil. simpl.
-      unfold nilD, listR, eq_rect_r, eq_rect, eq_sym, id.
-      generalize (btProd t u). generalize (tyProd t u); intros.
-      generalize dependent (btList t0); intros.
-      generalize dependent (typD (tyList t0)); intros; subst.
-      generalize dependent (typD t0); intros; subst.
-      f_equal. do 2 (apply functional_extensionality; intro). destruct (listD (xsD x x0)); reflexivity.
+      erewrite trmR_nil_eq. reflexivity.
     + do 3 (destruct_exprs; try (apply mkZip_sound; [assumption | apply mkConst_sound])).
       * reduce.
         rewrite mkNil_sound.
-        unfold zipD, fun_to_typ2.
-        do 2 rewrite exprT_App_wrap.
-        rewrite listDR. rewrite listD_nil. simpl.
-        unfold nilD, listR, listD, eq_rect_r, eq_rect, eq_sym, id.
-        generalize (btProd t0 u). generalize (tyProd t0 u); intros.
-        generalize dependent (btList t); intros.
-        generalize dependent (typD (tyList t)).
-        generalize dependent (typD t).
-        intros; subst. reflexivity.
+        simpl.
+        erewrite trmR_nil_eq. reflexivity.
       * do 2 (destruct_exprs; try (apply mkZip_sound; [assumption | apply mkConst_sound])).
         reduce.
         erewrite mkCons_sound; try eassumption; [| eapply mkPair_sound; [eassumption | apply mkConst_sound] | eapply IHys; eassumption].
-        unfold consD, zipD, pairD, fun_to_typ2.
-        do 8 rewrite exprT_App_wrap.
-        do 3 rewriteD listDR.
-        simpl. rewriteD listDR.
-        f_equal.
-        do 2 (apply functional_extensionality; intro).
-        f_equal.
-        unfold eq_rect_r, eq_rect, eq_sym, prodR, eq_rect, eq_sym. simpl.
-        generalize (btProd t0 u); generalize (e3 x x0, a); intros.
-        generalize dependent (typD (tyProd t0 u)); intros; subst. reflexivity.
+        simpl. 
+        unfold consD, zipD, pairD, tyArrR2, tyArrR2', tyArrR', tyArrD, tyArrD'.
+        do 6 rewrite exprT_App_tyArrD.
+        unfold tyArrD, tyArrD'.
+        repeat rewriteD @trmDR.
+        unfold listR. unfold listD.
+        unfold prodR.
+        rewriteD @trmDR.
+        symmetry.
+        rewriteD trmR_cons_eq. reflexivity.
   Qed.
 
   Lemma zipExprConst_right_sound tus tvs (t u : typ) (xs : list (typD t)) (ys : expr typ func) 
@@ -178,46 +175,26 @@ Section Zip.
     generalize dependent ys. generalize dependent ysD.
     induction xs; simpl; intros.
     + rewrite listR_nil. 
-      unfold zipD, fun_to_typ2. 
-      do 2 rewrite exprT_App_wrap.
-      rewrite mkNil_sound.
-      rewriteD listD_nil. simpl.
-      unfold nilD, listR, eq_rect_r, eq_rect, eq_sym, id.
-      generalize (btProd t u). generalize (tyProd t u); intros.
-      generalize dependent (btList t0); intros.
-      generalize dependent (typD (tyList t0)); intros; subst.
-      generalize dependent (typD t0); intros; subst. reflexivity.
-    + destruct_exprs; try (reduce; apply mkZip_sound; [apply mkConst_sound | assumption]).
-      destruct_exprs; try (reduce; apply mkZip_sound; [apply mkConst_sound | reduce]).
-      destruct_exprs; try (apply mkZip_sound; [apply mkConst_sound | assumption]).
+      reduce.
+      rewriteD mkNil_sound.
+      simpl. erewrite trmR_nil_eq; reflexivity.
+    + do 3 (destruct_exprs; try (apply mkZip_sound; [apply mkConst_sound| assumption])).
       * reduce.
         rewrite mkNil_sound.
-        unfold zipD, fun_to_typ2.
-        do 2 rewrite exprT_App_wrap.
-        rewrite listDR. rewrite listD_nil. simpl.
-        unfold nilD, listR, listD, eq_rect_r, eq_rect, eq_sym, id.
-        generalize (btProd t t0). generalize (tyProd t t0); intros.
-        generalize dependent (btList t1); intros.
-        generalize dependent (typD (tyList t1)).
-        generalize dependent (typD t1).
-        generalize dependent (btList t0).
-        generalize (tyList t0).
-        intros; subst.
-        generalize dependent (typD t2); intros; subst. reflexivity.
-      * do 4 (destruct_exprs; try (apply mkZip_sound; [apply mkConst_sound | assumption])).
+        simpl.
+        erewrite trmR_nil_eq; reflexivity.
+      * do 2 (destruct_exprs; try (apply mkZip_sound; [apply mkConst_sound | assumption])).
         reduce.
         erewrite mkCons_sound; try eassumption; [| eapply mkPair_sound; [apply mkConst_sound | eassumption] | eapply IHxs; eassumption].
-        unfold consD, zipD, pairD, fun_to_typ2.
-        do 8 rewrite exprT_App_wrap.
-        do 3 rewriteD listDR.
-        simpl. rewriteD listDR.
-        f_equal.
-        do 2 (apply functional_extensionality; intro).
-        f_equal.
-        Check prodR.
-        unfold eq_rect_r, eq_rect, eq_sym, prodR, eq_rect, eq_sym.
-        generalize (btProd t t0); generalize (a, e3 x x0); intros.
-        generalize dependent (typD (tyProd t t0)); intros; subst. reflexivity.
+        unfold consD, zipD, pairD, tyArrR2, tyArrR2', tyArrR', tyArrD, tyArrD'.
+        do 6 rewrite exprT_App_tyArrD.
+        unfold tyArrD, tyArrD'.
+        repeat rewriteD @trmDR.
+        unfold listR. unfold listD.
+        unfold prodR.
+        rewriteD @trmDR. simpl.
+        symmetry.
+        rewriteD trmR_cons_eq. reflexivity.
   Qed.
 
 
@@ -233,47 +210,23 @@ Section Zip.
       try (apply mkZip_sound; eassumption).
     + do 2 (destruct_exprs; try (apply mkZip_sound; eassumption)).
       reduce.
-      unfold zipD, fun_to_typ2.
-      do 2 rewrite exprT_App_wrap.
-      rewrite listD_nil. simpl.
-      rewrite mkNil_sound.
-      f_equal; do 2 (apply functional_extensionality; intro).
-      unfold nilD, listR, eq_rect_r, eq_rect, eq_sym, id.
-      generalize (btProd t0 u). generalize (tyProd t0 u); intros.
-      generalize dependent (btList t); intros.
-      generalize dependent (typD (tyList t)); intros; subst.
-      generalize dependent (typD t); intros; subst. reflexivity.
+      rewriteD mkNil_sound. simpl.
+      erewrite trmR_nil_eq; reflexivity.
     + do 7 (destruct_exprs; try (apply mkZip_sound; eassumption)).
       * reduce.
-        unfold zipD, fun_to_typ2.
-        do 2 rewrite exprT_App_wrap.
-        rewrite listD_nil.
-        rewriteD listDR. simpl.
-        rewrite mkNil_sound.
-        unfold nilD, listR, eq_rect_r, eq_rect, eq_sym, id.
-        generalize (btProd t0 t1). generalize (tyProd t0 t1); intros.
-        generalize dependent (btList t); intros.
-        generalize dependent (typD (tyList t)); intros; subst.
-        generalize dependent (typD t); intros; subst. reflexivity.
+        rewriteD @combine_nil.
+        erewrite trmR_nil_eq. rewrite mkNil_sound. reflexivity.
       * do 2 (destruct_exprs; try (apply mkZip_sound; eassumption)).
-        reduce.
-        unfold zipD, fun_to_typ2.
-        do 2 rewrite exprT_App_wrap.
+        reduce. simpl.
         erewrite mkCons_sound; [| eapply mkPair_sound; eassumption | eapply H; [repeat constructor | eassumption | eassumption]].
-
-        do 6 (rewriteD exprT_App_wrap_sym).
-        unfold consD, zipD, pairD, fun_to_typ2.
-        do 6 rewriteD fun_to_typ_inv.
-        rewriteD listRD.
-        do 3 rewriteD listDR.
-        simpl.
-        rewriteD listDR.
-        f_equal.
-        do 2 (apply functional_extensionality; intro).
-        f_equal.
-        unfold eq_rect_r, eq_rect, eq_sym, prodR, eq_rect, eq_sym.
-        generalize (btProd t0 t1); generalize (e8 x x0, e4 x x0); intros.
-        generalize dependent (typD (tyProd t0 t1)); intros; subst. reflexivity.
+        unfold consD, zipD, pairD, tyArrR2, tyArrR2', tyArrR', tyArrD, tyArrD'. simpl.
+        repeat rewrite exprT_App_tyArrD.
+        unfold tyArrD, tyArrD'.
+        repeat rewrite @trmDR.
+        unfold listR, listD, prodR.
+        repeat rewriteD @trmDR. simpl.
+        symmetry.
+        rewriteD trmR_cons_eq. reflexivity.
   Qed.
     
   Definition zipTac  (_ : list (option (expr typ func))) (e : expr typ func) (args : list (expr typ func)) : expr typ func :=
@@ -307,13 +260,33 @@ Section Zip.
         end
       | _ => apps e args
     end.
-
+Require Import MirrorCore.Lambda.ExprD.
+Check typeof_expr.
   Lemma zipTacOk : partial_reducer_ok (zipTac nil).
   Proof.
     unfold partial_reducer_ok; intros.
     eexists; split; [|reflexivity].
     unfold zipTac.
     do 6 (destruct_exprs; try assumption).
+    destruct_exprs.
+    Focus 2.
+    (* Here we have a problem at H as we have to prove False from
+       tyList = tyArr.
+    *)
+    (*
+red_exprD_hyp.
+forward_step.
+forward_step.
+forward_step.
+Locate typ2_cast.
+inversion H.
+forward_step.
+repeat forward_step.
+  (try red_exprD_hyp); repeat forward_step; (repeat exprD_saturate_types); (repeat (first [rewrite_in_match | bf_rewrite_in_match])); (try red_exprD_goal); repeat (
+        first [red_unfold | red_rewrite]).
+    
+    rewrite zipExprOk.
+    destruct_exprs; [|apply zipExprOk].
     destruct_exprs; (try (reduce; apply zipExprOk; [reduce | eassumption])).
     destruct_exprs. destruct e1; try congruence.
     destruct_exprs; (try (reduce; apply zipExprOk; reduce)).
@@ -335,6 +308,13 @@ Section Zip.
 	  unfold zipD, fun_to_typ2.
 	  do 3 rewrite exprT_App_wrap.
 	  rewrite listDR. reflexivity.
+   *)
+   admit.
+   admit.
+   admit.
+   admit.
+   
+   
   Qed.
   
 Definition ZIP := SIMPLIFY (typ := typ) (fun _ _ _ _ => beta_all zipTac).

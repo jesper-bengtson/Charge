@@ -424,7 +424,10 @@ Print Typ2Ok.
 	      unfold mkString; rewrite BaseFunc.mkConst_sound; reflexivity]]).
        reduce. 
        erewrite mkConst_sound; [|apply mkNull_sound].
-       reduce. reflexivity.
+       reduce.
+       Check @trmDR. 
+rewriteD @trmDR.
+       reflexivity.
      + repeat destruct_exprs;
        try (solve [
 	     apply mkApplySubst_sound; [apply mkTruncSubst_sound; assumption|

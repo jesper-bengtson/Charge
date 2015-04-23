@@ -81,20 +81,20 @@ Section Denotation.
       (eq_ind (typD u) (fun Y : Type => typD (tyArr t u) = (typD t -> Y))
          (typ2_cast t u) B e2) A e1.
          
-  Definition tyArrD' {a b : typ} (f : typD (tyArr a b)) e1 e2 : typD a -> typD b :=
+  Definition tyArrD' {a b : typ} {A B : Type} (f : typD (tyArr a b)) (e1 : typD a = A) (e2 : typD b = B) : A -> B :=
     trmD f (funE e1 e2).
 
-  Program Definition tyArrD2' {a b c : typ} (f : typD (tyArr a (tyArr b c))) e1 e2 e3 : 
-    typD a -> typD b -> typD c := 
-    fun a b => tyArrD' (tyArrD' f e1 e2 a) eq_refl e3 b.
+  Program Definition tyArrD2' {a b c : typ} {A B C : Type} (f : typD (tyArr a (tyArr b c))) 
+    (e1 : typD a = A) (e2 : typD b = B) (e3 : typD c = C) : 
+    A -> B -> C := fun x => tyArrD' ((tyArrD' f e1 eq_refl) x) e2 e3.
 
-  Program Definition tyArrD3' {a b c d : typ} (f : typD (tyArr a (tyArr b (tyArr c d)))) 
-    e1 e2 e3 e4 : typD a -> typD b -> typD c -> typD d := 
-    fun a b c => tyArrD' (tyArrD' (tyArrD' f e1 e2 a) eq_refl e3 b) eq_refl e4 c.
+  Program Definition tyArrD3' {a b c d : typ} {A B C D : Type} (f : typD (tyArr a (tyArr b (tyArr c d)))) 
+    e1 e2 e3 e4 : A -> B -> C -> D :=
+      fun x y => tyArrD' ((tyArrD2' f e1 e2 eq_refl) x y) e3 e4.
 
-  Program Definition tyArrD4' {a b c d e : typ} (f : typD (tyArr a (tyArr b (tyArr c (tyArr d e))))) 
-    e1 e2 e3 e4 e5 : typD a -> typD b -> typD c -> typD d -> typD e := 
-    fun a b c d => tyArrD' (tyArrD' (tyArrD' (tyArrD' f e1 e2 a) eq_refl e3 b) eq_refl e4 c) eq_refl e5 d.
+  Program Definition tyArrD4' {a b c d e : typ} {A B C D E : Type} (f : typD (tyArr a (tyArr b (tyArr c (tyArr d e))))) 
+    e1 e2 e3 e4 e5 : A -> B -> C -> D -> E := 
+      fun x y z => tyArrD' ((tyArrD3' f e1 e2 e3 eq_refl) x y z) e4 e5.
 
   Definition tyArrD {a b : typ} (f : typD (tyArr a b)) : typD a -> typD b :=
     tyArrD' f eq_refl eq_refl.
@@ -108,23 +108,20 @@ Section Denotation.
   Program Definition tyArrD4 {a b c d e : typ} (f : typD (tyArr a (tyArr b (tyArr c (tyArr d e))))) 
     : typD a -> typD b -> typD c -> typD d -> typD e := 
 	  tyArrD4' f eq_refl eq_refl eq_refl eq_refl eq_refl.
-
-
 	  
-  Definition tyArrR' {a b : typ} (f : typD a -> typD b) e1 e2 : typD (tyArr a b) :=
+  Definition tyArrR' {a b : typ} {A B : Type} (f : A -> B) e1 e2 : typD (tyArr a b) :=
     trmR f (funE e1 e2).  
 
-  Definition tyArrR2' {a b c : typ} (f : typD a -> typD b -> typD c) e1 e2 e3 : 
-    typD (tyArr a (tyArr b c)) :=
-    tyArrR' (fun a => tyArrR' (f a) e2 e3) eq_refl e1. 
+  Definition tyArrR2' {a b c : typ} {A B C : Type} (f : A -> B -> C) (e1 : typD a = A) (e2 : typD b = B) (e3 : typD c = C) : 
+    typD (tyArr a (tyArr b c)) := tyArrR' (fun x => (tyArrR' (f x) e2 e3)) e1 eq_refl.
 
-  Definition tyArrR3' {a b c d : typ} (f : typD a -> typD b -> typD c -> typD d) e1 e2 e3 e4 : 
-    typD (tyArr a (tyArr b (tyArr c d))) :=
-    tyArrR' (fun a => tyArrR' (fun b => tyArrR' (f a b) e3 e4) eq_refl e2) eq_refl e1. 
+  Definition tyArrR3' {a b c d : typ} {A B C D : Type} (f : A -> B -> C -> D) e1 e2 e3 e4 : 
+    typD (tyArr a (tyArr b (tyArr c d))) := 
+    tyArrR' (fun x => tyArrR2' (f x) e2 e3 e4) e1 eq_refl.
 
-  Definition tyArrR4' {a b c d e : typ} (f : typD a -> typD b -> typD c -> typD d -> typD e) 
+  Definition tyArrR4' {a b c d e : typ} {A B C D E : Type} (f : A -> B -> C -> D -> E) 
     e1 e2 e3 e4 e5 : typD (tyArr a (tyArr b (tyArr c (tyArr d e)))) :=
-    tyArrR' (fun a => tyArrR' (fun b => tyArrR' (fun c => tyArrR' (f a b c) e5 e4) eq_refl e3) eq_refl e2) eq_refl e1. 
+    tyArrR' (fun x => tyArrR3' (f x) e2 e3 e4 e5) e1 eq_refl.
 
   Definition tyArrR {a b : typ} (f : typD a -> typD b) : typD (tyArr a b) :=
     tyArrR' f eq_refl eq_refl.
