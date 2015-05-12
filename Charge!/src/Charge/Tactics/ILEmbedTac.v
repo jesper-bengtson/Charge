@@ -180,7 +180,7 @@ Qed.
         + simpl. remember (deep_op_eval (env_empty Prop) t1) as o1.
           remember (deep_op_eval de_env t2) as o2.
           destruct o1, o2; simpl; (try intuition congruence); reflexivity.
-    Qed.
+    Admitted.
     
   	Lemma env_sound_ar {A : Type} `{ILA : ILogic A} {EmbOp : EmbedOp Prop A} {Emb : Embed Prop A}
   	(de_env : env A) (tac_env : env (find_prop A))
@@ -339,7 +339,7 @@ Qed.
         + simpl. remember (deep_op_eval (env_empty Prop) t1) as o1.
           remember (deep_op_eval de_env t2) as o2.
           destruct o1, o2; simpl; (try intuition congruence); reflexivity.
-    Qed.
+    Admitted.
     
   	Lemma env_sound_al {A : Type} `{ILA : ILogic A} {EmbOp : EmbedOp Prop A} {Emb : Embed Prop A}
   	(de_env : env A) (tac_env : env (find_prop A))
@@ -563,7 +563,7 @@ Qed.
           apply lpropimplL. apply HP.
           rewrite IHt2. unfold find_prop_eval_impl; simpl.
           admit. (* Proof by induction on find_pro_eval_impl_aux *)
-    Qed.
+    Admitted.
     
   	Lemma env_sound_il {A : Type} `{ILA : ILogic A} {EmbOp : EmbedOp Prop A} {Emb : Embed Prop A}
   	(de_env : env A) (tac_env : env (find_prop A))

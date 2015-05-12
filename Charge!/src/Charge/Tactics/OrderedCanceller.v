@@ -28,7 +28,7 @@ Section ordered_cancel.
   Variable func : Type.
   Variable RSym_func : RSym func.
 
-  Let Expr_expr : ExprI.Expr _ (expr typ func) := Expr_expr.
+  Let Expr_expr : ExprI.Expr _ (expr typ func) := Expr_expr typ func RType_typ Typ2_Fun.
   Local Existing Instance Expr_expr.
 
   Inductive Conjuncts : Type :=

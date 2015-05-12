@@ -50,7 +50,7 @@ Section TrmDR.
   Proof.
     subst. reflexivity.
   Qed.
-
+(*
  Lemma trmDR2 f g (h : forall {A : Type} {t : typ}, (typD t = A) -> typD (f t) = g A) 
     t A B (x : forall A, g A) (e1 : typD t = A) (e2 : typD t = B) : trmD (trmR (x A) (h e1)) (h e2) = x B.
   Proof.
@@ -67,7 +67,7 @@ Section TrmDR.
 	assert (e = eq_refl) by admit.
 	subst. reflexivity.
   Qed.
-    
+  *)  
 End TrmDR.
 
 Section Denotation.

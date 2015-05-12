@@ -171,10 +171,10 @@ End ILogicEquivOps.
 
 Section ILogicMorphisms.
   Context {A : Frm} `{IL: ILogic A}.
-  
+
   Global Instance lequiv_lentails : subrelation lequiv lentails.
   Proof. firstorder. Qed.
-  Global Instance lequiv_inverse_lentails: subrelation lequiv (inverse lentails).
+  Global Instance lequiv_flip_lentails: subrelation lequiv (flip lentails).
   Proof. firstorder. Qed.
 
   Global Instance lforall_lentails_m T:
@@ -273,7 +273,7 @@ Lemma lforwardL {Frm} `{IL: ILogic Frm} {Q R}:
     P |-- Q ->
     (P |-- R -> G) ->
     G.
-Proof. intros HQR ** HPQ HG. apply HG. etransitivity; eassumption. Qed.
+Proof. intros HQR P G HPQ HG. apply HG. etransitivity; eassumption. Qed.
 
 Tactic Notation "lforwardL" hyp(H) := 
   eapply (lforwardL H); clear H; [|intros H].
@@ -339,7 +339,7 @@ Section ILogicFacts.
   Lemma limplL P Q CL CR (HP: CL |-- P) (HR: Q //\\ CL |-- CR) :
     (P -->> Q) //\\ CL |-- CR.
   Proof.
-    rewrite <-HR, <-HP. apply landR; [apply landAdj |apply landL2]; reflexivity.
+    rewrite <-HR, <-HP. apply landR; [apply landAdj | apply landL2]; reflexivity.
   Qed.
 
   Lemma limplAdj2 P Q R : P -->> Q -->> R -|- P //\\ Q -->> R.
@@ -502,16 +502,28 @@ Section ILogicFacts.
 End ILogicFacts.
 
 (* Prop is an intuitionistic logic *)
-Global Instance ILogicOps_Prop : ILogicOps Prop := {|
+(* Bug in Coq 8.5beta2 does not allow us to declare this one directly *)
+Global Instance ILogicOps_Prop : ILogicOps Prop.
+split.
+unfold relation. apply impl.
+apply True.
+apply False.
+apply impl.
+apply and.
+apply or.
+intros T f; apply (forall x, f x).
+intros T f; apply (exists x, f x).
+Defined.
+(* := {|
   lentails P Q := P -> Q;
   ltrue        := True;
   lfalse       := False;
   limpl    P Q := P -> Q;
   land     P Q := P /\ Q;
-  lor      P Q := P \/ Q;
+  lor      P Q := P \/ Q
   lforall  T F := forall x:T, F x;
   lexists  T F := exists x:T, F x
-|}.
+ |}. *)
 
 Global Instance ILogic_Prop : ILogic Prop.
 Proof.

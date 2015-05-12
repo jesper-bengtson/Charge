@@ -301,7 +301,7 @@ Section ListOps.
     symmetry in Heqo.
     forward.
 	admit.
-  Qed.
+  Admitted.
   
 End ListOps.
 

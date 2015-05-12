@@ -111,8 +111,8 @@ Section BaseFuncInst.
   Definition rel_dec_cases {T A : Type} {RelDec_T : RelDec (@eq T)} {HROk : RelDec_Correct RelDec_T} (x y : T)
     (f_true : x = y -> A) (f_false : x <> y -> A) : A :=
   match Reflect_RelDecCorrect T eq RelDec_T HROk x y with
-	| reflect_true H => (fun eq : x = y => f_true eq) H
-	| reflect_false H => (fun neq : x <> y => f_false neq) H
+	| reflect_true _ _ H => (fun eq : x = y => f_true eq) H
+	| reflect_false _ _ H => (fun neq : x <> y => f_false neq) H
   end.
   
   Implicit Arguments rel_dec_cases [[T] [A] [RelDec_T] [HROk]].
