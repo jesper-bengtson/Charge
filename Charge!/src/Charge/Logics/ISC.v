@@ -1,6 +1,7 @@
 Require Import ILogic BILogic.
 Require Import SetInterface SetFacts SetProperties.
 Require Import Compare_dec.
+Require Import Omega.
 
 Set Implicit Arguments.
 Unset Strict Implicit.

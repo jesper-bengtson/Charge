@@ -43,9 +43,23 @@ Section ILogic_Pre.
     lexists  A P := mk (fun t => Exists a, (ILPreFrm_pred (P a)) t) _
   |}. 
   Next Obligation. 
-    lforallR t'' Ht'. lforallL t''.
+    apply lforallR; intro t''.
+    apply lforallR; intro Ht'.
+    apply lforallL with t''.
     assert (ord t t'') as Ht'' by (transitivity t'; assumption).
     lforallL Ht''; reflexivity.
+  Defined.
+  Next Obligation.
+    simpl; rewrite H; reflexivity.
+  Defined.
+  Next Obligation.
+    simpl; rewrite H; reflexivity.
+  Defined.
+  Next Obligation.
+    simpl; setoid_rewrite H; reflexivity.
+  Defined.
+  Next Obligation.
+    simpl; setoid_rewrite H; reflexivity.
   Defined.
 
   Program Definition ILPre_ILogic : ILogic ILPreFrm.

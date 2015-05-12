@@ -425,8 +425,6 @@ Print Typ2Ok.
        reduce. 
        erewrite mkConst_sound; [|apply mkNull_sound].
        reduce.
-       Check @trmDR. 
-rewriteD @trmDR.
        reflexivity.
      + repeat destruct_exprs;
        try (solve [
@@ -652,4 +650,4 @@ Proof.
   
 End SubstTac.
 Print SUBST.
-Implicit Arguments SUBST [[ST] [BT] [RType_typ] [OF] [ILF] [BILF] [LF] [EF] [BF] [Typ2_tyArr] [ilp] [bilp] [HBTD]].
+Implicit Arguments SUBST [[ST] [BT] [RType_typ] [OF] [ILF] [BILF] [LF] [EF] [BF] [Typ2_tyArr] [ilp] [bilp] [eilp] [HBTD]].
