@@ -20,7 +20,7 @@ Class BaseType (typ : BTType) := {
   tyString : typ;
   tyProd : typ -> typ -> typ
 }.
-
+Print RType.
 Section BaseTypeD.
 	Context {typ : BTType} {HT : BaseType typ} {HR : RType typ}.
 	
