@@ -22,7 +22,7 @@ Set Implicit Arguments.
 Set Strict Implicit.
 Set Maximal Implicit Insertion.
 
-Inductive base_func typ {RType_typ : RType typ} :=
+Polymorphic Inductive base_func typ {RType_typ : RType typ} :=
   | pConst t : typD t -> base_func
   | pEq : typ -> base_func
   | pPair : typ -> typ -> base_func.

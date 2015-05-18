@@ -35,8 +35,7 @@ Class Inhabited A := { cinhabited : inhabited A}.
 Instance inhabitedNat: Inhabited nat. Proof. split; split; apply 0. Qed.
 Instance inhabitedBool: Inhabited bool. Proof. split; split; apply true. Qed.
 
-Polymorphic Definition Frm := Type.
-Polymorphic Definition MyType := Type.
+Definition Frm := Type.
 
 (* Logical connectives *)
 Polymorphic Class ILogicOps (A : Frm) := {
@@ -46,8 +45,8 @@ Polymorphic Class ILogicOps (A : Frm) := {
   limpl: A -> A -> A;
   land: A -> A -> A;
   lor: A -> A -> A;
-  lforall: forall {T : MyType}, (T -> A) -> A;
-  lexists: forall {T : MyType}, (T -> A) -> A
+  lforall: forall {T : Type}, (T -> A) -> A;
+  lexists: forall {T : Type}, (T -> A) -> A
 }.
 
 (* These notations have to sit strictly between level 80 (precendence of /\)
