@@ -35,18 +35,19 @@ Class Inhabited A := { cinhabited : inhabited A}.
 Instance inhabitedNat: Inhabited nat. Proof. split; split; apply 0. Qed.
 Instance inhabitedBool: Inhabited bool. Proof. split; split; apply true. Qed.
 
-Definition Frm := Type.
+Polymorphic Definition Frm := Type.
+Polymorphic Definition MyType := Type.
 
 (* Logical connectives *)
-Class ILogicOps (A : Frm) := {
+Polymorphic Class ILogicOps (A : Frm) := {
   lentails: relation A;
   ltrue: A;
   lfalse: A;
   limpl: A -> A -> A;
   land: A -> A -> A;
   lor: A -> A -> A;
-  lforall: forall {T}, (T -> A) -> A;
-  lexists: forall {T}, (T -> A) -> A
+  lforall: forall {T : MyType}, (T -> A) -> A;
+  lexists: forall {T : MyType}, (T -> A) -> A
 }.
 
 (* These notations have to sit strictly between level 80 (precendence of /\)
@@ -84,7 +85,7 @@ Infix "-|-"  := lequiv (at level 85, no associativity).
    of the left, respectively right, side of a turnstile. The notable exception
    to this pattern is implication, which is required to be the right adjoint of
    conjunction. This makes singleton contexts work. *)
-Class ILogic Frm {ILOps: ILogicOps Frm} := {
+Polymorphic Class ILogic Frm {ILOps: ILogicOps Frm} := {
   lentailsPre:> PreOrder lentails;
   ltrueR: forall C, C |-- ltrue;
   lfalseL: forall C, lfalse |-- C;
@@ -502,28 +503,17 @@ Section ILogicFacts.
 End ILogicFacts.
 
 (* Prop is an intuitionistic logic *)
-(* Bug in Coq 8.5beta2 does not allow us to declare this one directly *)
-Global Instance ILogicOps_Prop : ILogicOps Prop.
-split.
-unfold relation. apply impl.
-apply True.
-apply False.
-apply impl.
-apply and.
-apply or.
-intros T f; apply (forall x, f x).
-intros T f; apply (exists x, f x).
-Defined.
-(* := {|
-  lentails P Q := P -> Q;
+
+Global Instance ILogicOps_Prop : ILogicOps Prop := {|
+  lentails P Q := (P : Prop) -> Q;
   ltrue        := True;
   lfalse       := False;
   limpl    P Q := P -> Q;
   land     P Q := P /\ Q;
-  lor      P Q := P \/ Q
+  lor      P Q := P \/ Q;
   lforall  T F := forall x:T, F x;
   lexists  T F := exists x:T, F x
- |}. *)
+ |}.
 
 Global Instance ILogic_Prop : ILogic Prop.
 Proof.

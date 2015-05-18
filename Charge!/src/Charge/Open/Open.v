@@ -8,7 +8,7 @@ Unset Strict Implicit.
 Set Maximal Implicit Insertion.
 
 Section Expr.
-  Definition OpenType := Type. (* To combat universe inconsistencies *)
+  Polymorphic Definition OpenType := Type. (* To combat universe inconsistencies *)
 
   Context {A val : OpenType} {HR : RelDec (@eq A)} {HROk : RelDec_Correct HR}.
   Context {V : ValNull val}.

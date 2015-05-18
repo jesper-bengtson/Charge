@@ -79,7 +79,7 @@ Section IBISepAlg.
     + apply _.
     + intros P Q x; simpl.
       lexistsL x1 x2 H1. lexistsR x2 x1.
-      apply lexistsR; [apply sa_mulC; assumption|intuition].
+      apply lexistsR; [apply sa_mulC; assumption | apply landC].
     + intros P Q R x; simpl.
       lexistsL x1 x2 Hx x3. lexistsL x4 Hx1.
       lexistsR x3.

@@ -91,12 +91,12 @@ Section Typ2Cases.
     + unfold typ2_simple_match.
       rewrite H. apply HFail.
   Qed.
-
-  Lemma typ2_simple_match_zeta (A : Type) (t u : typ) (tr : typ -> typ -> A) (fr : A) :
+SearchAbout typ2.
+  Lemma typ2_simple_match_iota (A : Type) (t u : typ) (tr : typ -> typ -> A) (fr : A) :
     typ2_simple_match (tyArr t u) tr fr = tr t u.
   Proof.
     unfold typ2_simple_match.
-    rewrite typ2_match_zeta; [|apply _].
+    rewrite typ2_match_iota; [|apply _].
     generalize (typ2_cast t u).
     generalize dependent (typD (typ2 t u)); intros; subst.
     reflexivity.
@@ -224,7 +224,7 @@ Section EmbedFuncInst.
   Proof.
     specialize (eilpOk (tyArr t u) (tyArr v w)).
     unfold tyArr in eilpOk.
-    do 2 rewrite typ2_simple_match_zeta in eilpOk.
+    do 2 rewrite typ2_simple_match_iota in eilpOk.
     forward.
     unfold Rty in r. subst.
     exists e. assumption.
@@ -234,7 +234,7 @@ Section EmbedFuncInst.
   Proof.
     specialize (eilpOk (tyArr t u) (tyArr v w)).
     unfold tyArr in *.
-    do 2 rewrite typ2_simple_match_zeta in eilpOk.
+    do 2 rewrite typ2_simple_match_iota in eilpOk.
     forward.
     exists e0. reflexivity.
   Qed.
@@ -245,7 +245,7 @@ Section EmbedFuncInst.
   Proof.
     specialize (eilpOk (tyArr t u) (tyArr t v)).
     unfold tyArr in *.
-    do 2 rewrite typ2_simple_match_zeta in eilpOk.
+    do 2 rewrite typ2_simple_match_iota in eilpOk.
     rewrite type_cast_refl in eilpOk.
     rewrite gstu, gsu in eilpOk. rewrite <- eilpOk, tyArrRD. reflexivity.
     apply _.
@@ -257,7 +257,7 @@ Section EmbedFuncInst.
   Proof.
     specialize (eilpOk (tyArr t u) (tyArr t v)).
     unfold tyArr in *.
-    do 2 rewrite typ2_simple_match_zeta in eilpOk.
+    do 2 rewrite typ2_simple_match_iota in eilpOk.
     rewrite type_cast_refl in eilpOk; [|apply _].
     rewrite gstu, gsu in eilpOk.
     symmetry in eilpOk.
@@ -346,7 +346,7 @@ Section EmbedFuncExprOk.
  	specialize (H1 t); (rewrite type_cast_refl in H1; [|apply _]);
  	inversion H1. 
 *)
-  Qed.
+  Admitted.
   (*
   Lemma bilogicS_is_bilogic (f : func) (e : bilfunc typ) t df
   	(H1 : bilogicS f = Some e) (H2 : funcAs f t = Some df) :

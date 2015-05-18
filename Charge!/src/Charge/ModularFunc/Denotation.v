@@ -9,10 +9,10 @@ Require Import MirrorCore.Lambda.Expr.
 Section TrmDR.
   Context {typ : Type} {RType_typ : RType typ}.
   
-  Definition trmD {A B : Type} (p : A) (e : A = B) : B :=
+  Polymorphic Definition trmD {A B : Type} (p : A) (e : A = B) : B :=
     eq_rect _ id p _ e.
     
-  Definition trmR {A B : Type} (p : B) (e : A = B) : A :=
+  Polymorphic Definition trmR {A B : Type} (p : B) (e : A = B) : A :=
     eq_rect_r id p e.
      
   Lemma trmD_eq_refl A (x : A) :

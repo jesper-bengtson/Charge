@@ -314,7 +314,7 @@ Section SepAlgMap.
     (MapsTo k y a /\ ~ In k b) + (MapsTo k y b /\ ~ In k a).
   Proof.
 	admit. (* THIS IS NOT CORRECT!!! *)
-  Qed.
+  Admitted.
     
   Lemma map_sa_mul_notinR {A : Type} {a b c : Map [K, A]} {k : K}
         (Habc: sa_mul a b c) (Hc: ~ In k c) :
