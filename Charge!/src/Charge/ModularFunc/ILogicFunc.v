@@ -24,7 +24,9 @@ Set Implicit Arguments.
 Set Strict Implicit.
 Set Maximal Implicit Insertion.
 
-Inductive ilfunc typ :=
+Polymorphic Definition ILType := Type.
+
+Inductive ilfunc (typ : ILType) :=
   | ilf_entails (logic : typ)
   | ilf_true (logic : typ)
   | ilf_false (logic : typ)
@@ -33,7 +35,7 @@ Inductive ilfunc typ :=
   | ilf_impl (logic : typ)
   | ilf_exists (arg logic : typ)
   | ilf_forall (arg logic : typ).
-  
+
 Definition ilfunc_logic typ (x : ilfunc typ) : typ :=
   match x with
     | ilf_entails t => t
@@ -46,7 +48,7 @@ Definition ilfunc_logic typ (x : ilfunc typ) : typ :=
     | ilf_forall _ t => t
   end.
 
-Class ILogicFunc (typ func : Type) := {
+Class ILogicFunc (typ func : ILType) := {
   fEntails  : typ -> func;
   fTrue : typ -> func;
   fFalse : typ -> func;
@@ -59,10 +61,10 @@ Class ILogicFunc (typ func : Type) := {
 }.
     
 Section ILogicFuncSum.
-	Context {typ func : Type} {H : ILogicFunc typ func}.
+	Context {typ func : ILType} {H : ILogicFunc typ func}.
 
 	Global Instance ILogicFuncSumL (A : Type) : 
-		ILogicFunc typ (func + A) := {
+		ILogicFunc typ ((func + A)%type) := {
 		  fEntails l := inl (fEntails l);
 		  fTrue l := inl (fTrue l);
 		  fFalse l := inl (fFalse l);
@@ -78,7 +80,7 @@ Section ILogicFuncSum.
         }.
 
 	Global Instance ILogicFuncSumR (A : Type) : 
-		ILogicFunc typ (A + func) := {
+		ILogicFunc typ ((A + func)%type) := {
 		  fEntails l := inr (fEntails l);
 		  fTrue l := inr (fTrue l);
 		  fFalse l := inr (fFalse l);
@@ -112,7 +114,7 @@ Section ILogicFuncSum.
 End ILogicFuncSum.
 
 Section ILogicCast.
-  Context {typ : Type} {RType_typ : RType typ}.
+  Context {typ : ILType} {RType_typ : RType typ}.
   Context {Typ2_tyArr : Typ2 RType_typ Fun}.
   
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
@@ -127,7 +129,7 @@ End ILogicCast.
 
 Section ILogicFuncInst.
 
-	Context {typ func : Type}.
+	Context {typ func : ILType}.
 	Context {HR : RType typ} {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
 
     Context {Typ2_tyArr : Typ2 _ Fun}.
@@ -161,7 +163,7 @@ Section ILogicFuncInst.
   Variable gs : logic_ops.
 
   Definition il_pointwise := typ -> bool.
-
+(*
   Definition il_pointwiseOk (ilp : il_pointwise) :=
     forall t,
     typ2_match (fun T : Type => Prop) t
@@ -467,7 +469,7 @@ Section ILogicFuncInst.
     destruct ilpOk as [_ [_ [_ [_ [HImpl _]]]]].
 	apply functional_extensionality; intros; rewrite HImpl; reflexivity.
   Qed.    
-
+*)
   Definition typeof_ilfunc (f : ilfunc typ) : option typ :=
     match f with
       | ilf_true t
@@ -672,7 +674,7 @@ Section ILogicFuncInst.
 End ILogicFuncInst.
 
 Section MakeILogic.
-	Context {typ func : Type} {H : ILogicFunc typ func}.
+	Context {typ func : ILType} {H : ILogicFunc typ func}.
 
 	Definition mkEntails (t : typ) (P Q : expr typ func) := App (App (fEntails t) P) Q.
 	Definition mkTrue t : expr typ func := Inj (fTrue t).
@@ -688,7 +690,7 @@ End MakeILogic.
 Implicit Arguments RSym_ilfunc [[typ] [HR] [Heq] [Typ2_tyArr] [Typ0_tyProp]].
 
 Section TypeOfFunc.
-  Context {typ func : Type}.
+  Context {typ func : ILType}.
   Context {RType_typ : RType typ}.
   Context {RTypeOk_typ : RTypeOk}.
   Context {RSym_func : RSym func}.
@@ -722,7 +724,7 @@ Section TypeOfFunc.
 End TypeOfFunc.
 
 Section ILogicFuncOk.
-  Context {typ func : Type} {HO: ILogicFunc typ func}.
+  Context {typ func : ILType} {HO: ILogicFunc typ func}.
   Context {RType_typ : RType typ} {RSym_func : RSym func}.
   Context {RelDec_eq : RelDec (@eq typ)}.
 
@@ -750,7 +752,7 @@ End ILogicFuncOk.
 Implicit Arguments ILogicFuncOk [[HO] [RType_typ] [RSym_func] [RelDec_eq] [Typ2_tyArr] [Typ0_Prop]].
 
 Section ILogicFuncBaseOk.
-  Context {typ func : Type} {HO: ILogicFunc typ func}.
+  Context {typ func : ILType} {HO: ILogicFunc typ func}.
   Context {RType_typ : RType typ} {RSym_func : RSym func}.
   Context {RelDec_eq : RelDec (@eq typ)}.
 
@@ -775,7 +777,7 @@ Section ILogicFuncBaseOk.
 End ILogicFuncBaseOk.
 
 Section ILogicFuncExprOk.
-  Context {typ func : Type} `{HOK : ILogicFuncOk typ func}.
+  Context {typ func : ILType} `{HOK : ILogicFuncOk typ func}.
   Context {HROk : RTypeOk}.
   Context {A : Type} {RSymA : RSym A}.
   Context {RSymOk_func : RSymOk RSym_func0}.
@@ -955,7 +957,7 @@ End ILogicFuncExprOk.
 Require Import ExtLib.Tactics.
 
 Section MakeILogicSound.
-  Context {typ func : Type} `{HOK : ILogicFuncOk typ func}.
+  Context {typ func : ILType} `{HOK : ILogicFuncOk typ func}.
   Context {HROk : RTypeOk} {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}
           {RSym_funcOk : RSymOk RSym_func0}.
 

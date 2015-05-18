@@ -205,8 +205,6 @@ Section BISepAlg2.
   Context {POB : @PureOp B}.
   Context {PureB : Pure POB}.
 
-  Print PureOp.
-
   Global Instance pureop_bi_sepalg2 : PureOp := { 
     pure := fun (P : ILPreFrm rel B) => 
         (forall h, pure ((ILPreFrm_pred P) h)) /\
@@ -329,7 +327,10 @@ Section BIViews.
         rel x2 x2' ->> sa_mul x1 x2' x ->> (ILPreFrm_pred P) x1 -->> (ILPreFrm_pred Q) x) _
   }.
   Next Obligation.
-    intros. setoid_rewrite H. reflexivity.
+    intros.
+    apply embed_sound.
+    apply Hunit_proper.
+    apply H.
   Qed.
   Next Obligation.
     lexistsL x1 x2. apply lpropandL; intro Hmulx.
@@ -384,7 +385,9 @@ Section BIViews.
   Program Definition SRBIAtom (a: A) : ILPreFrm rel B :=
     mkILPreFrm (fun a' => embed (rel a a')) _.
   Next Obligation.
-    intros. rewrite H. reflexivity.
+    apply embed_sound.
+    intros H1.
+    transitivity t; assumption.
   Qed.
 
   Global Instance SRBIAtom_Proper: Proper (rel --> lentails) SRBIAtom.
@@ -455,12 +458,21 @@ Section BISepRel.
         Forall x1, Forall x, sa_mul x1 x2 x ->> (ILPreFrm_pred P) x1 -->> (ILPreFrm_pred Q) x) _
   }.
   Next Obligation.
-    intros. setoid_rewrite H. reflexivity.
+    intros.
+    apply embed_sound.
+    setoid_rewrite H. reflexivity.
   Qed.
   Next Obligation.
-    intros. setoid_rewrite H. reflexivity.
+    intros. 
+    cancel1; intros x1.
+    cancel1; intros x2.
+    cancel1; intros x3.
+    repeat (apply landR).
+    + apply landL1. reflexivity.
+    + apply landL2; apply landL1; apply embed_sound; rewrite H; reflexivity.
+    + apply landL2; apply landL2; apply landL1; reflexivity.
+    + apply landL2; apply landL2; apply landL2; reflexivity.
   Qed.
-  Local Existing Instance ILPre_Ops.
   Next Obligation.
     cancel1; intros x1. lforallR x'.
     apply lpropimplR; intro Hmul_x'.
@@ -526,7 +538,7 @@ Section BISepRel.
   Program Definition SRBIAtom (a: A) : ILPreFrm rel B :=
     mkILPreFrm (fun a' => embed (rel a a')) _.
   Next Obligation.
-    intros. rewrite H. reflexivity.
+    intros. apply embed_sound. rewrite H. reflexivity.
   Qed.
 
   Global Instance SRBIAtom_Proper: Proper (rel --> lentails) SRBIAtom.
@@ -620,16 +632,16 @@ Section BILPre.
   Proof.
     constructor.
     { repeat split; intros; intro t; simpl.
-      * apply pureandsc with (po := POA); auto.
-      * apply purescand with (po := POA); auto.
-      * apply pureandscD with (po := POA); auto.
-      * apply pureandscD with (po := POA); auto.
+      * eapply pureandsc; eauto. 
+      * eapply purescand; eauto.
+      * eapply pureandscD; eauto.
+      * eapply pureandscD; eauto.
       * apply lforallR; intro t'; apply lforallR; intro Ht.
         apply lforallL with t'; apply lforallL with Ht.
-        apply puresiimpl with (po := POA); auto.
+        eapply puresiimpl; eauto.
       * apply lforallR; intro t'; apply lforallR; intro Ht.
         apply lforallL with t'; apply lforallL with Ht.
-        apply pureimplsi with (po := POA); auto. }
+        eapply pureimplsi; eauto. }
     { do 2 red. unfold pure; simpl. intros.
       split.
       { intros. eapply pure_proper. 2: eapply H0. symmetry.
@@ -688,12 +700,12 @@ Section BILogic_Fun.
   Proof.
     constructor.
     { intros. repeat split; intros; intro t; simpl.
-      * apply pureandsc with (po := POA); auto.
-      * apply purescand with (po := POA); auto.
-      * apply pureandscD with (po := POA); auto.
-      * apply pureandscD with (po := POA); auto.
-      * apply puresiimpl with (po := POA); auto.
-      * apply pureimplsi with (po := POA); auto. }
+      * eapply pureandsc; eauto.
+      * eapply purescand; eauto.
+      * eapply pureandscD; eauto.
+      * eapply pureandscD; eauto.
+      * eapply puresiimpl; eauto.
+      * eapply pureimplsi; eauto. }
     { do 2 red; simpl; intros.
       red in H. simpl in H.
       split.

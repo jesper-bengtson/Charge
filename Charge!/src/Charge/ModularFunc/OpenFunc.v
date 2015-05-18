@@ -13,14 +13,21 @@ Require Import MirrorCore.Lambda.ExprTac.
 Require Import MirrorCore.SymI.
 Require Import MirrorCore.syms.SymSum.
 
+Set Printing Universes.
+Require Import Charge.ModularFunc.Denotation.
+
+Print trmD.
+
+Require Import Charge.ModularFunc.ILogicFunc.
+Print Charge.Logics.ILogic.ILogic.
+
+Require Import Charge.ModularFunc.BaseType.
 Require Import Charge.Open.Stack.
 Require Import Charge.Open.Subst.
 Require Import Charge.ModularFunc.Denotation.
-Require Import Charge.ModularFunc.BaseType.
 Require Import Charge.ModularFunc.ListType.
 Require Import Charge.ModularFunc.SubstType.
 Require Import Charge.ModularFunc.ListFunc.
-Require Import Charge.ModularFunc.ILogicFunc.
 Require Import Charge.ModularFunc.BILogicFunc.
 Require Import Charge.ModularFunc.BaseFunc.
 Require Import Charge.ModularFunc.EmbedFunc.

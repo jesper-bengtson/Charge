@@ -115,7 +115,7 @@ Section BILogicFuncInst.
   Variable gs : bilogic_ops.
   
   Definition bil_pointwise := typ -> bool.
-
+(*
   Definition bil_pointwiseOk (bilp : bil_pointwise) :=
     forall t,
     typ2_match (fun T : Type => Prop) t
@@ -326,7 +326,7 @@ Section BILogicFuncInst.
     destruct bilpOk as [_ [_ HWand]].
 	apply functional_extensionality; intros; rewrite HWand; reflexivity.
   Qed.    
-
+*)
   Definition typeof_bilfunc (f : bilfunc typ) : option typ :=
     match f with
       | bilf_emp t => match gs t with
@@ -507,7 +507,7 @@ Section BILogicFuncExprOk.
  	specialize (H1 t); (rewrite type_cast_refl in H1; [|apply _]);
  	inversion H1. 
 *)
-  Qed.
+  Admitted.
   
   Lemma bilogicS_is_bilogic (f : func) (e : bilfunc typ) t df
   	(H1 : bilogicS f = Some e) (H2 : funcAs f t = Some df) :
@@ -521,7 +521,7 @@ Section BILogicFuncExprOk.
     unfold funcAs in H2; simpl in H2;
     (destruct (gs logic); [eexists; reflexivity | congruence]).
 *)
-  Qed.
+  Admitted.
   
   Lemma bilf_emp_func_type_eq (f : func) t u df
     (H1 : bilogicS f = Some (bilf_emp t)) (H2 : funcAs f u = Some df) :
