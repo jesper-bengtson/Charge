@@ -142,18 +142,19 @@ Section BaseFuncInst.
 	   (tyArrR2 (fun a b => prodR t u (a, b))).
 
 	 Polymorphic Definition base_func_symD bf :=
-		match bf as bf return match typeof_base_func bf with
-								| Some t => typD t
-								| None => unit
-							  end with
-        | pConst _ c => c
-	    | pEq t => eqD t
-        | pPair t u => pairD t u
-	end.
-Set Printing Universes.
-	Global Polymorphic Instance RSym_BaseFunc : SymI.RSym (base_func typ) := {
+	   match bf as bf return match typeof_base_func bf return Type with
+				 | Some t => typD t
+				 | None => unit
+				 end with
+           | pConst _ c => c
+	   | pEq t => eqD t
+           | pPair t u => pairD t u
+	   end.
+
+	Global Polymorphic Instance RSym_BaseFunc
+        : SymI.RSym (base_func typ) := {
 	  typeof_sym := typeof_base_func;
-	  symD := base_func_symD;
+	  symD := base_func_symD ;
 	  sym_eqb := base_func_eq
 	}.
 
