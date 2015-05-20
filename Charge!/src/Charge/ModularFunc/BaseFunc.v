@@ -22,14 +22,14 @@ Set Implicit Arguments.
 Set Strict Implicit.
 Set Maximal Implicit Insertion.
 
-Polymorphic Inductive base_func typ {RType_typ : RType typ} :=
+Inductive base_func typ {RType_typ : RType typ} :=
   | pConst t : typD t -> base_func
   | pEq : typ -> base_func
   | pPair : typ -> typ -> base_func.
 
 Implicit Arguments base_func [[RType_typ]].
 
-Polymorphic Class BaseFunc (typ func : Type) {RType_typ : RType typ} := {
+Class BaseFunc (typ func : Type) {RType_typ : RType typ} := {
   fConst t : typD t -> func;
   
   fEq : typ -> func;
@@ -141,7 +141,7 @@ Section BaseFuncInst.
 	 Definition pairD (t u : typ) : typD (tyArr t (tyArr u (tyProd t u))) :=
 	   (tyArrR2 (fun a b => prodR t u (a, b))).
 
-	 Polymorphic Definition base_func_symD bf :=
+	 Definition base_func_symD bf :=
 	   match bf as bf return match typeof_base_func bf return Type with
 				 | Some t => typD t
 				 | None => unit
@@ -151,7 +151,7 @@ Section BaseFuncInst.
            | pPair t u => pairD t u
 	   end.
 
-	Global Polymorphic Instance RSym_BaseFunc
+	Global Instance RSym_BaseFunc
         : SymI.RSym (base_func typ) := {
 	  typeof_sym := typeof_base_func;
 	  symD := base_func_symD ;
