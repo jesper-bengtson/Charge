@@ -1,5 +1,5 @@
 Require Import Setoid Morphisms RelationClasses Program.Basics. 
-Require Import ILogic ILEmbed ILQuantTac.
+Require Import ILogic ILEmbed.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -98,7 +98,7 @@ Section CoreInferenceRules.
   Lemma bilexistsscL {T} (P : A) (Q : T -> A):
     Exists x : T, P ** Q x |-- P ** Exists x : T, Q x.
   Proof.
-  	lexistsL x.
+  	apply lexistsL; intro x.
     rewrite sepSPC. etransitivity; [|rewrite <- sepSPC; reflexivity].
     apply bilsep. eapply lexistsR; reflexivity.
   Qed.
@@ -107,7 +107,7 @@ Section CoreInferenceRules.
     P ** (Exists x : T, Q x) |-- Exists x : T, P ** Q x.
   Proof.
     rewrite sepSPC; rewrite wandSepSPAdj.
-    lexistsL x; erewrite <- wandSPAdj. reflexivity.
+    apply lexistsL; intro x; erewrite <- wandSPAdj. reflexivity.
     eapply lexistsR; rewrite sepSPC; reflexivity.
   Qed.
 
@@ -120,9 +120,9 @@ Section CoreInferenceRules.
   Lemma bilforallscR {T} (P : A) (Q : T -> A) :
     P ** (Forall x : T, Q x) |-- Forall x : T, P ** Q x.
   Proof.
-    lforallR x.
+    apply lforallR; intro x.
     rewrite sepSPC; etransitivity; [|rewrite <- sepSPC; reflexivity].
-    apply bilsep. lforallL x; reflexivity.
+    apply bilsep. apply lforallL with x; reflexivity.
   Qed.
   
   Lemma bilandscDL (P Q R : A) : (P //\\ Q) ** R |-- (P ** R) //\\ (Q ** R).
@@ -212,9 +212,9 @@ Section DerivedInferenceRules.
   Proof.
     split.
 	+ apply lforallR; intro x. apply wandSepSPAdj; eapply wandSPL; [|reflexivity].
-	  lexistsR x. reflexivity.
-	+ apply wandSepSPAdj. rewrite bilexistsscR. lexistsL.
-	  rewrite sepSPC, bilforallscR. lforallL x. rewrite sepSPC. 
+	  apply lexistsR with x. reflexivity.
+	+ apply wandSepSPAdj. rewrite bilexistsscR. apply lexistsL; intro x.
+	  rewrite sepSPC, bilforallscR. apply lforallL with x. rewrite sepSPC. 
 	  apply wandSPL; reflexivity.
   Qed.
   

@@ -16,8 +16,6 @@ Require Import MirrorCore.syms.SymSum.
 Set Printing Universes.
 Require Import Charge.ModularFunc.Denotation.
 
-Print trmD.
-
 Require Import Charge.ModularFunc.ILogicFunc.
 Print Charge.Logics.ILogic.ILogic.
 
@@ -54,7 +52,7 @@ Set Maximal Implicit Insertion.
     
 Implicit Arguments open_func [[RType_typ] [HST]].
     
-Class OpenFunc (typ func : Type) {RType_typ : RType typ} {HST : SubstType typ} := {
+Polymorphic Class OpenFunc (typ func : Type) {RType_typ : RType typ} {HST : SubstType typ} := {
   fConst : typ -> func;
   fAp : typ -> typ -> func;
   
@@ -177,7 +175,8 @@ Section OpenFuncInst.
 	  
 	  open_funcS f := Some f
 	}.
-  
+Set Printing Universes.
+
   Definition typeof_open_func (f : open_func typ) : option typ :=
     match f with
     | of_const t => Some (tyArr t (tyArr tyStack t))

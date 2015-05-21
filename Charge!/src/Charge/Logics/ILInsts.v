@@ -1,5 +1,5 @@
 Require Import RelationClasses Setoid Morphisms.
-Require Import ILogic ILEmbed ILQuantTac.
+Require Import ILogic ILEmbed.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -47,7 +47,7 @@ Section ILogic_Pre.
     apply lforallR; intro Ht'.
     apply lforallL with t''.
     assert (ord t t'') as Ht'' by (transitivity t'; assumption).
-    lforallL Ht''; reflexivity.
+    apply lforallL with Ht''; reflexivity.
   Defined.
   Next Obligation.
     simpl; rewrite H; reflexivity.
@@ -70,10 +70,10 @@ Section ILogic_Pre.
       transitivity ((ILPreFrm_pred Q) t); [apply HPQ | apply HQR].
     - apply ltrueR.
     - apply lfalseL.
-    - lforallL x; apply H. 
-    - lforallR x; apply H. 
-    - lexistsL x; apply H. 
-    - lexistsR x; apply H. 
+    - apply lforallL with x; apply H. 
+    - apply lforallR; intro x; apply H. 
+    - apply lexistsL; intro x; apply H. 
+    - apply lexistsR with x; apply H. 
     - apply landL1; eapply H; assumption.
     - apply landL2; eapply H; assumption.
     - apply lorR1; eapply H; assumption.
@@ -83,7 +83,7 @@ Section ILogic_Pre.
     - apply landAdj.
       etransitivity; [apply H|]. apply lforallL with t.
       apply lforallL; reflexivity.
-    - lforallR t' Hord. apply limplAdj.
+    - apply lforallR; intro t'; apply lforallR; intro Hord. apply limplAdj.
       rewrite ->Hord; eapply H; assumption.
   Qed.
 
@@ -119,7 +119,7 @@ Section ILogic_Pre.
   Program Definition ILPreAtom {HPre : PreOrder ord} (t: T) :=
     mk (fun t' => Exists x : ord t t', ltrue) _.
   Next Obligation.
-    lexistsL H1.
+    apply lexistsL; intro H1.
     apply lexistsR; [transitivity t0; assumption | apply ltrueR].
   Qed.
 
@@ -128,7 +128,6 @@ End ILogic_Pre.
 Implicit Arguments ILPreFrm [[T] [ILOps]].
 Implicit Arguments mkILPreFrm [[T] [ord] [A] [ILOps]].
 
-Check @ILPre_Ops.
 Section Embed_ILogic_Pre.
   Context T (ord: relation T) {HPre : PreOrder ord}.
   Context {A : Type} `{ILA: ILogic A}.
@@ -162,8 +161,8 @@ Section Embed_ILogic_Pre.
     + split; intros t; simpl; apply embedlforall.
     + split; intros t; simpl; apply embedlexists.
     + split; intros t; simpl. 
-      * lforallL t. apply lforallL; [reflexivity | apply embedImpl].
-      * lforallR x H. apply embedImpl.
+      * apply lforallL with t. apply lforallL; [reflexivity | apply embedImpl].
+      * apply lforallR; intro x; apply lforallR; intro H. apply embedImpl.
   Qed.
         
   Global Program Instance EmbedILPreOp : EmbedOp (ILPreFrm ord A) (ILPreFrm ord B) := {
@@ -181,7 +180,8 @@ Section Embed_ILogic_Pre.
     + split; intros t; simpl; apply embedlexists.
     + split; intros t; simpl;
       do 2 setoid_rewrite <- embedlforall; 
-      lforallR t' H; lforallL t' H; apply embedImpl.
+      apply lforallR; intro t'; apply lforallR; intro H; 
+      apply lforallL with t'; apply lforallL with H; apply embedImpl.
   Qed.
         
 End Embed_ILogic_Pre.
