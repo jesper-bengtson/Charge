@@ -203,7 +203,7 @@ Section ListFuncInst.
   Qed.
 
 	 Definition list_func_symD lf :=
-		match lf as lf return match typeof_list_func lf with
+		match lf as lf return match typeof_list_func lf return Type with
 								| Some t => typD t
 								| None => unit
 							  end with

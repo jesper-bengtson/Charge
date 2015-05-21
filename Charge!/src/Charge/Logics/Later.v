@@ -1,5 +1,5 @@
 Require Import Setoid Morphisms RelationClasses Program.Basics Omega.
-Require Import ILogic ILInsts ILEmbed ILQuantTac.
+Require Import ILogic ILInsts ILEmbed.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -47,7 +47,7 @@ Section ILogicLaterCoreRules.
   Lemma spec_later_and P P': |>(P //\\ P') -|- |>P //\\ |>P'.
   Proof.
     do 2 rewrite land_is_forall; rewrite spec_later_forall;
-    split; lforallR x; lforallL x; 
+    split; apply lforallR; intro x; apply lforallL with x; 
     destruct x; reflexivity.
   Qed.
 
@@ -55,14 +55,14 @@ Section ILogicLaterCoreRules.
   Proof.
     do 2 rewrite lor_is_exists; split;
     [rewrite spec_later_exists_inhabited; [|firstorder]| rewrite <- spec_later_exists];
-    lexistsL x; lexistsR x; destruct x; reflexivity.
+    apply lexistsL; intro x; apply lexistsR with x; destruct x; reflexivity.
   Qed.    
 
   Lemma spec_later_true : |>ltrue -|- ltrue.
   Proof.
     split; [intuition|].
     rewrite ltrue_is_forall, spec_later_forall.
-    lforallR x; destruct x.
+    apply lforallR; intro x; destruct x.
   Qed.
 
 End ILogicLaterCoreRules.
@@ -84,7 +84,7 @@ Section ILogic_nat.
     |}.
   Next Obligation.
     intros.
-    lforallR x Hx; lforallL x. 
+    apply lforallR; intro x; apply lforallR; intro Hx; apply lforallL with x. 
     apply lforallL; [omega | reflexivity].
   Qed.
 
@@ -95,48 +95,51 @@ Local Transparent ILPre_Ops.
     split.
     + apply _.
     + intros P H x; induction x. 
-      - rewrite <- H; simpl; lforallR y;
-        lforallR Hy; omega.
-      - rewrite <- H; simpl; lforallR y Hy.
+      - rewrite <- H; simpl; apply lforallR; intro y;
+        apply lforallR; intro Hy; omega.
+      - rewrite <- H; simpl; apply lforallR; intro y; apply lforallR; intro Hy.
         assert (x >= y) by omega.
         rewrite <- ILPreFrm_closed; eassumption.
-    + intros P x; simpl; lforallR y Hyx.
+    + intros P x; simpl; apply lforallR; intro y; apply lforallR; intro Hyx.
       apply ILPreFrm_closed; simpl. omega.
     + intros P Q; split; intros x; simpl.
-      - lforallR y Hxy.
+      - apply lforallR; intro y; apply lforallR; intro Hxy.
         apply limplAdj.
-        lforallR z Hzy.
-        lforallL z z.
-        lforallL_aux. do 2 (apply lforallL; [omega |]).
-	    lforallL z. lforallL_aux. apply lforallL; [omega|].
-        apply landAdj. reflexivity.
-      - lforallR y Hyx z Hyz.
-        lforallL (z + 1).
+        apply lforallR; intro z; apply lforallR; intro Hzy.
+        rewrite landC, landforallD; [|apply _].
+        apply lforallL with z.
+        rewrite landforallD; [|repeat split; assumption].
+        apply lforallL with Hzy.
+        rewrite landC. apply landAdj.
+        apply lforallL with z. apply lforallL; [omega|].
+        apply lforallL with z. apply lforallL; [omega|].
+	    reflexivity.
+      - apply lforallR; intro y; apply lforallR; intro Hyx; apply lforallR; intro z; apply lforallR; intro Hyz.
+        apply lforallL with (z + 1).
         apply lforallL. omega.
         apply limplAdj.
         apply limplL.
-        lforallR a Ha.
+        apply lforallR; intro a; apply lforallR; intro Ha.
         apply ILPreFrm_closed. omega.
-        lforallL z.
-        lforallL. apply lforallL. omega.
-        apply landL1. reflexivity.
+        apply landL1.
+        apply lforallL with z; apply lforallL; [omega | reflexivity].
     + intros T F; split; simpl; intros x.
-      - lforallR a y Hyx.
-        lforallL y Hyx a.
+      - apply lforallR; intro a; apply lforallR; intro y; apply lforallR; intro Hyx.
+        apply lforallL with y; apply lforallL with Hyx; apply lforallL with a.
         reflexivity.
-      - lforallR y Hyx a.
-        lforallL a y Hyx.
+      - apply lforallR; intro y; apply lforallR; intro Hyx; apply lforallR; intro a.
+        apply lforallL with a; apply lforallL with y; apply lforallL with Hyx.
         reflexivity.
     + intros T F x; simpl.
-      lexistsL a; lforallR y H.
-      lforallL y H; lexistsR a.
+      apply lexistsL; intro a; apply lforallR; intro y; apply lforallR; intro H.
+      apply lforallL with y; apply lforallL with H; apply lexistsR with a.
       reflexivity.
     + intros T F Hin x; simpl.      
       inversion Hin as [a]; destruct x.
-      - lexistsR a; lforallR y H; omega.
-      - lforallL x. apply lforallL; [omega|].
-        lexistsL b; lexistsR b.
-        lforallR y H.
+      - apply lexistsR with a; apply lforallR; intro y; apply lforallR; intro H; omega.
+      - apply lforallL with x. apply lforallL; [omega|].
+        apply lexistsL; intro b; apply lexistsR with b.
+        apply lforallR; intro y; apply lforallR; intro H.
         apply ILPreFrm_closed; omega.
   Qed.
 

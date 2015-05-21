@@ -1,5 +1,5 @@
 Require Import Setoid Morphisms RelationClasses Program.Basics. 
-Require Import ILogic IBILogic BILogic BILInsts ILQuantTac ILInsts Pure ILEmbed.
+Require Import ILogic IBILogic BILogic BILInsts ILInsts Pure ILEmbed.
 Require Import Rel SepAlg.
 
 Set Implicit Arguments.

@@ -1,4 +1,4 @@
-Require Import ILogic ILInsts BILogic ILEmbed ILQuantTac.
+Require Import ILogic ILInsts BILogic ILEmbed.
 Require Import Setoid Morphisms.
 
 Set Implicit Arguments.

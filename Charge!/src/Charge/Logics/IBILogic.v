@@ -1,5 +1,5 @@
 Require Import RelationClasses Setoid Morphisms.
-Require Import ILogic ILInsts BILInsts ILQuantTac BILogic SepAlg.
+Require Import ILogic ILInsts BILInsts BILogic SepAlg.
 Require Import Pure.
 
 Set Implicit Arguments.
@@ -50,20 +50,20 @@ Section IBISepAlg.
                                                  (ILPreFrm_pred P) x1 -->> (ILPreFrm_pred Q) x2) _
   }.
   Next Obligation.
-    lexistsL x1 x2 H1.
+    apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro H1.
     unfold subheap in H.
     destruct H as [t'' H].
     destruct (sa_mulA H1 H) as [ac [H2 H3]].
-    lexistsR x1 ac. apply lexistsR. assumption. apply landR.
+    apply lexistsR with x1; apply lexistsR with ac. apply lexistsR. assumption. apply landR.
     + apply landL1; reflexivity.
     + apply landL2; apply ILPreFrm_closed; simpl.
       exists t''; assumption.
   Qed.
   Next Obligation.
-    lforallR x1 x2 H1.
+    apply lforallR; intro x1; apply lforallR; intro x2; apply lforallR; intro H1.
     destruct H as [t'' H].
     destruct (sa_mulA H H1) as [ac [H2 H3]].
-    lforallL ac x2. apply lforallL; [assumption|].
+    apply lforallL with ac; apply lforallL with x2. apply lforallL; [assumption|].
     apply limplAdj. apply limplL.
     apply ILPreFrm_closed. exists t''. eapply sa_mulC. assumption.
     apply landL1. reflexivity.
@@ -78,33 +78,39 @@ Section IBISepAlg.
     split.
     + apply _.
     + intros P Q x; simpl.
-      lexistsL x1 x2 H1. lexistsR x2 x1.
+      apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro H1.
+      apply lexistsR with x2; apply lexistsR with x1.
       apply lexistsR; [apply sa_mulC; assumption | apply landC].
     + intros P Q R x; simpl.
-      lexistsL x1 x2 Hx x3. lexistsL x4 Hx1.
-      lexistsR x3.
+      apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro Hx. 
+      repeat setoid_rewrite landexistsD.
+      apply lexistsL; intro x3; apply lexistsL; intro x4; apply lexistsL; intro Hx1.
+      apply lexistsR with x3.
       destruct (sa_mulA Hx1 Hx) as [x5 [Hx2 Hx5]].
-      lexistsR x5 Hx5 x4. lexistsR x2 Hx2. rewrite landA. reflexivity. 
+      apply lexistsR with x5; apply lexistsR with Hx5. 
+      rewrite landA; apply landR; [apply landL1; reflexivity | apply landL2].
+      apply lexistsR with x4. apply lexistsR with x2; apply lexistsR with Hx2. reflexivity. 
     + intros P Q R; split; intros H x; simpl.
-      - lforallR x1 x2 Hx1.
+      - apply lforallR; intro x1; apply lforallR; intro x2; apply lforallR; intro Hx1.
         apply limplAdj.
         specialize (H x2); simpl in H.
         rewrite <- H.
-        lexistsR x x1 Hx1. reflexivity.
-      - lexistsL x1 x2 Hx.
+        apply lexistsR with x; apply lexistsR with x1; apply lexistsR with Hx1. reflexivity.
+      - apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro Hx.
         specialize (H x1); simpl in H.
         setoid_rewrite H.
-        lforallL x2 x Hx. apply landAdj; reflexivity.
+        apply landAdj.
+        apply lforallL with x2; apply lforallL with x; apply lforallL with Hx; reflexivity.
     + intros P Q R H x; simpl.
-      lexistsL x1 x2 Hx.
-      lexistsR x1 x2 Hx; specialize (H x1); setoid_rewrite H.
+      apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro Hx.
+      apply lexistsR with x1; apply lexistsR with x2; apply lexistsR with Hx; specialize (H x1); setoid_rewrite H.
       reflexivity.
     + intros P; split; intros x; simpl.
-      - lexistsL x1 x2 H1. apply landL1.
+      - apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro H1. apply landL1.
         apply ILPreFrm_closed; simpl.
         exists x2. assumption.
-      - destruct (sa_unit_ex x) as [u [H1 H2]]. lexistsR x u.
-        lexistsR H2. apply landR; [reflexivity | apply ltrueR].
+      - destruct (sa_unit_ex x) as [u [H1 H2]]. apply lexistsR with x; apply lexistsR with u.
+        apply lexistsR with H2. apply landR; [reflexivity | apply ltrueR].
   Qed.
 
   Local Existing Instance SAIBILogic_aux.

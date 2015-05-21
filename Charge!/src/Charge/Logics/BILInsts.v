@@ -1,5 +1,5 @@
 Require Import Setoid Morphisms RelationClasses Program.Basics.
-Require Import ILogic BILogic ILQuantTac ILInsts Pure.
+Require Import ILogic BILogic ILInsts Pure.
 Require Import Rel SepAlg.
 
 Set Implicit Arguments.
@@ -23,15 +23,15 @@ Section BISepAlg.
                                                  (ILPreFrm_pred P) x1 -->> (ILPreFrm_pred Q) x2) _
   }.
   Next Obligation.
-  	lexistsL H1. eapply lexistsR. rewrite <- H. assumption. apply ltrueR.
+  	apply lexistsL; intro H1. eapply lexistsR. rewrite <- H. assumption. apply ltrueR.
   Qed.
   Next Obligation.
-  	lexistsL a b Hab.
-  	lexistsR a b. eapply lexistsR. eapply sa_mul_monR; eassumption. reflexivity.
+  	apply lexistsL; intro a; apply lexistsL; intro b; apply lexistsL; intro Hab.
+  	apply lexistsR with a; apply lexistsR with b. eapply lexistsR. eapply sa_mul_monR; eassumption. reflexivity.
   Qed.
   Next Obligation.
-	lforallR a b Hab.
-	lforallL a b. apply lforallL. eapply sa_mul_mon; [symmetry|]; eassumption.
+	apply lforallR; intro a; apply lforallR; intro b; apply lforallR; intro Hab.
+	apply lforallL with a; apply lforallL with b. apply lforallL. eapply sa_mul_mon; [symmetry|]; eassumption.
 	reflexivity.
   Qed.
 
@@ -39,35 +39,41 @@ Section BISepAlg.
     split.
     + apply _.
     + intros P Q x; simpl.
-      lexistsL x1 x2 H'; apply sa_mulC in H'.
-      lexistsR x2 x1 H'; apply landC.
+      apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro H'; apply sa_mulC in H'.
+      apply lexistsR with x2; apply lexistsR with x1; apply lexistsR with H'; apply landC.
     + intros P Q R x; simpl.
-      lexistsL x1 x2 Hx x3. lexistsL x4 Hx1.
+      apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro Hx.
+      repeat setoid_rewrite landexistsD.
+      apply lexistsL; intro x3. apply lexistsL; intro x4; apply lexistsL; intro Hx1.
       destruct (sa_mulA Hx1 Hx) as [x5 [Hx2 Hx5]].
-      lexistsR x3 x5 Hx5 x4. lexistsR x2 Hx2.
-      apply landA.
+      apply lexistsR with x3; apply lexistsR with x5; apply lexistsR with Hx5.
+      rewrite landA. apply landR; [apply landL1; reflexivity| apply landL2].
+      apply lexistsR with x4. apply lexistsR with x2; apply lexistsR with Hx2.
+      reflexivity.
     + intros P Q R; split; intros H x; simpl.
-      - lforallR x1 x2 Hx1.
+      - apply lforallR; intro x1; apply lforallR; intro x2; apply lforallR; intro Hx1.
         apply limplAdj.
         specialize (H x2); simpl in H.
         rewrite <- H.
-        lexistsR x x1 Hx1. reflexivity.
-      - lexistsL x1 x2 Hx.
+        apply lexistsR with x; apply lexistsR with x1; apply lexistsR with Hx1. reflexivity.
+      - apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro Hx.
         specialize (H x1); simpl in H.
-        setoid_rewrite H.
-        lforallL x2 x Hx.
-        apply landAdj. reflexivity.
+        rewrite H.
+		apply landAdj.
+        apply lforallL with x2; apply lforallL with x; apply lforallL with Hx.
+        reflexivity.
     + intros P Q R H x; simpl.
-      lexistsL x1 x2 Hx.
-      lexistsR x1 x2 Hx.      
+      apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro Hx.
+      repeat eapply lexistsR; [eassumption|].
       rewrite H. reflexivity.
     + intros P; split; intros x; simpl.
-      - lexistsL x1 x2 Hx H2.
-        apply landL1.
+      - apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro Hx.
+        rewrite landC, landexistsD. apply lexistsL; intro Horg.
+        apply landL2.
         apply sa_unit_eq in Hx. rewrite <- Hx. reflexivity. assumption.
       - destruct (sa_unit_ex x) as [u [H1 H2]].
-        lexistsR x u H2 H1. 
-        apply landR; [reflexivity| apply ltrueR].
+        apply lexistsR with x; apply lexistsR with u; apply lexistsR with H2.
+        apply landR; [reflexivity| apply lexistsR; [assumption | apply ltrueR]].
   Qed.
 
   Global Instance pureop_bi_sepalg : PureOp := { 
@@ -150,15 +156,15 @@ Section BISepAlg2.
                                                  (ILPreFrm_pred P) x1 -* (ILPreFrm_pred Q) x2) _
   }.
   Next Obligation.
-  	lexistsL H1. eapply lexistsR. rewrite <- H. assumption. reflexivity.
+  	apply lexistsL; intro H1. eapply lexistsR. rewrite <- H. assumption. reflexivity.
   Qed.
   Next Obligation.
-  	lexistsL a b Hab.
-  	lexistsR a b. eapply lexistsR. eapply sa_mul_monR; eassumption. reflexivity.
+  	apply lexistsL; intro a; apply lexistsL; intro b; apply lexistsL; intro Hab.
+  	apply lexistsR with a; apply lexistsR with b. eapply lexistsR. eapply sa_mul_monR; eassumption. reflexivity.
   Qed.
   Next Obligation.
-	lforallR a b Hab.
-	lforallL a b. apply lforallL. eapply sa_mul_mon; [symmetry|]; eassumption.
+	apply lforallR; intro a; apply lforallR; intro b; apply lforallR; intro Hab.
+	apply lforallL with a; apply lforallL with b. apply lforallL. eapply sa_mul_mon; [symmetry|]; eassumption.
 	reflexivity.
   Qed.
 
@@ -166,39 +172,41 @@ Section BISepAlg2.
     split.
     + apply _.
     + intros P Q x; simpl.
-      lexistsL x1 x2 H'; apply sa_mulC in H'.
-      lexistsR x2 x1 H'. apply sepSPC.
+      apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro H'; apply sa_mulC in H'.
+      apply lexistsR with x2; apply lexistsR with x1; apply lexistsR with H'. apply sepSPC.
     + intros P Q R x; simpl.
-      lexistsL x1 x2 Hx. 
+      apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro Hx. 
       rewrite sepSPC. do 3 setoid_rewrite <- bilexistssc.
-      lexistsL x3 x4 Hx1.
+      apply lexistsL; intro x3; apply lexistsL; intro x4; apply lexistsL; intro Hx1.
       destruct (sa_mulA Hx1 Hx) as [x5 [Hx2 Hx5]].
-      lexistsR x3 x5 Hx5 x4. lexistsR x2 Hx2.
+      apply lexistsR with x3; apply lexistsR with x5; apply lexistsR with Hx5; apply lexistsR with x4;
+      apply lexistsR with x2; apply lexistsR with Hx2.
       rewrite sepSPC, sepSPA. reflexivity.
     + intros P Q R; split; intros H x; simpl.
-      - lforallR x1 x2 Hx1.
+      - apply lforallR; intro x1; apply lforallR; intro x2; apply lforallR; intro Hx1.
         apply wandSepSPAdj. 
         specialize (H x2); simpl in H.
         rewrite <- H.
-        lexistsR x x1 Hx1. reflexivity.
-      - lexistsL x1 x2 Hx.
+        apply lexistsR with x; apply lexistsR with x1; apply lexistsR with Hx1. reflexivity.
+      - apply lexistsL; intro x1. apply lexistsL; intro x2; apply lexistsL; intro Hx.
         specialize (H x1); simpl in H.
         setoid_rewrite H.
         rewrite sepSPC. do 3 setoid_rewrite bilforallscR.
-        lforallL x2 x Hx.
+        apply lforallL with x2; apply lforallL with x; apply lforallL with Hx.
         rewrite sepSPC.
         apply wandSepSPAdj. reflexivity.
     + intros P Q R H x; simpl.
-      lexistsL x1 x2 Hx.
-      lexistsR x1 x2 Hx.      
+      apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro Hx.
+      apply lexistsR with x1; apply lexistsR with x2; apply lexistsR with Hx.      
       rewrite H. reflexivity.
     + intros P; split; intros x; simpl.
-      - setoid_rewrite <- bilexistssc. lexistsL x1 x2 Hx H2.
+      - setoid_rewrite <- bilexistssc. 
+        apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro Hx; apply lexistsL; intro H2.
         rewrite empSPR. 
         apply sa_unit_eq in Hx. rewrite <- Hx. reflexivity. assumption.
       - destruct (sa_unit_ex x) as [u [H1 H2]].
         setoid_rewrite <- bilexistssc.
-        lexistsR x u H2 H1. 
+        apply lexistsR with x; apply lexistsR with u; apply lexistsR with H2; apply lexistsR with H1. 
         rewrite empSPR. reflexivity.
   Qed.
 
@@ -333,9 +341,9 @@ Section BIViews.
     apply H.
   Qed.
   Next Obligation.
-    lexistsL x1 x2. apply lpropandL; intro Hmulx.
+    apply lexistsL; intro x1; apply lexistsL; intro x2. apply lpropandL; intro Hmulx.
     destruct (Hmul_K Hmulx H) as [x1' [x2' [Hrelx1 [Hrelx2 Hmulx']]]].
-    lexistsR x1' x2'. apply lpropandR; [assumption|].
+    apply lexistsR with x1'; apply lexistsR with x2'. apply lpropandR; [assumption|].
     rewrite Hrelx1, Hrelx2. reflexivity.
   Qed.
   Next Obligation.
@@ -349,35 +357,36 @@ Section BIViews.
     split.
     + apply _.
     + intros P Q x; simpl.
-      lexistsL x1 x2. apply lpropandL; intros Hmul. apply sa_mulC in Hmul.
-      lexistsR x2 x1. apply lpropandR; [assumption|]. apply landC.
+      apply lexistsL; intro x1; apply lexistsL; intro x2. apply lpropandL; intros Hmul. apply sa_mulC in Hmul.
+      apply lexistsR with x2; apply lexistsR with x1. apply lpropandR; [assumption|]. apply landC.
     + intros P Q R x; simpl.
-      lexistsL xPQ' xR. apply lpropandL; intro HmulPQ_R.
-      lexistsL xP xQ. unfold lembedand. rewrite landA. apply lpropandL; intro HmulPQ.
+      apply lexistsL; intro xPQ'; apply lexistsL; intro xR. apply lpropandL; intro HmulPQ_R.
+      repeat setoid_rewrite landexistsD.
+      apply lexistsL; intro xP; apply lexistsL; intro xQ. unfold lembedand. rewrite landA. apply lpropandL; intro HmulPQ.
       destruct (sa_mulA HmulPQ HmulPQ_R) as [xQR [HmulQR HmulP_QR]].
-      lexistsR xP xQR. apply lpropandR; [assumption|].
+      apply lexistsR with xP; apply lexistsR with xQR. apply lpropandR; [assumption|].
       rewrite landA. apply landR; [apply landL1; reflexivity|]. 
-      lexistsR xQ xR. apply lpropandR; [assumption|]. 
+      apply lexistsR with xQ; apply lexistsR with xR. apply lpropandR; [assumption|]. 
       apply landL2. reflexivity.
     + intros P Q R. split; intros H.
-      * simpl. intros xP. lforallR xP' xQ xR'. 
+      * simpl. intros xP. apply lforallR; intro xP'; apply lforallR; intro xQ; apply lforallR; intro xR'. 
       	apply lpropimplR; intro Hrel_xP.
       	apply lpropimplR; intro Hmul_xR'.
         apply limplAdj. rewrite <-H. simpl.
-        lexistsR xP' xQ. apply lpropandR; [now apply sa_mulC|].
+        apply lexistsR with xP'; apply lexistsR with xQ. apply lpropandR; [now apply sa_mulC|].
         now rewrite Hrel_xP.
-      * simpl. intros xR. lexistsL xP xQ. apply lpropandL; intro Hmul_xR.
-        apply landAdj. rewrite ->H. simpl. lforallL xP xQ xR.
+      * simpl. intros xR. apply lexistsL; intro xP; apply lexistsL; intro xQ. apply lpropandL; intro Hmul_xR.
+        apply landAdj. rewrite -> H. simpl. apply lforallL with xP; apply lforallL with xQ; apply lforallL with xR.
         apply lpropimplL; [reflexivity|]. apply lpropimplL; [now apply sa_mulC|].
         reflexivity.
     + intros. simpl. setoid_rewrite H. reflexivity.
     + intros P; split; intros x; simpl.
-      - lexistsL x1 x2. apply lpropandL; intro Hx12.
+      - apply lexistsL; intro x1; apply lexistsL; intro x2. apply lpropandL; intro Hx12.
         rewrite landC. apply landAdj.
         apply embedPropL; intros Hex2. apply limplValid.
         cancel1. rewrite (sa_unit_eq Hex2 Hx12). reflexivity.
       - destruct (sa_unit_ex x) as [ex [Hunit Hmul]].
-        lexistsR x ex. apply lpropandR; [assumption|].
+        apply lexistsR with x; apply lexistsR with ex. apply lpropandR; [assumption|].
         apply landR; [reflexivity|].
         etransitivity; [apply ltrueR|]. apply embedPropR. assumption.
   Qed.
@@ -401,29 +410,29 @@ Section BIViews.
   Proof.
     split.
     - simpl. intros x.
-      lexistsL a' b'. apply lpropandL; intros Hmulab'.
+      apply lexistsL; intro a'; apply lexistsL; intro b'. apply lpropandL; intros Hmulab'.
       apply landAdj. apply embedPropL; intros Hrela.
       apply limplValid. apply embedPropL; intros Hrelb.
       destruct (Hmul_proper _ _ Hrela _ _ Hrelb _ Hmulab')
         as [ab [Hmulab Hrelab]].
-      lexistsR ab. apply landR; apply embedPropR; assumption.
-    - lexistsL c. apply landAdj.
+      apply lexistsR with ab. apply landR; apply embedPropR; assumption.
+    - apply lexistsL; intro c. apply landAdj.
       apply embedPropL; intros Hmulc. apply limplValid. (* tactic fails *)
       simpl. intros x. apply embedPropL; intros Hrelc.
       destruct (Hmul_K Hmulc Hrelc) as [x1' [x2' [Hrelx1 [Hrelx2 Hmulx']]]].
-      lexistsR x1' x2'. apply lpropandR; [assumption|].
+      apply lexistsR with x1'; apply lexistsR with x2'. apply lpropandR; [assumption|].
       apply landR; apply embedPropR; assumption.
    Qed.
 
   Lemma SRBIAtom_emp: Exists e, sa_unit e /\\ SRBIAtom e -|- empSP.
   Proof.
     split; intros x; simpl.
-    - lexistsL e'.
+    - apply lexistsL; intro e'.
       apply landAdj. apply embedPropL; intros He'. apply limplValid.
       apply embedPropL; intros Hrele'. apply embedPropR.
       rewrite <-Hrele'. assumption.
     - apply embedPropL; intros Hx.
-      lexistsR x. apply landR; apply embedPropR; [assumption|reflexivity].
+      apply lexistsR with x. apply landR; apply embedPropR; [assumption|reflexivity].
   Qed.
 
 End BIViews.
@@ -474,11 +483,11 @@ Section BISepRel.
     + apply landL2; apply landL2; apply landL2; reflexivity.
   Qed.
   Next Obligation.
-    cancel1; intros x1. lforallR x'.
+    cancel1; intros x1. apply lforallR; intro x'.
     apply lpropimplR; intro Hmul_x'.
     destruct (Hmul_proper (reflexivity x1) H Hmul_x')
       as [x [Hmul_x Hrel_x]].
-    lforallL x. apply lpropimplL; [assumption|]. now rewrite Hrel_x.
+    apply lforallL with x. apply lpropimplL; [assumption|]. now rewrite Hrel_x.
   Qed.
 
   Local Transparent ILPre_Ops.
@@ -488,37 +497,39 @@ Section BISepRel.
     split.
     + apply _.
     + intros P Q x; simpl.
-      lexistsL x1 x2 x12. 
+      apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro x12. 
       apply lpropandL; intros Hmul.
       apply lpropandL; intros Hrel. apply sa_mulC in Hmul.
-      lexistsR x2 x1 x12. do 2 (apply lpropandR; [assumption|]). apply landC.
+      apply lexistsR with x2; apply lexistsR with x1; apply lexistsR with x12.
+      do 2 (apply lpropandR; [assumption|]). apply landC.
     + intros P Q R x; simpl.
-      lexistsL xPQ' xR xPQ_R. 
+      apply lexistsL; intro xPQ'; apply lexistsL; intro xR; apply lexistsL; intro xPQ_R. 
       apply lpropandL; intros HmulPQ_R.
       apply lpropandL; intros HrelPQ_R.
-      lexistsL xP xQ xPQ. unfold lembedand. rewrite landA.
+      repeat setoid_rewrite landexistsD.
+      apply lexistsL; intro xP; apply lexistsL; intro xQ; apply lexistsL; intro xPQ. unfold lembedand. rewrite landA.
       apply lpropandL; intros HmulPQ. rewrite landA.
       apply lpropandL; intros HrelPQ.
       destruct (Hmul_proper HrelPQ (reflexivity xR) HmulPQ_R)
         as [xPQ_R' [HmulPQ_R' HrelPQ_R']].
       destruct (sa_mulA HmulPQ HmulPQ_R') as [xQR [HmulQR HmulP_QR]].
-      lexistsR xP xQR xPQ_R'. apply lpropandR; [assumption|].
+      apply lexistsR with xP; apply lexistsR with xQR; apply lexistsR with xPQ_R'. apply lpropandR; [assumption|].
       apply lpropandR; [etransitivity; eassumption|].
-      lexistsR xQ xR xQR. 
-      rewrite landA. apply landR; [apply landL1; reflexivity | apply landL2].
+      rewrite landA; apply landR; [apply landL1; reflexivity | apply landL2].
+      apply lexistsR with xQ; apply lexistsR with xR; apply lexistsR with xQR. 
       apply lpropandR; [assumption|]; apply lpropandR; reflexivity.
     + intros P Q R. split; intros H.
-      * simpl. intros xP. lforallR xQ xR. apply lpropimplR; intros Hmul_xR. apply limplAdj.
-        specialize (H xR). rewrite <-H. simpl. lexistsR xP xQ xR.
+      * simpl. intros xP. apply lforallR; intro xQ; apply lforallR; intro xR. apply lpropimplR; intros Hmul_xR. apply limplAdj.
+        specialize (H xR). rewrite <-H. simpl. apply lexistsR with xP; apply lexistsR with xQ; apply lexistsR with xR.
         apply lpropandR; [now apply sa_mulC|]. apply lpropandR; reflexivity.
-      * simpl. intros xR'. lexistsL xP xQ xR. 
+      * simpl. intros xR'. apply lexistsL; intro xP; apply lexistsL; intro xQ; apply lexistsL; intro xR. 
         apply lpropandL; intros Hmul_xR.
         apply lpropandL; intros Hrel_xR.
-        apply landAdj. rewrite ->H. simpl. lforallL xQ xR.
+        apply landAdj. rewrite ->H. simpl. apply lforallL with xQ; apply lforallL with xR.
         apply lpropimplL; [now apply sa_mulC|]. now rewrite Hrel_xR.
     + intros. simpl. setoid_rewrite H. reflexivity.
     + intros P; split; intros x; simpl.
-      - lexistsL x1 x2 x12. 
+      - apply lexistsL; intro x1; apply lexistsL; intro x2; apply lexistsL; intro x12. 
         apply lpropandL; intros Hx12.
         apply lpropandL; intros Hrelx12.
         rewrite landC. apply landAdj.
@@ -529,7 +540,7 @@ Section BISepRel.
         rewrite (sa_unit_eq Hex2 Hmulx') in Hrelx'. rewrite <-Hrelx'.
         reflexivity.
       - destruct (sa_unit_ex x) as [ex [Hunit Hmul]].
-        lexistsR x ex x. apply lpropandR; [assumption|].
+        apply lexistsR with x; apply lexistsR with ex; apply lexistsR with x. apply lpropandR; [assumption|].
         apply lpropandR; [reflexivity|]. apply landR; [reflexivity|].
         etransitivity; [apply ltrueR|].
         apply embedPropR. exists ex. split; [assumption|reflexivity].
@@ -551,31 +562,32 @@ Section BISepRel.
   Proof.
     split.
     - simpl. intros x.
-      lexistsL a' b' ab'. 
+      apply lexistsL; intro a'; apply lexistsL; intro b'; apply lexistsL; intro ab'. 
       apply lpropandL; intros Hmulab'.
       apply lpropandL; intros Hrelab'.
       apply landAdj. apply embedPropL; intros Hrela.
       apply limplValid. apply embedPropL; intros Hrelb.
       destruct (Hmul_proper Hrela Hrelb Hmulab') as [ab [Hmulab Hrelab]].
-      lexistsR ab. apply landR.
+      apply lexistsR with ab. apply landR.
       + apply embedPropR. assumption.
       + apply embedPropR. etransitivity; eassumption.
-    - lexistsL c. apply landAdj.
+    - apply lexistsL; intro c. apply landAdj.
       apply embedPropL; intros Hmulc. apply limplValid. (* tactic fails *)
       simpl. intros x. apply embedPropL; intros Hrelc.
-      lexistsR a b c. apply lpropandR; [assumption|]. apply lpropandR; [assumption|].
+      apply lexistsR with a; apply lexistsR with b; apply lexistsR with c. 
+      apply lpropandR; [assumption|]. apply lpropandR; [assumption|].
       apply landR; apply embedPropR; reflexivity.
    Qed.
 
   Lemma SRBIAtom_emp: Exists e, sa_unit e /\\ SRBIAtom e -|- empSP.
   Proof.
     split; intros x; simpl.
-    - lexistsL e'.
+    - apply lexistsL; intro e'.
       apply landAdj. apply embedPropL; intros He'. apply limplValid.
       apply embedPropL; intros Hrele'. apply embedPropR.
       exists e'. split; assumption.
     - apply embedPropL; intros [e' [He' Hrele']].
-      lexistsR e'. apply landR; apply embedPropR; assumption.
+      apply lexistsR with e'. apply landR; apply embedPropR; assumption.
   Qed.
 
 End BISepRel.
@@ -597,8 +609,8 @@ Section BILPre.
   Qed.
   Next Obligation.
     intros.
-    lforallR x Hx. rewrite <- H in Hx.
-    lforallL x Hx; reflexivity.
+    apply lforallR; intro x; apply lforallR; intro Hx. rewrite <- H in Hx.
+    apply lforallL with x; apply lforallL with Hx; reflexivity.
   Qed.
 
   Local Existing Instance ILPre_Ops.
@@ -613,11 +625,11 @@ Section BILPre.
     + intros P Q x; simpl; apply sepSPC.
     + intros P Q R x; simpl; apply sepSPA.
     + intros P Q R; split; intros H t; simpl.
-      * lforallR t' H1.
+      * apply lforallR; intro t'; apply lforallR; intro H1.
         transitivity ((ILPreFrm_pred P) t'); [apply ILPreFrm_closed; assumption|].
         apply wandSepSPAdj; apply H. 
       *  apply wandSepSPAdj; specialize (H t); unfold wandSP in H; simpl in H.
-         rewrite H. lforallL t; apply lforallL; reflexivity.
+         rewrite H. apply lforallL with t; apply lforallL; reflexivity.
     + intros P Q R H x; simpl; apply bilsep; apply H. 
     + intros P; split; intros x; simpl; apply empSPR.
   Qed.
