@@ -160,12 +160,12 @@ Section EmbedFuncInst.
 
  Definition embedD t u (EIL : EmbedOp (typD t) (typD u)) := tyArrR (@embed _ _ EIL).
 
- Definition funcD (f : embed_func typ) : match typeof_embed_func f with
+ Definition funcD (f : embed_func typ) : match typeof_embed_func f return Type with
 							              | Some t => typD t
 							              | None => unit
 							             end :=
     match f as f
-          return match typeof_embed_func f with
+          return match typeof_embed_func f return Type with
 		   | Some t => typD t
 		   | None => unit
 		 end

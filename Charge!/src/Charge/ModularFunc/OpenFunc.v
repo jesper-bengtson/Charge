@@ -241,7 +241,7 @@ Set Printing Universes.
 	   tyArrR3 (fun a b c => @ap (Fun (typD tyStack)) (Applicative_Fun _) (typD t) (typD u)
 	   	 (tyArrD2 a) (tyArrD b) c).
 
-	 Program Definition applySubstD (t : typ) : typD (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t))) :=
+	 Definition applySubstD (t : typ) : typD (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t))) :=
 	   tyArrR3 (fun a b c => apply_subst
 	     (fun x => tyArrD a (tyArrR x)) (substD b)
 	     (tyArrD c)).
@@ -255,11 +255,11 @@ Set Printing Universes.
 	 Definition truncSubstD :=
 	   tyArrR (fun a => substR (substl_trunc_aux (substListD a))).
 
-	 Definition open_func_symD f : match typeof_open_func f with
+	 Definition open_func_symD f : match typeof_open_func f return Type with
 	                                 | Some t => typD t
 	                                 | None => unit
 	                               end :=
-		match f as f return match typeof_open_func f with
+		match f as f return match typeof_open_func f return Type with
 								| Some t => typD t
 								| None => unit
 							  end with
@@ -274,7 +274,7 @@ Set Printing Universes.
 	      | of_trunc_subst => truncSubstD
 	    end.
 
-	Global Program Instance RSym_OpenFunc : SymI.RSym (open_func typ) := {
+	Global Instance RSym_OpenFunc : SymI.RSym (open_func typ) := {
 	  typeof_sym := typeof_open_func;
 	  symD := open_func_symD;
 	  sym_eqb := (fun a b => Some (rel_dec a b))
@@ -659,9 +659,9 @@ Section MakeOpenSound.
   Context {OFOK : OpenFuncOk typ func}.
 
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
-  
-  Let Expr_expr := Expr_expr (typ := typ) (func := func).
-  Let ExprOk_expr := ExprOk_expr (typ := typ) (func := func).
+
+  Let Expr_expr := Expr_expr.
+  Let ExprOk_expr := ExprOk_expr.
   Let ExprUVar_expr := ExprUVar_expr (typ := typ) (func := func).
   
   Local Existing Instance Expr_expr.

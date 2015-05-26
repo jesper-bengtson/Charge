@@ -12,22 +12,20 @@ Set Implicit Arguments.
 Set Strict Implicit.
 Set Maximal Implicit Insertion.
 
-Polymorphic Definition BTType := Type.
-
-Class BaseType (typ : BTType) := {
+Class BaseType (typ : Type) := {
   tyNat  : typ;
   tyBool : typ;
   tyString : typ;
   tyProd : typ -> typ -> typ
 }.
-Print RType.
+Check (nat:Type).
 Section BaseTypeD.
-	Context {typ : BTType} {HT : BaseType typ} {HR : RType typ}.
+	Context {typ : Type} {HT : BaseType typ} {HR : RType typ}.
 	
 	Class BaseTypeD := {
-	  btNat : typD tyNat = nat;
-	  btBool : typD tyBool = bool;
-	  btString : typD tyString = string;
+	  btNat : typD tyNat = (nat:Type);
+	  btBool : typD tyBool = (bool:Type);
+	  btString : typD tyString = (string:Type);
 	  btProd : forall t1 t2, typD (tyProd t1 t2) = (typD t1 * typD t2)%type;
 
       tyProd_inj : forall t u t' u', Rty (tyProd t u) (tyProd t' u') -> Rty t t' /\ Rty u u'
@@ -49,7 +47,7 @@ Ltac prod_inj :=
   end.
 
 Section BaseTypeD'.
-  Context {typ : BTType} {BT : BaseType typ} {RType_typ : RType typ} {BTD : BaseTypeD BT}.
+  Context {typ : Type} {BT : BaseType typ} {RType_typ : RType typ} {BTD : BaseTypeD BT}.
  
   Definition natD (n : typD tyNat) : nat :=
     trmD n btNat.
@@ -100,7 +98,7 @@ Section BaseTypeD'.
 End BaseTypeD'.  
 
 Section BaseTypeRelDec.
-  Context {typ : BTType} {BT : BaseType typ} {RType_typ : RType typ} {BTD : BaseTypeD BT}.
+  Context {typ : Type} {BT : BaseType typ} {RType_typ : RType typ} {BTD : BaseTypeD BT}.
   
   Global Instance RelDec_tyString : RelDec (@eq (typD tyString)) := {
     rel_dec a b := stringD a ?[ eq ] stringD b

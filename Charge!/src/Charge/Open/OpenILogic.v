@@ -2,7 +2,6 @@ Require Import Charge.Rel.
 Require Import Charge.Logics.ILogic. 
 Require Import Charge.Logics.ILEmbed.
 Require Import Charge.Logics.ILInsts.
-Require Import Charge.Tactics.ILQuantTac.
 Require Import Charge.Open.Open.
 Require Import Charge.Open.Stack.
 
@@ -45,7 +44,7 @@ Section Existentialise.
   Lemma existentialise_var (x : A) (P : open B) : 
   	P |-- @lexists (open B) _ _ (fun v : val => @lembedand vlogic (open B) _ _ (open_eq (x/V) `v) P).
   Proof.
-  	intro s; unfold liftn, lift, var_expr, open_eq; simpl. lexistsR (s x). 	
+  	intro s; unfold liftn, lift, var_expr, open_eq; simpl. apply lexistsR with (s x). 	
   	apply landR; [apply embedPropR|]; reflexivity.
   Qed.
 End Existentialise.

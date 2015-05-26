@@ -315,7 +315,7 @@ repeat forward_step.
    admit.
    
    
-  Qed.
+  Admitted.
   
 Definition ZIP := SIMPLIFY (typ := typ) (fun _ _ _ _ => beta_all zipTac).
 

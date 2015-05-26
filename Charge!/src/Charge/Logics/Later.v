@@ -9,11 +9,11 @@ Section LaterSect.
   Context {A : Type}.
   Context `{ILOps: ILogicOps A}.
           
-Class ILLOperators (A : Type) := {
+Polymorphic Class ILLOperators (A : Type) : Type := {
   illater : A -> A
 }.
 
-Class ILLater {ILLOps: ILLOperators A} := {
+Polymorphic Class ILLater {ILLOps: ILLOperators A} : Type := {
   illogic :> ILogic A;                                           
   spec_lob P : illater P |-- P -> |-- P;
   spec_later_weaken P : P |-- illater P;

@@ -9,9 +9,9 @@ Section ILogicEmbed.
   Context {A} `{ILOpsA: ILogicOps A}.
   Context {B} `{ILOpsB: ILogicOps B}.
 
-  Class EmbedOp := { embed : A -> B }.
+  Polymorphic Class EmbedOp : Type := { embed : A -> B }.
 
-  Class Embed {EmbOp: EmbedOp} := {
+  Polymorphic Class Embed {EmbOp: EmbedOp} : Type := {
      embed_sound p q : p |-- q -> embed p |-- embed q;
      
      embedlforall T f : Forall x : T, embed (f x) -|- embed (Forall x : T, f x);
