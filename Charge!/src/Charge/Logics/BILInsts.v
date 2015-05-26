@@ -8,7 +8,7 @@ Set Maximal Implicit Insertion.
 
 Section BISepAlg.
   Context {A} `{sa : SepAlg A}.
-  Context {B : Frm} `{IL: ILogic B}.
+  Context {B : Type} `{IL: ILogic B}.
   Context {HPre : PreOrder (@rel A _)}.
 
   Open Scope sa_scope.

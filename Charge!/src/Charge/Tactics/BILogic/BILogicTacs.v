@@ -105,7 +105,7 @@ Ltac bilf_wand_expr :=
       end
   end.
 
-
+(*
 Ltac bil_pointwise_bilogicD :=  
   match goal with
     | bilp : bil_pointwise, gs : bilogic_ops |- _ =>
@@ -129,14 +129,14 @@ Ltac bil_pointwise_bilogic_rangeD :=
           end
       end
   end.
-
+*)
 Ltac bilf_unfold := 
   first [
     progress (unfold empD) |
     progress (unfold starD) |
     progress (unfold wandD)
   ].
-
+(*
 Ltac pointwise_empD_rewrite :=
   match goal with
     | gs : bilogic_ops, bilp : bil_pointwise |- context [trmD BILogic.empSP _ _] =>
@@ -166,15 +166,15 @@ Ltac bilf_rewrite :=
     pointwise_empD_rewrite |
     pointwise_empR_rewrite
   ].
-
+*)
 Ltac bilf_forward_step :=
   match goal with 
     | H : Some _ = bilogicS _ |- _ =>  symmetry in H
     | _ => 
        first [
-        bil_pointwise_bilogicD |
+  (*      bil_pointwise_bilogicD |
         bil_pointwise_bilogic_rangeD |
-        bilf_emp_type |
+   *)     bilf_emp_type |
         bilf_star_type |
         bilf_wand_type |
         bilf_emp_expr |

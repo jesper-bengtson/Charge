@@ -30,23 +30,21 @@ Ltac cancel3 :=
   apply (proper_prf (Proper := _: Proper (_ ==> _ ==> _ ==> _) _));
   postcancel.
 
-Class Inhabited A := { cinhabited : inhabited A}.
+Class Inhabited (A : Type) := { cinhabited : inhabited A}.
 
 Instance inhabitedNat: Inhabited nat. Proof. split; split; apply 0. Qed.
 Instance inhabitedBool: Inhabited bool. Proof. split; split; apply true. Qed.
 
-Definition Frm := Type.
-
 (* Logical connectives *)
-Polymorphic Class ILogicOps (A : Frm) := {
+Polymorphic Class ILogicOps (A : Type@{q}) : Type := {
   lentails: relation A;
   ltrue: A;
   lfalse: A;
   limpl: A -> A -> A;
   land: A -> A -> A;
   lor: A -> A -> A;
-  lforall: forall {T : Type}, (T -> A) -> A;
-  lexists: forall {T : Type}, (T -> A) -> A
+  lforall: forall {T : Type@{q}}, (T -> A) -> A;
+  lexists: forall {T : Type@{q}}, (T -> A) -> A
 }.
 
 (* These notations have to sit strictly between level 80 (precendence of /\)
@@ -65,7 +63,7 @@ Notation "'Exists' x , p" :=
   (lexists (fun x => p)) (at level 78, x ident, right associativity, only parsing).
 
 Section ILogicEquiv.
-  Context {A : Frm} `{IL: ILogicOps A}.
+  Context {A : Type} `{IL: ILogicOps A}.
   
   Definition lequiv P Q := P |-- Q /\ Q |-- P.
 End ILogicEquiv.
@@ -84,26 +82,27 @@ Infix "-|-"  := lequiv (at level 85, no associativity).
    of the left, respectively right, side of a turnstile. The notable exception
    to this pattern is implication, which is required to be the right adjoint of
    conjunction. This makes singleton contexts work. *)
-Polymorphic Class ILogic Frm {ILOps: ILogicOps Frm} := {
+Polymorphic Class ILogic {A : Type} {ILOps: ILogicOps A} : Type := {
   lentailsPre:> PreOrder lentails;
-  ltrueR: forall C, C |-- ltrue;
-  lfalseL: forall C, lfalse |-- C;
-  lforallL: forall T x (P: T -> Frm) C, P x |-- C -> lforall P |-- C;
-  lforallR: forall T (P: T -> Frm) C, (forall x, C |-- P x) -> C |-- lforall P;
-  lexistsL: forall T (P: T -> Frm) C, (forall x, P x |-- C) -> lexists P |-- C;
-  lexistsR: forall T x (P: T -> Frm) C, C |-- P x -> C |-- lexists P;
-  landL1: forall P Q C, P |-- C  ->  P //\\ Q |-- C;
-  landL2: forall P Q C, Q |-- C  ->  P //\\ Q |-- C;
-  lorR1:  forall P Q C, C |-- P  ->  C |-- P \\// Q;
-  lorR2:  forall P Q C, C |-- Q  ->  C |-- P \\// Q;
-  landR:  forall P Q C, C |-- P  ->  C |-- Q  ->  C |-- P //\\ Q;
-  lorL:   forall P Q C, P |-- C  ->  Q |-- C  ->  P \\// Q |-- C;
-  landAdj: forall P Q C, C |-- (P -->> Q) -> C //\\ P |-- Q;
-  limplAdj: forall P Q C, C //\\ P |-- Q -> C |-- (P -->> Q)
+  ltrueR: forall (C : A), C |-- ltrue;
+  lfalseL: forall (C : A), lfalse |-- C;
+  lforallL: forall (T : Type) x (P: T -> A) C, P x |-- C -> lforall P |-- C;
+  lforallR: forall (T : Type) (P: T -> A) C, (forall x, C |-- P x) -> C |-- lforall P;
+  lexistsL: forall (T : Type) (P: T -> A) C, (forall x, P x |-- C) -> lexists P |-- C;
+  lexistsR: forall (T : Type) (x : T) (P: T -> A) C, C |-- P x -> C |-- lexists P;
+  landL1: forall (P Q C : A), P |-- C  ->  P //\\ Q |-- C;
+  landL2: forall (P Q C : A), Q |-- C  ->  P //\\ Q |-- C;
+  lorR1:  forall (P Q C : A), C |-- P  ->  C |-- P \\// Q;
+  lorR2:  forall (P Q C : A), C |-- Q  ->  C |-- P \\// Q;
+  landR:  forall (P Q C : A), C |-- P  ->  C |-- Q  ->  C |-- P //\\ Q;
+  lorL:   forall (P Q C : A), P |-- C  ->  Q |-- C  ->  P \\// Q |-- C;
+  landAdj: forall (P Q C : A), C |-- (P -->> Q) -> C //\\ P |-- Q;
+  limplAdj: forall (P Q C : A), C //\\ P |-- Q -> C |-- (P -->> Q)
 }.
+Check lforallL.
 Implicit Arguments ILogic [[ILOps]].
-Implicit Arguments lforallL [[ILOps] [Frm] [ILogic] [T] [P] [C]].
-Implicit Arguments lexistsR [[ILOps] [Frm] [ILogic] [T] [P] [C]].
+Implicit Arguments lforallL [[ILOps] [ILogic] [A] [T] [P] [C]].
+Implicit Arguments lexistsR [[ILOps] [ILogic] [A] [T] [P] [C]].
 
 Notation "|--  P" := (ltrue |-- P) (at level 85, no associativity).
 Hint Extern 0 (?x |-- ?x) => reflexivity.
@@ -112,7 +111,7 @@ Hint Extern 0 (lfalse |-- _) => apply lfalseL.
 Hint Extern 0 (?P |-- ?Q) => (is_evar P; reflexivity) || (is_evar Q; reflexivity).
 
 Section ILogicEquiv2.
-  Context {A : Frm} `{IL: ILogic A}.
+  Context {A : Type} `{IL: ILogic A}.
 
   Global Instance lequivEquivalence : Equivalence lequiv.
   Proof.
@@ -131,7 +130,7 @@ End ILogicEquiv2.
    since it is an adjoint. *)
 
 Section ILogicEquivOps.
-  Context {A : Frm} `{IL: ILogic A}.
+  Context {A : Type} `{IL: ILogic A}.
   
   Lemma land_is_forall P Q :
     P //\\ Q -|- Forall b : bool, if b then P else Q.
@@ -170,7 +169,7 @@ Section ILogicEquivOps.
 End ILogicEquivOps.
 
 Section ILogicMorphisms.
-  Context {A : Frm} `{IL: ILogic A}.
+  Context {A : Type} `{IL: ILogic A}.
 
   Global Instance lequiv_lentails : subrelation lequiv lentails.
   Proof. firstorder. Qed.
@@ -268,7 +267,7 @@ Hint Extern 0 (?x -|- ?x) => reflexivity.
 Hint Extern 0 (?P -|- ?Q) => (is_evar P; reflexivity) || (is_evar Q; reflexivity).
 
 (* TODO: also add lforwardR. *)
-Lemma lforwardL {Frm} `{IL: ILogic Frm} {Q R}:
+Lemma lforwardL {A} `{IL: ILogic A} {Q R}:
     Q |-- R -> forall P G,
     P |-- Q ->
     (P |-- R -> G) ->
@@ -279,7 +278,7 @@ Tactic Notation "lforwardL" hyp(H) :=
   eapply (lforwardL H); clear H; [|intros H].
 
 Section ILogicFacts.
-  Context {A : Frm} `{IL: ILogic A}.
+  Context {A : Type} `{IL: ILogic A}.
   
   (* Experiments with proof search. *)
   Ltac landR :=

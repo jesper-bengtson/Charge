@@ -170,7 +170,7 @@ Ltac ilf_impl_expr :=
 		 end
       end
   end.
-
+(*
 Ltac il_pointwise_ilogicD :=  
   match goal with
     | ilp : il_pointwise, gs : logic_ops |- _ =>
@@ -194,7 +194,7 @@ Ltac il_pointwise_ilogic_rangeD :=
           end
       end
   end.
-
+*)
 Ltac lf_unfold := 
   first [
     progress (unfold trueD) |
@@ -203,7 +203,7 @@ Ltac lf_unfold :=
     progress (unfold orD) | 
     progress (unfold implD)
   ].
-
+(*
 Ltac pointwise_trueD_rewrite :=
   match goal with
     | gs : logic_ops, ilp : il_pointwise |- context [trmD ILogic.ltrue _ _] =>
@@ -259,15 +259,15 @@ Ltac lf_rewrite :=
     pointwise_falseD_rewrite |
     pointwise_falseR_rewrite
   ].
-
+*)
 Ltac ilf_forward_step :=
   match goal with 
     | H : Some _ = ilogicS _ |- _ =>  symmetry in H
     | _ => 
        first [
-        il_pointwise_ilogicD |
+(*        il_pointwise_ilogicD |
         il_pointwise_ilogic_rangeD |
-        ilf_true_type |
+ *)       ilf_true_type |
         ilf_false_type |
         ilf_and_type |
         ilf_or_type |

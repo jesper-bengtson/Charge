@@ -35,11 +35,11 @@ Ltac red_unfold :=
 
 Ltac red_rewrite :=
   first [
-    lf_rewrite | bilf_rewrite |
+ (*   lf_rewrite | bilf_rewrite |*)
     progress (repeat rewrite (exprT_App_tyArrD) in * ) | 
         progress (repeat rewriteD trmDR) | 
-        progress (repeat rewriteD trmRD) |
-        progress (repeat rewriteD trmDR2)].
+        progress (repeat rewriteD trmRD)
+    (*    progress (repeat rewriteD trmDR2) *)].
         
 Ltac destruct_match_goal :=
   match goal with 

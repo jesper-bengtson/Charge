@@ -24,7 +24,7 @@ Set Implicit Arguments.
 Set Strict Implicit.
 Set Maximal Implicit Insertion.
 
-Inductive ilfunc (typ : Type) :=
+Inductive ilfunc (typ : Type) : Type :=
   | ilf_entails (logic : typ)
   | ilf_true (logic : typ)
   | ilf_false (logic : typ)
@@ -46,7 +46,7 @@ Definition ilfunc_logic typ (x : ilfunc typ) : typ :=
     | ilf_forall _ t => t
   end.
 
-Class ILogicFunc (typ func : Type) := {
+Class ILogicFunc (typ func : Type) : Type := {
   fEntails  : typ -> func;
   fTrue : typ -> func;
   fFalse : typ -> func;
@@ -57,7 +57,11 @@ Class ILogicFunc (typ func : Type) := {
   fForall : typ -> typ -> func;
   ilogicS : func -> option (ilfunc typ)
 }.
-    
+
+Set Printing Universes.
+
+Check @ILogicFunc.
+
 Section ILogicFuncSum.
 	Context {typ func : Type} {H : ILogicFunc typ func}.
 
@@ -152,6 +156,7 @@ Section ILogicFuncInst.
 
   Definition logic_ops := forall (t : typ),
     option (ILogicOps (typD t)).
+    
   Definition logic_opsOk (l : logic_ops) : Prop :=
     forall g, match l g return Prop with
                 | Some T => @ILogic _ T
@@ -539,12 +544,12 @@ Section ILogicFuncInst.
  Implicit Arguments orD [[t] [IL]].
  Implicit Arguments implD [[t] [IL]].
  
- Definition funcD (f : ilfunc typ) : match typeof_ilfunc f with
+ Definition funcD (f : ilfunc typ) : match typeof_ilfunc f return Type with
 							         | Some t => typD t
 							         | None => unit
 							        end :=
     match f as f
-          return match typeof_ilfunc f with
+          return match typeof_ilfunc f return Type with
 		   | Some t => typD t
 		   | None => unit
 		 end

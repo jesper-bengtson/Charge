@@ -116,12 +116,12 @@ Section LaterFuncInst.
                      end
         end.
 
- Definition funcD (f : later_func) : match typeof_later_func f with
+ Definition funcD (f : later_func) : match typeof_later_func f return Type with
 							           | Some t => typD t
 							           | None => unit
 							         end :=
     match f as f
-          return match typeof_later_func f with
+          return match typeof_later_func f return Type with
 		   | Some t => typD t
 		   | None => unit
 		 end

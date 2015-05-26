@@ -84,12 +84,12 @@ Definition PULL_EXISTSL := PULL_EXISTSL_AUX pull_quant.
 Lemma PULL_EXISTSR_sound : rtac_sound PULL_EXISTSR.
 Proof.
   admit.
-Qed.
+Admitted.
 
 Lemma PULL_EXISTSL_sound : rtac_sound PULL_EXISTSL.
 Proof.
   admit.
-Qed.
+Admitted.
 
 End PullQuant.
 

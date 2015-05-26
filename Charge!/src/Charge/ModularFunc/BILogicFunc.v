@@ -106,9 +106,10 @@ Section BILogicFuncInst.
 
   Definition bilogic_ops := forall (t : typ),
     option (BILOperators (typD t)).
+    
   Definition bilogic_opsOk (l : bilogic_ops) : Prop :=
     forall g, match is g, l g return Prop with
-                | Some T, Some U => @BILogic _ T U
+                | Some T, Some U => BILogic (typD g)
                 | _, _ => True
               end.
 
@@ -361,12 +362,12 @@ Section BILogicFuncInst.
  Definition starD t BIL := tyArrR2 (@sepSP (typD t) BIL).
  Definition wandD t BIL := tyArrR2 (@wandSP (typD t) BIL).
  
- Definition funcD (f : bilfunc typ) : match typeof_bilfunc f with
+ Definition funcD (f : bilfunc typ) : match typeof_bilfunc f return Type with
 							       | Some t => typD t
 							       | None => unit
 							      end :=
     match f as f
-          return match typeof_bilfunc f with
+          return match typeof_bilfunc f return Type with
 		   | Some t => typD t
 		   | None => unit
 		 end

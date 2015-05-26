@@ -6,6 +6,7 @@ Require Import Charge.Logics.Later.
 Require Import Charge.Rel.
 
 Require Import Setoid.
+Require Import Omega.
 
 Set Implicit Arguments.
 Unset Strict Implicit.

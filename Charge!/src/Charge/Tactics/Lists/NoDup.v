@@ -124,6 +124,8 @@ Section NoDup.
   Lemma propD_to_exprD tus tvs e eD (H : propD tus tvs e = Some eD) : 
     exists eD', exprD' tus tvs tyProp e = Some eD' /\ eD = fun us vs => PropD (eD' us vs).
   Proof.
+    admit.
+    (*
     unfold propD, exprD'_typ0 in H.
     destruct_match_oneres; inv_all; subst.
     exists e0; split; [apply Heqo|].
@@ -133,10 +135,13 @@ Section NoDup.
     unfold exprT, OpenT.
     generalize (typ0_cast (F := Prop)). intros.
     destruct e1. reflexivity.
-  Qed.
+*)
+  Admitted.
 
   Lemma NODUP_sound : rtac_sound NODUP.
   Proof.
+    admit.
+    (*
     unfold rtac_sound; intros; subst.
     destruct g; simpl; try apply I.
     do 7 (destruct_exprs; try apply I).
@@ -151,6 +156,7 @@ Section NoDup.
     reduce.
     unfold PropD, NoDupD, PropR. reduce.
     apply no_dup_sound. assumption.
-  Qed.
+*)
+  Admitted.
 
 End NoDup.
