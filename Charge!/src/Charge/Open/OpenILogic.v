@@ -17,8 +17,8 @@ Section VLogic.
   Definition open_eq {T} (a b : open T) : vlogic :=
     fun s => a s = b s.
     
-  Global Instance ILOpsVLogic : ILogicOps vlogic := _.
-  Global Instance ILogicVLogic : ILogic vlogic := _.
+  Global Polymorphic Instance ILOpsVLogic : ILogicOps vlogic := _.
+  Global Polymorphic Instance ILogicVLogic : ILogic vlogic := _.
   
   Local Transparent ILFun_Ops.
  
