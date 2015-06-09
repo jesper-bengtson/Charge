@@ -657,7 +657,7 @@ Proof.
 *)
    Admitted.
 
-  Definition SUBST := SIMPLIFY (typ := typ) (fun _ _ _ _ => beta_all substTac).
+  Definition SUBST : rtac typ (expr typ func) := SIMPLIFY (typ := typ) (fun _ _ _ _ => beta_all substTac).
 
   
 End SubstTac.
