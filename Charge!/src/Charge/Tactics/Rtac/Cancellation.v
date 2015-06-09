@@ -29,7 +29,7 @@ Section Canceller.
   Context {SS : Subst subst (expr typ func)}.
   Context {SU : SubstUpdate subst (expr typ func)}.
   Context {SO : SubstOk SS}.
-  Context {MA : MentionsAny (expr typ func)}.
+(*  Context {MA : MentionsAny (expr typ func)}.*)
   Context {uis_pure : expr typ func -> bool}.
 
   Definition sls : SepLogAndSpec typ func :=
@@ -184,4 +184,4 @@ Definition the_canceller2 tus tvs (lhs rhs : expr typ func) :=
 End Canceller.
 
 Implicit Arguments CANCELLATION [[HIL] [HBIL] [RType_typ] [RelDec_typ]
-                                [Typ2_typ] [RSym_func] [MA]].
+                                [Typ2_typ] [RSym_func]].
