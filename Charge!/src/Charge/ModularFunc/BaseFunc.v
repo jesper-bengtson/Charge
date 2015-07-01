@@ -117,6 +117,7 @@ Section BaseFuncInst.
   
   Implicit Arguments rel_dec_cases [[T] [A] [RelDec_T] [HROk]].
 
+
 	  Definition base_func_eq (a b : base_func typ) : option bool :=
 	  match a , b with
 		| pConst t1 e1, pConst t2 e2 =>

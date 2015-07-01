@@ -3,9 +3,8 @@ Require Import ExtLib.Core.RelDec.
 Require Import MirrorCore.Lambda.Expr.
 Require Import MirrorCore.Lemma.
 Require Import MirrorCore.TypesI.
-(*
 Require Import MirrorCore.Reify.Reify.
-*)
+
 Require Import Charge.ModularFunc.ILogicFunc.
 
 Section ReifyLemma.
