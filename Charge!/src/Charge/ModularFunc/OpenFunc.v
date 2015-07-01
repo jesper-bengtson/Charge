@@ -52,7 +52,7 @@ Set Maximal Implicit Insertion.
     
 Implicit Arguments open_func [[RType_typ] [HST]].
     
-Polymorphic Class OpenFunc (typ func : Type) {RType_typ : RType typ} {HST : SubstType typ} := {
+ Class OpenFunc (typ func : Type) {RType_typ : RType typ} {HST : SubstType typ} := {
   fConst : typ -> func;
   fAp : typ -> typ -> func;
   
