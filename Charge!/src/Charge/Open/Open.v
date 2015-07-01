@@ -8,12 +8,12 @@ Unset Strict Implicit.
 Set Maximal Implicit Insertion.
 
 Section Expr.
-  Polymorphic Definition OpenType := Type. (* To combat universe inconsistencies *)
+  Definition OpenType := Type. (* To combat universe inconsistencies *)
 
   Context {A val : OpenType} {HR : RelDec (@eq A)} {HROk : RelDec_Correct HR}.
   Context {V : ValNull val}.
 
-  Polymorphic Definition open B : Type := stack A val -> B.
+  Definition open B : Type := stack A val -> B.
 
   Program Definition lift {A B} (f : A -> B) (a : open A) : open B := 
     fun x => f (a x).

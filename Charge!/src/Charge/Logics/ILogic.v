@@ -36,7 +36,7 @@ Instance inhabitedNat: Inhabited nat. Proof. split; split; apply 0. Qed.
 Instance inhabitedBool: Inhabited bool. Proof. split; split; apply true. Qed.
 
 (* Logical connectives *)
-Polymorphic Class ILogicOps (A : Type@{q}) : Type := {
+Class ILogicOps (A : Type@{q}) : Type := {
   lentails: relation A;
   ltrue: A;
   lfalse: A;
@@ -82,7 +82,7 @@ Infix "-|-"  := lequiv (at level 85, no associativity).
    of the left, respectively right, side of a turnstile. The notable exception
    to this pattern is implication, which is required to be the right adjoint of
    conjunction. This makes singleton contexts work. *)
-Polymorphic Class ILogic {A : Type} {ILOps: ILogicOps A} : Type := {
+Class ILogic {A : Type} {ILOps: ILogicOps A} : Type := {
   lentailsPre:> PreOrder lentails;
   ltrueR: forall (C : A), C |-- ltrue;
   lfalseL: forall (C : A), lfalse |-- C;

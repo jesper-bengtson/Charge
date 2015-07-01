@@ -11,13 +11,13 @@ Section BILogic.
   Context {A : BILogicType}.
   Context {HILOp: ILogicOps A}.
 
-  Polymorphic Class BILOperators (A : BILogicType) : Type := {
+  Class BILOperators (A : BILogicType) : Type := {
     empSP  : A;
     sepSP  : A -> A -> A;
     wandSP : A -> A -> A
   }.
 
-  Polymorphic Class BILogic {BILOp: BILOperators A} : Type := {
+  Class BILogic {BILOp: BILOperators A} : Type := {
     bilil :> ILogic A;
     sepSPC1 P Q : sepSP P Q |-- sepSP Q P;
     sepSPA1 P Q R : sepSP (sepSP P Q) R |-- sepSP P (sepSP Q R);
