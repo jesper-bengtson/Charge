@@ -18,7 +18,7 @@ Require Import Charge.Tactics.Base.DenotationTacs.
 Require Import Charge.Tactics.Base.MirrorCoreTacs.
 
 Require Import ExtLib.Core.RelDec.
-
+(*
 Section Zip.
   Context {typ func : Type} {RType_typ : RType typ} {RSym_func : RSym func}.
   Context {LT : ListType typ} {LTD : ListTypeD LT}. 
@@ -320,3 +320,5 @@ repeat forward_step.
 Definition ZIP := SIMPLIFY (typ := typ) (fun _ _ _ _ => beta_all zipTac).
 
 End Zip.
+
+*)

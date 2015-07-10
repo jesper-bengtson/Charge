@@ -3,6 +3,9 @@ Require Import ExtLib.Data.Fun.
 Require Import ExtLib.Data.Nat.
 Require Import ExtLib.Data.Bool.
 Require Import ExtLib.Data.String.
+Require Import ExtLib.Data.Map.FMapPositive.
+Require Import ExtLib.Data.SumN.
+Require Import ExtLib.Data.Positive.
 Require Import ExtLib.Tactics.Consider.
 Require Import ExtLib.Tactics.
 
@@ -22,15 +25,244 @@ Set Implicit Arguments.
 Set Strict Implicit.
 Set Maximal Implicit Insertion.
 
-Inductive base_func typ {RType_typ : RType typ} :=
-  | pConst t : typD t -> base_func
+Inductive base_func {typ : Type} :=
+  | pNat : nat -> base_func
+  | pBool : bool -> base_func
+  | pString : string -> base_func
   | pEq : typ -> base_func
   | pPair : typ -> typ -> base_func.
 
-Implicit Arguments base_func [[RType_typ]].
+Implicit Arguments base_func [].
 
-Class BaseFunc (typ func : Type) {RType_typ : RType typ} := {
-  fConst t : typD t -> func;
+Section RSym_OneOf.
+  Context {typ : Type} {RType_typ : RType typ}.
+
+  Fixpoint pmap_lookup'_Empty (p : positive) : pmap_lookup' Empty p = None :=
+    match p with
+      | xH => eq_refl
+      | xO p => pmap_lookup'_Empty p
+      | xI p => pmap_lookup'_Empty p
+    end.
+
+  Definition OneOf_Empty (f : OneOf Empty) : False.
+  Proof.
+    destruct f. rewrite pmap_lookup'_Empty in value.
+    destruct value.
+  Defined.
+
+  Lemma pmap_lookup'_eq p m : pmap_lookup p m = pmap_lookup' m p.
+  Proof.
+    generalize dependent m. induction p; intuition.
+    simpl. destruct m. simpl. rewrite pmap_lookup'_Empty. reflexivity.
+    simpl in *. apply IHp.
+    simpl in *. destruct m. simpl. rewrite pmap_lookup'_Empty. reflexivity.
+    simpl. apply IHp.
+  Defined.
+
+  Instance RSym_Empty_set : RSym (Empty_set) := {
+    typeof_sym s := None;
+    symD := fun f => match f return unit with end;
+    sym_eqb := fun f _ => match f return option bool with end
+  }.
+
+  Definition typeof_sym_OneOf {m : pmap Type}
+    (H : forall p, RSym (match pmap_lookup' m p with | Some T => T | None => Empty_set end))
+    (s : OneOf m) : option typ :=
+    match s with
+      | Build_OneOf _ x v =>
+        match pmap_lookup' m x as o return o = pmap_lookup' m x -> option typ with
+          | Some T => 
+            fun pf =>
+              let RSym_p := 
+                  eq_rect_r (fun o => RSym (match o with 
+                                              | Some T => T 
+                                              | None => Empty_set 
+                                            end)) (H x) pf in 
+              let v' :=
+                  eq_rect_r (fun o => match o with 
+                                        | Some T => T 
+                                        | None => Empty_set 
+                                      end) v pf in 
+              typeof_sym (RSym := RSym_p) v'
+          | None => fun _ => None
+        end eq_refl
+    end.
+  
+
+  Definition symD_OneOf (m : pmap Type) 
+    (H : forall p, RSym (match pmap_lookup' m p with | Some T => T | None => Empty_set end))
+    (f : OneOf m) : match typeof_sym_OneOf H f with
+                      | Some t => typD t
+                      | None => unit:Type
+                    end.
+ refine (
+    match f as f' return f = f' -> 
+                         match typeof_sym_OneOf H f' with
+                           | Some t => typD t
+                           | None => unit:Type
+                         end with
+      | Build_OneOf _ x v => 
+        fun eqf => 
+          match pmap_lookup' m x as o 
+                return o = pmap_lookup' m x -> 
+                       match typeof_sym_OneOf H {| SumN.index := x; value := v |} with
+                         | Some t => typD t
+                         | None => unit:Type
+                       end with
+            | Some T => 
+              fun pf =>
+                let RSym_p := 
+                    eq_rect_r (fun o => RSym (match o with 
+                                                | Some T => T 
+                                                | None => Empty_set 
+                                              end)) (H x) pf in 
+                let v' :=
+                    eq_rect_r (fun o => match o with 
+                                          | Some T => T 
+                                          | None => Empty_set 
+                                        end) v pf in 
+              let v'' := symD (RSym := RSym_p) v' in _ 
+            | None =>
+              fun pf => 
+                let RSym_p := 
+                    eq_rect_r (fun o => RSym (match o with 
+                                                | Some T => T 
+                                                | None => Empty_set 
+                                              end)) (H x) pf in 
+                let v' :=
+                    eq_rect_r (fun o => match o with 
+                                          | Some T => T 
+                                          | None => Empty_set 
+                                        end) v pf in _
+          end eq_refl
+    end eq_refl).
+simpl.
+generalize dependent (H x).
+clear H.
+clear eqf.
+revert v v'.
+rewrite <- pf.
+intros.
+apply v''.
+
+intros; simpl.
+generalize dependent (H x).
+clear H eqf.
+revert v v'.
+rewrite <- pf.
+intros.
+apply tt.
+
+Defined.
+
+  Definition sym_eqb_OneOf
+    (m : pmap Type) 
+    (H : forall p, RSym (match pmap_lookup' m p with | Some T => T | None => Empty_set end))
+    (f1 f2 : OneOf m) : option bool :=
+    match f1, f2 with
+      | Build_OneOf _ x1 v1, Build_OneOf _ x2 v2 =>
+        match Pos.eq_dec x1 x2 with
+          | left eqx =>
+            match pmap_lookup' m x1 as o return o = pmap_lookup' m x1 -> option bool with
+              | Some _ => 
+                fun eqo =>
+                  let v1' := eq_rect_r (fun o => match o with 
+                                                   | Some T => T 
+                                                   | None => Empty_set 
+                                                 end) v1 eqo in
+                  let v2' := eq_rect_r (fun x => match pmap_lookup' m x with 
+                                                   | Some T => T 
+                                                   | None => Empty_set 
+                                                 end) v2 eqx in 
+                  let v2' := eq_rect_r (fun o => match o with 
+                                                   | Some T => T 
+                                                   | None => Empty_set 
+                                                 end) v2' eqo in
+                  let RSym_x := eq_rect_r (fun o => RSym (match o with 
+                                                            | Some T => T 
+                                                            | None => Empty_set 
+                                                          end)) (H x1) eqo in 
+                  @sym_eqb typ RType_typ _ RSym_x v1' v2'
+              | None => fun _ => None
+            end eq_refl
+          | right _ => None
+        end
+    end.
+
+  Instance RSymOneOf (m : pmap Type) 
+    (H : forall p, RSym (match pmap_lookup' m p with | Some T => T | None => Empty_set end)) :
+    RSym (OneOf m) := 
+    {
+      typeof_sym s := typeof_sym_OneOf H s;
+      symD f := symD_OneOf H f;
+      sym_eqb f1 f2 := sym_eqb_OneOf H f1 f2
+    }.
+
+
+  Instance RSym_Empty : RSym (OneOf Empty) := {
+    typeof_sym s := None;
+    symD := fun f => match OneOf_Empty f return unit with end;
+    sym_eqb := fun f _ => match OneOf_Empty f return option bool with end
+  }.
+
+Instance RSymOk_OneOf (m : pmap Type) 
+  (H1 : forall p, RSym (match pmap_lookup' m p with | Some T => T | None => Empty_set end)) 
+  (H2 : forall p, RSymOk (H1 p)) :
+  RSymOk (RSymOneOf m H1) := {
+    sym_eqbOk f1 f2 :=
+        match f1 as f1' return f1 = f1' -> 
+                               match sym_eqb f1 f2 with
+                                 | Some true => f1 = f2
+                                 | Some false => f1 <> f2
+                                 | None => True
+                               end with
+          | Build_OneOf _ x1 v1 => 
+            fun eqf1 => 
+              match f2 as f2' return f2 = f2' -> 
+                                     match sym_eqb f1 f2 with
+                                       | Some true => f1 = f2
+                                       | Some false => f1 <> f2
+                                       | None => True
+                                     end with
+                | Build_OneOf _ x2 v2 => 
+                  fun eqf2 =>
+                    match FMapPositive.PositiveMap.E.eq_dec x1 x2 with
+                      | left eqx =>
+                        match pmap_lookup' m x1 as o return 
+                              o = pmap_lookup' m x1 ->
+                              match sym_eqb f1 f2 with
+                                | Some true => f1 = f2
+                                | Some false => f1 <> f2
+                                | None => True
+                              end with
+                          | Some T => fun eqT => _
+                          | None => _
+                        end eq_refl
+                      | right _ => _
+                    end       
+              end eq_refl
+        end eq_refl
+}.
+subst.
+simpl.
+generalize dependent (H2 x2).
+generalize dependent (H1 x2).
+clear H2 H1.
+revert v2 v1.
+unfold eq_rect_r, eq_rect, eq_sym.
+simpl.
+destruct (FMapPositive.PositiveMap.E.eq_dec x2 x2); [|congruence].
+simpl.
+cbv -[pmap_lookup'].
+admit. (* Problems with dependent types *)
+Admitted.
+
+End RSym_OneOf.
+
+Class BaseFunc (typ func : Type) := {
+  fNat : nat -> func;
+  fBool : bool -> func;
+  fString : string -> func;
   
   fEq : typ -> func;
   fPair : typ -> typ -> func;
@@ -38,14 +270,35 @@ Class BaseFunc (typ func : Type) {RType_typ : RType typ} := {
   baseS : func -> option (base_func typ)
 }.
 
-Implicit Arguments BaseFunc [[RType_typ]].
-    
 Section BaseFuncSum.
-	Context {typ func : Type} {RType_typ : RType typ} {H : BaseFunc typ func}.
+	Context {typ func : Type} {H : BaseFunc typ func}.
+	
+	Global Instance BaseFuncPMap (p : positive) (m : pmap Type) 
+	  (pf : Some func = pmap_lookup' m p) :
+	  BaseFunc typ (OneOf m) := {
+	    fNat n := Into (fNat n) p pf;
+	    fBool b := Into (fBool b) p pf;
+	    fString s := Into (fString s) p pf;
+	    fEq t := Into (fEq t) p pf;
+	    fPair t u := Into (fPair t u) p pf;
+	    
+	    baseS f :=
+	      match f with
+	        | Build_OneOf _ p' pf1 =>
+	          match Pos.eq_dec p p' with
+	            | left Heq => 
+	              baseS (eq_rect_r (fun o => match o with | Some T => T | None => Empty_set end) pf1 
+	                (eq_rect _ (fun p =>  Some func = pmap_lookup' m p) pf _ Heq))
+	            | right _ => None
+	          end
+	      end
+	}.
 
 	Global Instance BaseFuncSumL (A : Type) : 
 		BaseFunc typ (func + A) := {
-		  fConst t e := inl (fConst t e)
+		  fNat n := inl (fNat n)
+		; fBool b := inl (fBool b)
+		; fString s := inl (fString s)
 
         ; fEq t := inl (fEq t)
         ; fPair t1 t2 := inl (fPair t1 t2)
@@ -57,7 +310,10 @@ Section BaseFuncSum.
 
 	Global Instance BaseFuncSumR (A : Type) : 
 		BaseFunc typ (A + func) := {
-		  fConst t e := inr (fConst t e)
+		  fNat n := inr (fNat n)
+		; fBool b := inr (fBool b)
+		; fString s := inr (fString s)
+
         ; fEq t := inr (fEq t)
         ; fPair t1 t2 := inr (fPair t1 t2)
         ; baseS f := match f with
@@ -68,7 +324,10 @@ Section BaseFuncSum.
         
     Global Instance BaseFuncExpr :
     	BaseFunc typ (expr typ func) := {
-		  fConst t e := Inj (fConst t e);
+		  fNat n := Inj (fNat n);
+		  fBool b := Inj (fBool b);
+		  fString s := Inj (fString s);
+
     	  fEq t := Inj (fEq t);
     	  fPair t1 t2 := Inj (fPair t1 t2);
     	  baseS f := match f with
@@ -95,7 +354,10 @@ Section BaseFuncInst.
   Let tyProp : typ := @typ0 _ _ _ _.
 
   Global Instance BaseFuncInst : BaseFunc typ (base_func typ) := {
-	fConst t e := pConst t e;
+	fNat := pNat;
+	fBool := pBool;
+	fString := pString;
+	
 	fEq := pEq;
 	fPair := pPair;
 	baseS f := Some f 
@@ -103,7 +365,9 @@ Section BaseFuncInst.
 
   Definition typeof_base_func bf :=
     match bf with
-      | pConst t _ => Some t
+      | pNat _ => Some tyNat
+      | pBool _ => Some tyBool
+      | pString _ => Some tyString
       | pEq t => Some (tyArr t (tyArr t tyProp))
       | pPair t1 t2 => Some (tyArr t1 (tyArr t2 (tyProd t1 t2)))
     end.
@@ -120,10 +384,9 @@ Section BaseFuncInst.
 
 	  Definition base_func_eq (a b : base_func typ) : option bool :=
 	  match a , b with
-		| pConst t1 e1, pConst t2 e2 =>
-		  rel_dec_cases t1 t2
-		    (fun pf => semi_eq_dec_typ e1 (@eq_rect_r _ _ typD e2 _ pf))
-		    (fun _ => None)
+	    | pNat n, pNat m => Some (n ?[ eq ] m)
+	    | pBool b1, pBool b2 => Some (b1 ?[ eq ] b2) 
+	    | pString s1, pString s2 => Some (s1 ?[ eq ] s2)
 	    | pEq t1, pEq t2 => Some (t1 ?[ eq ] t2)
 	    | pPair t1 t2, pPair t3 t4 => Some (t1 ?[ eq ] t3 &&
 	      								    t2 ?[ eq ] t4)%bool
@@ -147,9 +410,11 @@ Section BaseFuncInst.
 				 | Some t => typD t
 				 | None => unit
 				 end with
-           | pConst _ c => c
-	   | pEq t => eqD t
-           | pPair t u => pairD t u
+         | pNat n => trmR n btNat
+         | pBool b => trmR b btBool
+         | pString s => trmR s btString
+	     | pEq t => eqD t
+         | pPair t u => pairD t u
 	   end.
 
 	Global Instance RSym_BaseFunc
@@ -163,14 +428,9 @@ Section BaseFuncInst.
 	Proof.
 		split; intros.
 		destruct a, b; simpl; try apply I.
-		+ unfold rel_dec_cases.
-		  forward; inv_all; subst.
-		  unfold eq_rect_r, eq_rect, eq_sym in H1.
-		  pose proof (semi_eq_dec_typOk t1 t0 t2) as H2.
-		  rewrite H1 in H2.
-		  destruct b; [try intuition congruence|].
-		  intros H3; apply H2; inversion H3.
-		  apply Structures.EqDep.inj_pair2 in H5. apply H5.
+		+ consider (n ?[ eq ] n0); intuition congruence.
+		+ consider (b0 ?[ eq ] b); intuition congruence.
+		+ consider (s ?[ eq ] s0); intuition congruence.
 		+ consider (t ?[ eq ] t0); intuition congruence.
 		+ consider (t ?[ eq ] t1 && t0 ?[ eq ] t2)%bool; 
 		  intuition congruence.
@@ -182,11 +442,9 @@ Section MakeBase.
 	Context {typ func : Type} {RType_typ : RType typ}.
 	Context {HT : BaseType typ} {HF : BaseFunc typ func}.
 
-	Definition mkConst t e : expr typ func := Inj (fConst t e).
-
-	Definition mkNat (n : typD tyNat) : expr typ func := mkConst tyNat n.
-	Definition mkBool (b : typD tyBool) : expr typ func := mkConst tyBool b.
-	Definition mkString (s : typD tyString) : expr typ func := mkConst tyString s.
+	Definition mkNat (n : nat) : expr typ func := Inj (fNat n).
+	Definition mkBool (b : bool) : expr typ func := Inj (fBool b).
+	Definition mkString (s : string) : expr typ func := Inj (fString s).
 	Definition mkEq (t : typ) (a b : expr typ func) := App (App (fEq t) a) b.
 	Definition mkPair t u a b := App (App (fPair t u) a) b.
 
@@ -204,11 +462,13 @@ Section BaseFuncOk.
   Context {Typ0_Prop : Typ0 _ Prop}.
 
   Class BaseFuncOk := {
-    bf_funcAsOk (f : func) (e : @base_func typ RType_typ) : baseS f = Some e -> 
+    bf_funcAsOk (f : func) (e : @base_func typ) : baseS f = Some e -> 
       forall t, 
         funcAs f t = 
         funcAs (RSym_func := RSym_BaseFunc) e t;
-	bf_fConstOk t e : baseS (fConst t e) = Some (pConst t e);
+	bf_fNatOk n : baseS (fNat n) = Some (pNat n);
+	bf_fBoolOk b : baseS (fBool b) = Some (pBool b);
+	bf_fStringOk s : baseS (fString s) = Some (pString s);
     bf_fEqOk t : baseS (fEq t) = Some (pEq t);
     bf_fPairOk t u : baseS (fPair t u) = Some (pPair t u)
   }.
@@ -216,7 +476,7 @@ Section BaseFuncOk.
 End BaseFuncOk.
 
 Implicit Arguments BaseFuncOk [[BF] [RType_typ] [RSym_func] [RelDec_eq] [BT] [BTD]
-                               [Typ2_tyArr] [Typ0_Prop] [RelDec_eqOk] [Heqd]].
+                               [Typ2_tyArr] [Typ0_Prop]].
 
 Section BaseFuncBaseOk.
   Context {typ func : Type} {RType_typ : RType typ}.
@@ -235,7 +495,9 @@ Section BaseFuncBaseOk.
   Global Program Instance BaseFuncBaseOk : 
   	BaseFuncOk typ (RSym_func := RSym_BaseFunc) (base_func typ) := {
     bf_funcAsOk := fun _ _ _ _ => eq_refl;
-    bf_fConstOk t e := eq_refl;
+    bf_fNatOk n := eq_refl;
+    bf_fBoolOk b := eq_refl;
+    bf_fStringOk s := eq_refl;
     bf_fEqOk t := eq_refl;
     bf_fPairOk t u := eq_refl
   }.
@@ -269,28 +531,76 @@ Section BaseFuncExprOk.
  	end.
   Qed.
   
-  Lemma bf_typeof_const (t : typ) (c : typD t) : typeof_sym (fConst t c) = Some t.
+  Lemma bf_typeof_nat (n : nat) : typeof_sym (fNat n) = Some tyNat.
   Proof.
-    pose proof (BaseFunc_typeOk _ (bf_fConstOk t c)).
+    pose proof (BaseFunc_typeOk _ (bf_fNatOk n)).
     rewrite H. reflexivity.
   Qed.
   
-  Lemma bf_const_func_type_eq (f : func) t e t' df
-    (H1 : baseS f = Some (pConst t e)) (H2 : funcAs f t' = Some df) :
-    t = t'.
+  Lemma bf_typeof_bool (b : bool) : typeof_sym (fBool b) = Some tyBool.
+  Proof.
+    pose proof (BaseFunc_typeOk _ (bf_fBoolOk b)).
+    rewrite H. reflexivity.
+  Qed.
+  
+  Lemma bf_typeof_string (s : string) : typeof_sym (fString s) = Some tyString.
+  Proof.
+    pose proof (BaseFunc_typeOk _ (bf_fStringOk s)).
+    rewrite H. reflexivity.
+  Qed.
+  
+  Lemma bf_nat_func_type_eq (f : func) n t df
+    (H1 : baseS f = Some (pNat n)) (H2 : funcAs f t = Some df) :
+    t = tyNat.
   Proof.
     rewrite (bf_funcAsOk _ H1) in H2.
     unfold funcAs in H2; simpl in *.
     forward.
   Qed.
 
-  Lemma bf_const_type_eq (e : expr typ func) t c t' tus tvs de
-    (H1 : baseS e = Some (pConst t c)) (H2 : exprD' tus tvs t' e = Some de) :
-    t = t'.
+  Lemma bf_nat_type_eq (e : expr typ func) t n tus tvs de
+    (H1 : baseS e = Some (pNat n)) (H2 : exprD' tus tvs t e = Some de) :
+    t = tyNat.
   Proof.
    destruct e; simpl in *; try congruence.
    autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
-   apply (bf_const_func_type_eq _ _ H1 H).
+   apply (bf_nat_func_type_eq _ _ H1 H).
+  Qed.
+
+  Lemma bf_bool_func_type_eq (f : func) b t df
+    (H1 : baseS f = Some (pBool b)) (H2 : funcAs f t = Some df) :
+    t = tyBool.
+  Proof.
+    rewrite (bf_funcAsOk _ H1) in H2.
+    unfold funcAs in H2; simpl in *.
+    forward.
+  Qed.
+
+  Lemma bf_bool_type_eq (e : expr typ func) t b tus tvs de
+    (H1 : baseS e = Some (pBool b)) (H2 : exprD' tus tvs t e = Some de) :
+    t = tyBool.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
+   apply (bf_bool_func_type_eq _ _ H1 H).
+  Qed.
+
+  Lemma bf_string_func_type_eq (f : func) s t df
+    (H1 : baseS f = Some (pString s)) (H2 : funcAs f t = Some df) :
+    t = tyString.
+  Proof.
+    rewrite (bf_funcAsOk _ H1) in H2.
+    unfold funcAs in H2; simpl in *.
+    forward.
+  Qed.
+
+  Lemma bf_string_type_eq (e : expr typ func) t s tus tvs de
+    (H1 : baseS e = Some (pString s)) (H2 : exprD' tus tvs t e = Some de) :
+    t = tyString.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in H2; simpl in H2; forward; inv_all; subst.
+   apply (bf_string_func_type_eq _ _ H1 H).
   Qed.
 
   Lemma bf_eq_func_type_eq (f : func) t u df
@@ -340,7 +650,10 @@ Section BaseFuncExprOk.
           | inl b => _
           | inr b => _
         end;
-    bf_fConstOk t e := bf_fConstOk (func := func) t e;
+
+    bf_fNatOk n := bf_fNatOk (func := func) n;
+    bf_fBoolOk b := bf_fBoolOk (func := func) b;
+    bf_fStringOk s := bf_fStringOk (func := func) s;
     bf_fEqOk t := bf_fEqOk (func := func) t;
     bf_fPairOk t u := bf_fPairOk (func := func) t u
   }.
@@ -356,7 +669,9 @@ Section BaseFuncExprOk.
           | inl b => _
           | inr b => _
         end;
-    bf_fConstOk t e := bf_fConstOk (func := func) t e;
+    bf_fNatOk n := bf_fNatOk (func := func) n;
+    bf_fBoolOk b := bf_fBoolOk (func := func) b;
+    bf_fStringOk s := bf_fStringOk (func := func) s;
     bf_fEqOk t := bf_fEqOk (func := func) t;
     bf_fPairOk t u := bf_fPairOk (func := func) t u
   }.
@@ -403,17 +718,16 @@ End TypeOfFunc.
 
 Section MakeBaseFuncSound.
   Context {typ func : Type} `{HOK : BaseFuncOk typ func}.
-  Context {HeqdOk : SemiEqDecTypOk Heqd}.
   Context {HROk : RTypeOk} {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}
           {RSym_funcOk : RSymOk RSym_func0}.
 
   Let tyProp : typ := @typ0 _ _ _ _.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
-  Lemma bf_const_func_eq (t : typ) (c : typD t) (f : func) (fD : typD t)
-    (Ho : baseS f = Some (pConst t c))
-    (Hf : funcAs f t = Some fD) :
-    fD = c.
+  Lemma bf_nat_func_eq (n : nat) (f : func) (fD : typD tyNat)
+    (Ho : baseS f = Some (pNat n))
+    (Hf : funcAs f tyNat = Some fD) :
+    fD = trmR n btNat.
   Proof.
    rewrite (bf_funcAsOk _ Ho) in Hf.
    unfold funcAs in Hf; simpl in *.
@@ -422,15 +736,61 @@ Section MakeBaseFuncSound.
    inversion Hf. reflexivity.
   Qed.
 
-  Lemma bf_const_eq (t : typ) (c : typD t) (e : expr typ func) tus tvs
-    (eD : ExprI.exprT tus tvs (typD t))
-    (Ho : baseS e = Some (pConst t c))
-    (Hf : exprD' tus tvs t e = Some eD) :
-    eD = fun us vs => c.
+  Lemma bf_nat_eq (n : nat) (e : expr typ func) tus tvs
+    (eD : ExprI.exprT tus tvs (typD tyNat))
+    (Ho : baseS e = Some (pNat n))
+    (Hf : exprD' tus tvs tyNat e = Some eD) :
+    eD = fun us vs => trmR n btNat.
   Proof.
    destruct e; simpl in *; try congruence.
    autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
-   rewrite (bf_const_func_eq _ Ho H); reflexivity.
+   rewrite (bf_nat_func_eq _ Ho H); reflexivity.
+  Qed.
+
+  Lemma bf_bool_func_eq (b : bool) (f : func) (fD : typD tyBool)
+    (Ho : baseS f = Some (pBool b))
+    (Hf : funcAs f tyBool = Some fD) :
+    fD = trmR b btBool.
+  Proof.
+   rewrite (bf_funcAsOk _ Ho) in Hf.
+   unfold funcAs in Hf; simpl in *.
+   rewrite type_cast_refl in Hf; [|apply HROk].
+   unfold Rcast, Relim_refl in Hf.
+   inversion Hf. reflexivity.
+  Qed.
+
+  Lemma bf_bool_eq (b : bool) (e : expr typ func) tus tvs
+    (eD : ExprI.exprT tus tvs (typD tyBool))
+    (Ho : baseS e = Some (pBool b))
+    (Hf : exprD' tus tvs tyBool e = Some eD) :
+    eD = fun us vs => trmR b btBool.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   rewrite (bf_bool_func_eq _ Ho H); reflexivity.
+  Qed.
+
+  Lemma bf_string_func_eq (s : string) (f : func) (fD : typD tyString)
+    (Ho : baseS f = Some (pString s))
+    (Hf : funcAs f tyString = Some fD) :
+    fD = trmR s btString.
+  Proof.
+   rewrite (bf_funcAsOk _ Ho) in Hf.
+   unfold funcAs in Hf; simpl in *.
+   rewrite type_cast_refl in Hf; [|apply HROk].
+   unfold Rcast, Relim_refl in Hf.
+   inversion Hf. reflexivity.
+  Qed.
+
+  Lemma bf_string_eq (s : string) (e : expr typ func) tus tvs
+    (eD : ExprI.exprT tus tvs (typD tyString))
+    (Ho : baseS e = Some (pString s))
+    (Hf : exprD' tus tvs tyString e = Some eD) :
+    eD = fun us vs => trmR s btString.
+  Proof.
+   destruct e; simpl in *; try congruence.
+   autorewrite with exprD_rw in Hf; simpl in Hf; forward; inv_all; subst.
+   rewrite (bf_string_func_eq _ Ho H); reflexivity.
   Qed.
 
   Lemma bf_eq_func_eq (t : typ) (f : func) (fD : typD (tyArr t (tyArr t tyProp)))
@@ -479,12 +839,34 @@ Section MakeBaseFuncSound.
    rewrite (bf_pair_func_eq _ Ho H); reflexivity.
   Qed.
  
-  Lemma mkConst_sound (t : typ) (c : typD t) (tus tvs : tenv typ) :
-    exprD' tus tvs t (mkConst t c) = Some (fun _ _ => c).
+  Lemma mkNat_sound (n : nat) (tus tvs : tenv typ) :
+    exprD' tus tvs tyNat (mkNat n) = Some (fun _ _ => trmR n btNat).
   Proof.
-    unfold mkConst; simpl.
+    unfold mkNat; simpl.
     autorewrite with exprD_rw; simpl; forward; inv_all; subst.
-    pose proof (bf_fConstOk t c) as H1.
+    pose proof (bf_fNatOk n) as H1.
+    pose proof (bf_funcAsOk _ H1) as H2. rewrite H2.
+    unfold funcAs; simpl; rewrite type_cast_refl; [|apply _].
+    reflexivity.
+  Qed.
+  
+  Lemma mkBool_sound (b : bool) (tus tvs : tenv typ) :
+    exprD' tus tvs tyBool (mkBool b) = Some (fun _ _ => trmR b btBool).
+  Proof.
+    unfold mkBool; simpl.
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    pose proof (bf_fBoolOk b) as H1.
+    pose proof (bf_funcAsOk _ H1) as H2. rewrite H2.
+    unfold funcAs; simpl; rewrite type_cast_refl; [|apply _].
+    reflexivity.
+  Qed.
+  
+  Lemma mkString_sound (s : string) (tus tvs : tenv typ) :
+    exprD' tus tvs tyString (mkString s) = Some (fun _ _ => trmR s btString).
+  Proof.
+    unfold mkString; simpl.
+    autorewrite with exprD_rw; simpl; forward; inv_all; subst.
+    pose proof (bf_fStringOk s) as H1.
     pose proof (bf_funcAsOk _ H1) as H2. rewrite H2.
     unfold funcAs; simpl; rewrite type_cast_refl; [|apply _].
     reflexivity.

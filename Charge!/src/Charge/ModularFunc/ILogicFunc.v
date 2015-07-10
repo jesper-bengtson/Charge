@@ -3,6 +3,9 @@ Require Import ExtLib.Data.Fun.
 Require Import ExtLib.Data.Nat.
 Require Import ExtLib.Data.Bool.
 Require Import ExtLib.Data.String.
+Require Import ExtLib.Data.Map.FMapPositive.
+Require Import ExtLib.Data.SumN.
+Require Import ExtLib.Data.Positive.
 Require Import ExtLib.Tactics.
 Require Import ExtLib.Tactics.Consider.
 
@@ -58,13 +61,33 @@ Class ILogicFunc (typ func : Type) : Type := {
   ilogicS : func -> option (ilfunc typ)
 }.
 
-Set Printing Universes.
-
-Check @ILogicFunc.
-
 Section ILogicFuncSum.
 	Context {typ func : Type} {H : ILogicFunc typ func}.
 
+	Global Instance ILogicFuncPMap (p : positive) (m : pmap Type) 
+	  (pf : Some func = pmap_lookup' m p) :
+	  ILogicFunc typ (OneOf m) := {
+	    fEntails t := Into (fEntails t) p pf;
+	    fTrue t := Into (fTrue t) p pf;
+	    fFalse t := Into (fFalse t) p pf;
+	    fAnd t := Into (fAnd t) p pf;
+	    fOr t := Into (fOr t) p pf;
+	    fImpl t := Into (fImpl t) p pf;
+	    fExists t u := Into (fExists t u) p pf;
+	    fForall t u := Into (fForall t u) p pf;
+	    
+	    ilogicS f :=
+	      match f with
+	        | Build_OneOf _ p' pf1 =>
+	          match Pos.eq_dec p p' with
+	            | left Heq => 
+	              ilogicS (eq_rect_r (fun o => match o with | Some T => T | None => Empty_set end) pf1 
+	                (eq_rect _ (fun p =>  Some func = pmap_lookup' m p) pf _ Heq))
+	            | right _ => None
+	          end
+	      end
+	}.
+	
 	Global Instance ILogicFuncSumL (A : Type) : 
 		ILogicFunc typ ((func + A)%type) := {
 		  fEntails l := inl (fEntails l);

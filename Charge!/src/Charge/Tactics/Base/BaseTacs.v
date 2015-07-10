@@ -6,7 +6,7 @@ Require Import Charge.Tactics.Base.MirrorCoreTacs.
 Require Import MirrorCore.TypesI.
 Require Import MirrorCore.ExprI.
 
-
+(*
 Ltac bf_const_type :=
   match goal with
     | H1 : baseS ?e = Some (pConst ?t ?c) |- _ =>
@@ -143,3 +143,4 @@ Ltac bf_rewrite_in_match :=
     | |- context [ExprDsimul.ExprDenote.exprD' _ _ ?t (mkPair ?t ?u _ _)] =>
       rewrite mkPair_sound      
   end.
+*)

@@ -45,38 +45,16 @@ Section Length.
    (length 1::2::3::lst = 3 + (length lst) for instance). To be able to do this, we need a language that supports arithmetic operations
    (at least +) on natural numbers. This is a perfectly natural thing to have, but it is not implemented at the moment. *)
 
-  Fixpoint lengthTacAux (t : typ) (lst : expr typ func) : option nat :=
-    match lst with
-      | App (App f x) xs =>
-        match listS f with
-          | Some (pCons _) =>
-            match lengthTacAux t xs with
-              | Some x => Some (S x)
-              | None => None
-            end
-          | _ => None
-        end
-      | _ => None
-    end.
-
-  Definition lengthTac  (_ : list (option (expr typ func))) (e : expr typ func) (args : list (expr typ func)) : expr typ func :=
-    match listS e, args with
-	  | Some (pLength t), lst::nil =>
-	    match baseS lst with
-	      | Some (pConst u c) => 
-	        match type_cast (tyList t) u with
-	          | Some pf => mkNat (natR (length (listD (eq_rect_r typD c pf))))
-	          | None => apps e args
-	        end
-	      | _ =>
-	        match lengthTacAux t lst with
-	          | Some l => mkNat (natR l)
-	          | None => apps e args
-	        end
-	    end
-	  | _, _ => apps e args
-	end.
-
+  Fixpoint lengthTac (lst : expr typ func) : option nat :=
+    @list_cases typ func _ lst _ 
+      (fun _ _ _ _ => Some 0)
+      (fun _ _ _ xs _ _ =>
+        match lengthTac xs with
+          | Some n => Some (S n)
+          | None => None
+        end)
+      None.
+      
   Existing Instance Expr_expr.
   Existing Instance ExprOk_expr.
 

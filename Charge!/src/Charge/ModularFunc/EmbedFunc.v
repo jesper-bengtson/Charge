@@ -3,6 +3,9 @@ Require Import ExtLib.Data.Fun.
 Require Import ExtLib.Data.Nat.
 Require Import ExtLib.Data.Bool.
 Require Import ExtLib.Data.String.
+Require Import ExtLib.Data.Map.FMapPositive.
+Require Import ExtLib.Data.SumN.
+Require Import ExtLib.Data.Positive.
 Require Import ExtLib.Tactics.
 Require Import ExtLib.Tactics.Consider.
 
@@ -36,6 +39,23 @@ Class EmbedFunc (typ func : Type) := {
 Section EmbedFuncSum.
 	Context {typ func : Type} {H : EmbedFunc typ func}.
 
+	Global Instance EmbedFuncPMap (p : positive) (m : pmap Type) 
+	  (pf : Some func = pmap_lookup' m p) :
+	  EmbedFunc typ (OneOf m) := {
+	    fEmbed t u := Into (fEmbed t u) p pf;
+	    
+	    embedS f :=
+	      match f with
+	        | Build_OneOf _ p' pf1 =>
+	          match Pos.eq_dec p p' with
+	            | left Heq => 
+	              embedS (eq_rect_r (fun o => match o with | Some T => T | None => Empty_set end) pf1 
+	                (eq_rect _ (fun p =>  Some func = pmap_lookup' m p) pf _ Heq))
+	            | right _ => None
+	          end
+	      end
+	}.
+	
 	Global Instance EmbedFuncSumL (A : Type) : 
 	   EmbedFunc typ (func + A) := {
 		  fEmbed t u := inl (fEmbed t u);
