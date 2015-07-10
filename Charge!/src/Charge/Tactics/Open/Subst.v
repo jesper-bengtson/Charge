@@ -39,7 +39,7 @@ Section ApplySubst.
     Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
 	Definition applySingleSubst (x y : String.string) e :=
-		if x ?[ eq ] y then e else App fStackGet (mkString (stringR x)).
+		if x ?[ eq ] y then e else App fStackGet (mkString x).
 		    	
 	Fixpoint applyTruncSubst (t : typ) (x : String.string) (lst : expr typ func) : expr typ func :=
 	  match listS lst with
@@ -48,40 +48,32 @@ Section ApplySubst.
 	      match lst with
 	        | App (App f (App (App g y) e)) ys =>
 	          match listS f, baseS g, baseS y with
-	            | Some (pCons _), Some (pPair _ _), Some (pConst u y) =>
-	              match type_cast u tyString with
-	                | Some pf => 
-	                  if x ?[ eq ] stringD (eq_rect_r typD y (eq_sym pf)) then
+	            | Some (pCons _), Some (pPair _ _), Some (pString y) =>
+	                  if x ?[ eq ] y then
 	                    e
 	                  else
 	                    applyTruncSubst t x ys
-	                | None => mkApplySubst t (App fStackGet (mkString (stringR x))) (mkTruncSubst lst)
-	              end
-	            | _, _, _ => mkApplySubst t (App fStackGet (mkString (stringR x))) (mkTruncSubst lst)
+	            | _, _, _ => mkApplySubst t (App fStackGet (mkString x)) (mkTruncSubst lst)
 	          end
-	        | _ => mkApplySubst t (App fStackGet (mkString (stringR x))) (mkTruncSubst lst)
+	        | _ => mkApplySubst t (App fStackGet (mkString x)) (mkTruncSubst lst)
 	      end
 	  end.
 	  
 	Fixpoint applyParSubst (t : typ) (x : String.string) (lst : expr typ func) : expr typ func :=
 	  match listS lst with
-	    | Some (pNil u) => App (Inj fStackGet) (BaseFunc.mkConst tyString (stringR x))
+	    | Some (pNil u) => App (Inj fStackGet) (mkString x)
 	    | _ => 
 	      match lst with
 	        | App (App f (App (App g y) e)) ys =>
 	          match listS f, baseS g, baseS y with
-	            | Some (pCons _), Some (pPair _ _), Some (pConst u y) =>
-	              match type_cast u tyString with
-	                | Some pf => 
-	                  if x ?[ eq ] stringD (eq_rect_r typD y (eq_sym pf)) then
+	            | Some (pCons _), Some (pPair _ _), Some (pString y) =>
+	                  if x ?[ eq ] y then
 	                    e
 	                  else
 	                    applyParSubst t x ys
-	                | None => mkApplySubst t (App fStackGet (mkString (stringR x))) (mkSubst lst)
-	              end
-	            | _, _, _ => mkApplySubst t (App fStackGet (mkString (stringR x))) (mkSubst lst)
+	            | _, _, _ => mkApplySubst t (App fStackGet (mkString x)) (mkSubst lst)
 	          end
-	        | _ => mkApplySubst t (App fStackGet (mkString (stringR x))) (mkSubst lst)
+	        | _ => mkApplySubst t (App fStackGet (mkString x)) (mkSubst lst)
 	      end
 	  end.
 	  
@@ -89,19 +81,16 @@ Section ApplySubst.
 		match f with
 		  | App (App g e) y =>
 		  	match open_funcS g, baseS y with
-		  	  | Some of_single_subst, Some (pConst t' v) => 
-		  	    match type_cast t' tyString with
-		  	      | Some pf => applySingleSubst x (stringD (eq_rect_r typD v (eq_sym pf))) e
-		  	      | None => mkApplySubst t (App fStackGet (mkString (stringR x))) f
-		  	    end
-		  	  | _, _ => mkApplySubst t (App fStackGet (mkString (stringR x))) f
+		  	  | Some of_single_subst, Some (pString v) => 
+					applySingleSubst x v e
+		  	  | _, _ => mkApplySubst t (App fStackGet (mkString x)) f
 		    end
 		  | App g lst =>
 		    match open_funcS g with	  
 		  	  | Some of_trunc_subst => applyTruncSubst t x lst
-		  	  | _ => mkApplySubst t (App fStackGet (mkString (stringR x))) f
+		  	  | _ => mkApplySubst t (App fStackGet (mkString x)) f
 		    end
-		  | _ => mkApplySubst t (App fStackGet (mkString (stringR x))) f
+		  | _ => mkApplySubst t (App fStackGet (mkString x)) f
 	end.
 
 End ApplySubst.
@@ -141,11 +130,8 @@ Section PushSubst.
     		end
     	| App g p =>
     		match open_funcS g, baseS p with
-    			| Some of_stack_get, Some (pConst t' x) =>
-    			  match type_cast t' tyString with
-    			    | Some pf => applySubst t f (stringD (eq_rect _ typD x _ pf))
-    			    | None => mkApplySubst t e f
-    			  end
+    			| Some of_stack_get, Some (pString x) =>
+					applySubst t f x
     			| Some (of_const t), _ => OpenFunc.mkConst t p
     			| Some _, _ => mkApplySubst t e f
     			| None, _ => match embedS g with
@@ -202,7 +188,7 @@ Section SubstTac.
   Context {BILFOK : BILogicFuncOk typ func bs}.
   Context {EILFOK : EmbedFuncOk typ func es}.
   Context {Heqd : SemiEqDecTyp typ}.
-  Context {BFOK : BaseFuncOk (RelDec_eq := RelDec_typ) (Heqd := Heqd) typ func}.
+  Context {BFOK : BaseFuncOk (RelDec_eq := RelDec_typ) typ func}.
   Context {EqDec_typ : EqDec typ eq}.
   Context {ilp : il_pointwise (typ := typ)}.
  (* Context {ilpOk : il_pointwiseOk gs ilp}.*)
@@ -222,7 +208,7 @@ Section SubstTac.
 
   Definition substTac (_ : list (option (expr typ func))) (e : expr typ func) (args : list (expr typ func))
   : expr typ func :=
-    match open_funcS (RType_typ := RType_typ) (HST := ST) e with
+    match open_funcS e with
 	  | Some (of_apply_subst t) =>
 	    match args with
 	      | e :: f :: nil =>
@@ -662,4 +648,4 @@ Proof.
   
 End SubstTac.
 
-Implicit Arguments SUBST [[ST] [BT] [RType_typ] [OF] [ILF] [BILF] [LF] [EF] [BF] [Typ2_tyArr] [ilp] [bilp] [eilp] [HBTD]].
+Implicit Arguments SUBST [[ST] [BT] [RType_typ] [OF] [ILF] [BILF] [LF] [EF] [BF] [Typ2_tyArr] [ilp] [bilp] [eilp]].

@@ -36,15 +36,15 @@ Instance inhabitedNat: Inhabited nat. Proof. split; split; apply 0. Qed.
 Instance inhabitedBool: Inhabited bool. Proof. split; split; apply true. Qed.
 
 (* Logical connectives *)
-Class ILogicOps (A : Type@{q}) : Type := {
+Class ILogicOps (A : Type) : Type := {
   lentails: relation A;
   ltrue: A;
   lfalse: A;
   limpl: A -> A -> A;
   land: A -> A -> A;
   lor: A -> A -> A;
-  lforall: forall {T : Type@{q}}, (T -> A) -> A;
-  lexists: forall {T : Type@{q}}, (T -> A) -> A
+  lforall: forall {T : Type}, (T -> A) -> A;
+  lexists: forall {T : Type}, (T -> A) -> A
 }.
 
 (* These notations have to sit strictly between level 80 (precendence of /\)

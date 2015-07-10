@@ -5,6 +5,10 @@ Require Import ExtLib.Data.Bool.
 Require Import ExtLib.Data.String.
 Require Import ExtLib.Tactics.
 Require Import ExtLib.Tactics.Consider.
+Require Import ExtLib.Data.Map.FMapPositive.
+Require Import ExtLib.Data.SumN.
+Require Import ExtLib.Data.Positive.
+
 
 Require Import MirrorCore.TypesI.
 Require Import MirrorCore.syms.SymEnv.
@@ -46,6 +50,25 @@ Class BILogicFunc (typ func : Type) := {
     
 Section BILogicFuncSum.
 	Context {typ func : Type} {H : BILogicFunc typ func}.
+
+	Global Instance BILogicFuncPMap (p : positive) (m : pmap Type) 
+	  (pf : Some func = pmap_lookup' m p) :
+	  BILogicFunc typ (OneOf m) := {
+	    fEmp t := Into (fEmp t) p pf;
+	    fStar t := Into (fStar t) p pf;
+	    fWand t := Into (fWand t) p pf;
+	    
+	    bilogicS f :=
+	      match f with
+	        | Build_OneOf _ p' pf1 =>
+	          match Pos.eq_dec p p' with
+	            | left Heq => 
+	              bilogicS (eq_rect_r (fun o => match o with | Some T => T | None => Empty_set end) pf1 
+	                (eq_rect _ (fun p =>  Some func = pmap_lookup' m p) pf _ Heq))
+	            | right _ => None
+	          end
+	      end
+	}.
 
 	Global Instance BILogicFuncSumL (A : Type) : 
 		BILogicFunc typ (func + A) := {

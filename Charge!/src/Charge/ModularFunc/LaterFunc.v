@@ -3,6 +3,9 @@ Require Import ExtLib.Data.Fun.
 Require Import ExtLib.Data.Nat.
 Require Import ExtLib.Data.Bool.
 Require Import ExtLib.Data.String.
+Require Import ExtLib.Data.Map.FMapPositive.
+Require Import ExtLib.Data.SumN.
+Require Import ExtLib.Data.Positive.
 Require Import ExtLib.Tactics.Consider.
 
 Require Import MirrorCore.TypesI.
@@ -28,6 +31,12 @@ Class LaterFunc (typ func : Type) := {
     
 Section LaterFuncSum.
 	Context {typ func : Type} {H : LaterFunc typ func}.
+
+	Global Instance LaterFuncPMap (p : positive) (m : pmap Type) 
+	  (pf : Some func = pmap_lookup' m p) :
+	  LaterFunc typ (OneOf m) := {
+	    fLater t := Into (fLater t) p pf
+	}.
 
 	Global Instance LaterFuncSumL (A : Type) : 
 	   LaterFunc typ (func + A) := {

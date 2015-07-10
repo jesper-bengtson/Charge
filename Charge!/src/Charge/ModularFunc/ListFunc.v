@@ -1,5 +1,8 @@
 Require Import ExtLib.Core.RelDec.
 Require Import ExtLib.Data.Fun.
+Require Import ExtLib.Data.Map.FMapPositive.
+Require Import ExtLib.Data.SumN.
+Require Import ExtLib.Data.Positive.
 Require Import ExtLib.Tactics.Consider.
 Require Import ExtLib.Tactics.
 
@@ -48,6 +51,30 @@ Class ListFunc (typ func : Type) := {
 
 Section ListFuncSum.
 	Context {typ func : Type} {H : ListFunc typ func}.
+
+	Global Instance ListFuncPMap (p : positive) (m : pmap Type) 
+	  (pf : Some func = pmap_lookup' m p) :
+	  ListFunc typ (OneOf m) := {
+	    fNil t := Into (fNil t) p pf;
+	    fCons t := Into (fCons t) p pf;
+	    fLength t := Into (fLength t) p pf;
+	    fNoDup t := Into (fNoDup t) p pf;
+	    fIn t := Into (fIn t) p pf;
+	    fMap t u := Into (fMap t u) p pf;
+	    fFold t u := Into (fFold t u) p pf;
+	    fZip t u := Into (fZip t u) p pf;
+	    
+	    listS f :=
+	      match f with
+	        | Build_OneOf _ p' pf1 =>
+	          match Pos.eq_dec p p' with
+	            | left Heq => 
+	              listS (eq_rect_r (fun o => match o with | Some T => T | None => Empty_set end) pf1 
+	                (eq_rect _ (fun p =>  Some func = pmap_lookup' m p) pf _ Heq))
+	            | right _ => None
+	          end
+	      end
+	}.
 
 	Global Instance ListFuncSumL (A : Type) : 
 		ListFunc typ (func + A) := {
@@ -260,10 +287,10 @@ Section ListOps.
   Context {LT : ListType typ}.
  
   Context {Typ2_tyArr : Typ2 _ Fun}.
-
+(*
   Definition list_to_expr (t : typ) (lst : list (typD t)) :=
     fold_right (fun x acc => mkCons t (mkConst t x) acc) (mkNil t) lst.
- 
+ *)
   Fixpoint expr_to_list (e : expr typ func) : (list (expr typ func) * expr typ func) :=
     match e with
       | App (App f x) xs =>
@@ -957,3 +984,188 @@ Section MakeListFuncSound.
 
 End MakeListFuncSound.
 
+Section ListCases.
+  Context {typ func : Type} {LF : ListFunc typ func}.
+
+  Definition list_cases (e : expr typ func) (P : expr typ func -> Type)
+    (f_nil : forall t f, listS f = Some (pNil t) -> e = Inj f -> P e) 
+    (f_cons : forall t f x xs, listS f = Some (pCons t) -> e = App (App (Inj f) x) xs -> P e)
+    (f_default : P e) : P e := 
+    match e as e' return e = e' -> P e with
+      | Inj f => 
+        match listS f as e'' return listS f = e'' -> e = Inj f -> P e with
+          | Some p => 
+            match p as p' return listS f = Some p' -> e = Inj f -> P e with
+              | pNil t => fun eq1 eq2 =>  f_nil t f eq1 eq2
+              | _ => fun _ _ => f_default
+            end
+          | _ => fun _ _ => f_default
+        end eq_refl
+      | App (App (Inj f) x) xs =>
+        match listS f as e'' return listS f = e'' -> e = App (App (Inj f) x) xs -> P e with
+          | Some p => 
+            match p as p' return listS f = Some p' -> e = App (App (Inj f) x) xs -> P e with
+              | pCons t => fun eq1 eq2 => f_cons t f x xs eq1 eq2
+              | _ => fun _ _ => f_default
+            end
+          | _ => fun _ _ => f_default
+        end eq_refl
+      | _ => fun _ => f_default
+    end eq_refl.
+    
+  Fixpoint list_length (e : expr typ func) : nat :=
+    @list_cases e _
+      (fun _ _ _ _ => 0)
+      (fun _ _ _ xs _ _ => S (list_length xs))
+      0.
+    
+End ListCases.      
+
+Section ListCasesRules.
+  Context {typ func : Type} {LF : ListFunc typ func} {LT : ListType typ}.
+  Context {BF : BaseFunc typ func} {BT : BaseType typ}.
+  Context {RType_typ : RType typ} {RTypeOk_typ : RTypeOk} {RSym_func : RSym func}.
+  Context {LTD : ListTypeD LT} {BTD : BaseTypeD BT}.
+  
+  Context {HEq : RelDec (@eq typ)}.
+    
+  Context {Typ2_tyArr : Typ2 _ Fun}.
+  Context {Typ0_tyProp : Typ0 _ Prop}.
+ 
+  Context {LFOk : ListFuncOk typ func}.
+
+  Lemma list_case tus tvs (t : typ) (e : expr typ func) (P : expr typ func -> Type) (Q : P e -> Prop)
+    (f_nil : forall t f, listS f = Some (pNil t) -> e = Inj f -> P e) 
+    (f_cons : forall t f x xs, listS f = Some (pCons t) -> e = App (App (Inj f) x) xs -> P e)
+    (f_default : P e) 
+    (HType : typeof_expr tus tvs e = Some (tyList t))
+    (Hdefault : Q (f_default))
+    (Hnil : forall f (eq1 : listS f = Some (pNil t)) (eq2 : e = Inj f), Q (f_nil t f eq1 eq2))
+    (Hcons : forall f x xs (eq1 : listS f = Some (pCons t)) (eq2 : e = App (App (Inj f) x) xs), Q (f_cons t f x xs eq1 eq2)) : 
+    	(Q (@list_cases typ func LF e P f_nil f_cons f_default)).
+  Proof.
+    destruct e; simpl; try apply Hdefault.
+    { 
+       generalize (@eq_refl _ (listS f)).
+      change (let x := listS f in 
+      forall e : listS f = x,
+Q
+  (match
+     x as e'' return (listS f = e'' -> Inj f = Inj f -> P (Inj f))
+   with
+   | Some p =>
+       match
+         p as p' return (listS f = Some p' -> Inj f = Inj f -> P (Inj f))
+       with
+       | pNil t =>
+           fun (eq1 : listS f = Some (pNil t)) (eq2 : Inj f = Inj f) =>
+           f_nil t f eq1 eq2
+       | pCons y =>
+           fun (_ : listS f = Some (pCons y)) (_ : Inj f = Inj f) =>
+           f_default
+       | pLength y =>
+           fun (_ : listS f = Some (pLength y)) (_ : Inj f = Inj f) =>
+           f_default
+       | pNoDup y =>
+           fun (_ : listS f = Some (pNoDup y)) (_ : Inj f = Inj f) =>
+           f_default
+       | pIn y =>
+           fun (_ : listS f = Some (pIn y)) (_ : Inj f = Inj f) => f_default
+       | pMap y y0 =>
+           fun (_ : listS f = Some (pMap y y0)) (_ : Inj f = Inj f) =>
+           f_default
+       | pFold y y0 =>
+           fun (_ : listS f = Some (pFold y y0)) (_ : Inj f = Inj f) =>
+           f_default
+       | pZip y y0 =>
+           fun (_ : listS f = Some (pZip y y0)) (_ : Inj f = Inj f) =>
+           f_default
+       end
+   | None => fun (_ : listS f = None) (_ : Inj f = Inj f) => f_default
+   end e eq_refl)).
+      destruct x; intros; try apply Hdefault.
+      destruct l eqn:Heq; intros; try apply Hdefault.
+      simpl in HType.
+      pose proof (lf_funcAsOk f e).
+      specialize (H (tyList t0)).
+      simpl in H.
+      unfold funcAs at 2 in H.
+      simpl in H.
+      rewrite type_cast_refl in H.
+      simpl in H.
+      unfold Rrefl, Rcast, Relim, Rsym in H.
+      simpl in H.
+      pose proof (typeof_funcAs f (tyList t0) H).
+      rewrite H0 in HType.
+      inversion HType; subst. apply tyList_inj in H2; unfold Rty in H2. subst.
+      apply Hnil. apply _.
+   } {
+     destruct e1; try apply Hdefault.
+     destruct e1_1; try apply Hdefault.
+     generalize (@eq_refl _ (listS f)).
+	 change (let x := listS f in
+	 forall e : listS f = x,
+Q
+  (
+  match
+     x as e''
+     return
+       (listS f = e'' ->
+        App (App (Inj f) e1_2) e2 = App (App (Inj f) e1_2) e2 ->
+        P (App (App (Inj f) e1_2) e2))
+   with
+   | Some p =>
+       match
+         p as p'
+         return
+           (listS f = Some p' ->
+            App (App (Inj f) e1_2) e2 = App (App (Inj f) e1_2) e2 ->
+            P (App (App (Inj f) e1_2) e2))
+       with
+       | pNil y =>
+           fun (_ : listS f = Some (pNil y))
+             (_ : App (App (Inj f) e1_2) e2 = App (App (Inj f) e1_2) e2) =>
+           f_default
+       | pCons t0 =>
+           fun (eq1 : listS f = Some (pCons t0))
+             (eq2 : App (App (Inj f) e1_2) e2 = App (App (Inj f) e1_2) e2) =>
+           f_cons t0 f e1_2 e2 eq1 eq2
+       | pLength y =>
+           fun (_ : listS f = Some (pLength y))
+             (_ : App (App (Inj f) e1_2) e2 = App (App (Inj f) e1_2) e2) =>
+           f_default
+       | pNoDup y =>
+           fun (_ : listS f = Some (pNoDup y))
+             (_ : App (App (Inj f) e1_2) e2 = App (App (Inj f) e1_2) e2) =>
+           f_default
+       | pIn y =>
+           fun (_ : listS f = Some (pIn y))
+             (_ : App (App (Inj f) e1_2) e2 = App (App (Inj f) e1_2) e2) =>
+           f_default
+       | pMap y y0 =>
+           fun (_ : listS f = Some (pMap y y0))
+             (_ : App (App (Inj f) e1_2) e2 = App (App (Inj f) e1_2) e2) =>
+           f_default
+       | pFold y y0 =>
+           fun (_ : listS f = Some (pFold y y0))
+             (_ : App (App (Inj f) e1_2) e2 = App (App (Inj f) e1_2) e2) =>
+           f_default
+       | pZip y y0 =>
+           fun (_ : listS f = Some (pZip y y0))
+             (_ : App (App (Inj f) e1_2) e2 = App (App (Inj f) e1_2) e2) =>
+           f_default
+       end
+   | None =>
+       fun (_ : listS f = None)
+         (_ : App (App (Inj f) e1_2) e2 = App (App (Inj f) e1_2) e2) =>
+       f_default
+   end e eq_refl)
+	 ).
+	 destruct x; intros; try apply Hdefault.
+	 destruct l eqn:Heq; try apply Hdefault.
+	 simpl in HType.
+	 admit.	 
+   }
+ Admitted.
+ 
+End ListCasesRules.

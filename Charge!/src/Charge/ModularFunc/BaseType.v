@@ -18,7 +18,7 @@ Class BaseType (typ : Type) := {
   tyString : typ;
   tyProd : typ -> typ -> typ
 }.
-Check (nat:Type).
+
 Section BaseTypeD.
 	Context {typ : Type} {HT : BaseType typ} {HR : RType typ}.
 	

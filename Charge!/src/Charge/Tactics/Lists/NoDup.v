@@ -98,7 +98,8 @@ Section NoDup.
       eapply in_dec_false; eassumption.
   Qed.
 
-  Definition NODUP : rtac typ (expr typ func) :=
+  Definition NODUP : rtac typ (expr typ func) := fun tus tvs nus nvs ctx s e => Fail.
+  (*
     fun tus tvs nus nvs ctx s e =>
     match e with
 	  | App f lst =>
@@ -116,7 +117,7 @@ Section NoDup.
 	    end
 	  | _ => Fail
     end.
-    
+    *)
 
   Existing Instance Expr_expr.
   Existing Instance ExprOk_expr.

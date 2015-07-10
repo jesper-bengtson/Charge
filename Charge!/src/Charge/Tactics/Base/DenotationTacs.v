@@ -13,7 +13,7 @@ Ltac forward_step :=
   first [
     lf_forward_step | 
     of_forward_step | 
-    bf_forward_step |
+ (*   bf_forward_step | *)
     ilf_forward_step |
     bilf_forward_step |
     eilf_forward_step
@@ -25,7 +25,7 @@ Ltac tyArr_unfold :=
 
 Ltac red_unfold :=
   first [
-    bf_unfold |
+  (*  bf_unfold |*)
     lf_unfold |
     bilf_unfold |
     of_unfold |

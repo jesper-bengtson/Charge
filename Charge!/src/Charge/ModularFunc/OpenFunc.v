@@ -2,6 +2,9 @@ Require Import ExtLib.Core.RelDec.
 Require Import ExtLib.Structures.Applicative.
 Require Import ExtLib.Data.Fun.
 Require Import ExtLib.Data.String.
+Require Import ExtLib.Data.Map.FMapPositive.
+Require Import ExtLib.Data.SumN.
+Require Import ExtLib.Data.Positive.
 Require Import ExtLib.Tactics.Consider.
 Require Import ExtLib.Tactics.
 
@@ -39,7 +42,7 @@ Set Implicit Arguments.
 Set Strict Implicit.
 Set Maximal Implicit Insertion.
 
-  Inductive open_func typ {RType_typ : RType typ} {HST : SubstType typ} :=
+  Inductive open_func typ :=
     | of_const (_ : typ)
     | of_ap (_ _ : typ)
     | of_null
@@ -50,9 +53,9 @@ Set Maximal Implicit Insertion.
     | of_subst
     | of_trunc_subst.
     
-Implicit Arguments open_func [[RType_typ] [HST]].
+Implicit Arguments open_func [].
     
- Class OpenFunc (typ func : Type) {RType_typ : RType typ} {HST : SubstType typ} := {
+ Class OpenFunc (typ func : Type) := {
   fConst : typ -> func;
   fAp : typ -> typ -> func;
   
@@ -69,10 +72,35 @@ Implicit Arguments open_func [[RType_typ] [HST]].
   open_funcS : func -> option (open_func typ)
 }.
 
-Implicit Arguments OpenFunc [[RType_typ] [HST]].
+Implicit Arguments OpenFunc [].
 
 Section OpenFuncSum.
-	Context {typ func : Type} `{H : OpenFunc typ func}.
+	Context {typ func : Type} {H : OpenFunc typ func}.
+
+	Global Instance OpenFuncPMap (p : positive) (m : pmap Type) 
+	  (pf : Some func = pmap_lookup' m p) :
+	  OpenFunc typ (OneOf m) := {
+	    fConst t := Into (fConst t) p pf;
+	    fAp t u := Into (fAp t u) p pf;
+	    fNull := Into fNull p pf;
+	    fStackGet := Into fStackGet p pf;
+	    fStackSet := Into fStackSet p pf;
+	    fApplySubst t := Into (fApplySubst t) p pf;
+	    fSingleSubst := Into fSingleSubst p pf;
+	    fSubst := Into fSubst p pf;
+	    fTruncSubst := Into fTruncSubst p pf;
+	    
+	    open_funcS f :=
+	      match f with
+	        | Build_OneOf p' pf1 =>
+	          match Pos.eq_dec p p' with
+	            | left Heq => 
+	              open_funcS (eq_rect_r (fun o => match o with | Some T => T | None => Empty_set end) pf1 
+	                (eq_rect _ (fun p =>  Some func = pmap_lookup' m p) pf _ Heq))
+	            | right _ => None
+	          end
+	      end
+	}.
 
 	Global Instance OpenFuncSumL (A : Type) : 
 	   OpenFunc typ (func + A) := {
@@ -165,13 +193,13 @@ Section OpenFuncInst.
 	Global Instance OpenFuncInst : OpenFunc typ (open_func typ) := {
 	  fConst := of_const;
 	  fAp := of_ap;
-	  fNull := of_null;
-	  fStackGet := of_stack_get;
-	  fStackSet := of_stack_set;
+	  fNull := of_null typ;
+	  fStackGet := of_stack_get typ;
+	  fStackSet := of_stack_set typ;
 	  fApplySubst := of_apply_subst;
-	  fSingleSubst := of_single_subst;
-	  fSubst := of_subst;
-	  fTruncSubst := of_trunc_subst;
+	  fSingleSubst := of_single_subst typ;
+	  fSubst := of_subst typ;
+	  fTruncSubst := of_trunc_subst typ;
 	  
 	  open_funcS f := Some f
 	}.
@@ -304,13 +332,13 @@ Section OpenFuncOk.
     of_funcAsOk f e : open_funcS f = Some e -> forall t, funcAs f t = funcAs e t;
     of_fConstOk t : open_funcS (fConst t) = Some (of_const t);
     of_fApOk t u : open_funcS (fAp t u) = Some (of_ap t u);
-    of_fNullOk : open_funcS fNull = Some of_null;
-    of_fStackGetOk : open_funcS fStackGet = Some of_stack_get;
-    of_fStackSetOk : open_funcS fStackSet = Some of_stack_set;
+    of_fNullOk : open_funcS fNull = Some (of_null typ);
+    of_fStackGetOk : open_funcS fStackGet = Some (of_stack_get typ);
+    of_fStackSetOk : open_funcS fStackSet = Some (of_stack_set typ);
     of_fApplySubstOk t : open_funcS (fApplySubst t) = Some (of_apply_subst t);
-    of_fSingleSubstOk : open_funcS fSingleSubst = Some of_single_subst;
-    of_fSubstOk : open_funcS fSubst = Some of_subst;
-    of_fTruncSubstOk : open_funcS fTruncSubst = Some of_trunc_subst
+    of_fSingleSubstOk : open_funcS fSingleSubst = Some (of_single_subst typ);
+    of_fSubstOk : open_funcS fSubst = Some (of_subst typ);
+    of_fTruncSubstOk : open_funcS fTruncSubst = Some (of_trunc_subst typ)
   }.
 
 End OpenFuncOk.
@@ -824,7 +852,7 @@ Section MakeOpenSound.
   Qed.
 
   Lemma of_stack_get_func_type_eq t (f : func) (df : typD t) 
-    (Ho : open_funcS f = Some of_stack_get) 
+    (Ho : open_funcS f = Some (of_stack_get typ)) 
     (Hf : funcAs f t = Some df) :
     Rty t (tyArr tyString (tyArr (tyArr tyString tyVal) tyVal)).
   Proof.
@@ -835,7 +863,7 @@ Section MakeOpenSound.
   Qed.
 
   Lemma of_stack_get_type_eq tus tvs (e : expr typ func) t df
-    (Ho : open_funcS e = Some of_stack_get) 
+    (Ho : open_funcS e = Some (of_stack_get typ)) 
     (Hf : exprD' tus tvs t e = Some df) :
     Rty t (tyArr tyString (tyArr (tyArr tyString tyVal) tyVal)).
   Proof.
@@ -866,7 +894,7 @@ Section MakeOpenSound.
   Qed.
 
   Lemma of_single_subst_func_type_eq t (f : func) (df : typD t) 
-    (Ho : open_funcS f = Some of_single_subst) 
+    (Ho : open_funcS f = Some (of_single_subst typ)) 
     (Hf : funcAs f t = Some df) :
     Rty t (tyArr (tyArr tyStack tyVal) (tyArr tyString tySubst)).
   Proof.
@@ -877,7 +905,7 @@ Section MakeOpenSound.
   Qed.
   
   Lemma of_single_subst_type_eq tus tvs (e : expr typ func) t df
-    (Ho : open_funcS e = Some of_single_subst) 
+    (Ho : open_funcS e = Some (of_single_subst typ)) 
     (Hf : exprD' tus tvs t e = Some df) :
     Rty t (tyArr (tyArr tyStack tyVal) (tyArr tyString tySubst)).
   Proof.
@@ -887,7 +915,7 @@ Section MakeOpenSound.
   Qed.
 
   Lemma of_trunc_subst_func_type_eq t (f : func) (df : typD t) 
-    (Ho : open_funcS f = Some of_trunc_subst) 
+    (Ho : open_funcS f = Some (of_trunc_subst typ)) 
     (Hf : funcAs f t = Some df) :
     Rty t (tyArr (tyList (tyProd tyString tyExpr)) (tyArr tyString tyExpr)).
   Proof.
@@ -898,7 +926,7 @@ Section MakeOpenSound.
   Qed.
   
   Lemma of_trunc_subst_type_eq tus tvs t (e : expr typ func) df
-    (Ho : open_funcS e = Some of_trunc_subst) 
+    (Ho : open_funcS e = Some (of_trunc_subst typ)) 
     (Hf : exprD' tus tvs t e = Some df) :
     Rty t (tyArr (tyList (tyProd tyString tyExpr)) (tyArr tyString tyExpr)).
   Proof.
@@ -980,7 +1008,7 @@ Section MakeOpenSound.
 
   Lemma of_stack_get_func_eq (f : func) 
     (df : typD (tyArr tyString (tyArr tyStack tyVal)))
-    (Ho : open_funcS f = Some of_stack_get)
+    (Ho : open_funcS f = Some (of_stack_get typ))
     (Hf : funcAs f (tyArr tyString (tyArr tyStack tyVal)) = Some df) :
     df = stack_getD.
   Proof.
@@ -993,7 +1021,7 @@ Section MakeOpenSound.
 
   Lemma of_stack_get_eq tus tvs (e : expr typ func) 
     (df : ExprI.exprT tus tvs (typD (tyArr tyString (tyArr tyStack tyVal))))
-    (Ho : open_funcS e = Some of_stack_get)
+    (Ho : open_funcS e = Some (of_stack_get typ))
     (Hf : exprD' tus tvs (tyArr tyString (tyArr tyStack tyVal)) e = Some df) :
     df = fun us vs => stack_getD.
   Proof.
@@ -1004,7 +1032,7 @@ Section MakeOpenSound.
 
   Lemma of_trunc_subst_func_eq (f : func) 
     (df : typD (tyArr (tyList (tyProd tyString tyExpr)) (tyArr tyString tyExpr)))
-    (Ho : open_funcS f = Some of_trunc_subst)
+    (Ho : open_funcS f = Some (of_trunc_subst typ))
     (Hf : funcAs f (tyArr (tyList (tyProd tyString tyExpr)) (tyArr tyString tyExpr)) = Some df) :
     df = truncSubstD.
   Proof.
@@ -1017,7 +1045,7 @@ Section MakeOpenSound.
 
   Lemma of_trunc_subst_eq tus tvs (e : expr typ func) 
     (df : ExprI.exprT tus tvs (typD (tyArr (tyList (tyProd tyString tyExpr)) (tyArr tyString tyExpr))))
-    (Ho : open_funcS e = Some of_trunc_subst)
+    (Ho : open_funcS e = Some (of_trunc_subst typ))
     (Hf :exprD' tus tvs (tyArr (tyList (tyProd tyString tyExpr)) (tyArr tyString tyExpr)) e = Some df) :
     df = fun us vs => truncSubstD.
   Proof.
@@ -1028,7 +1056,7 @@ Section MakeOpenSound.
 
   Lemma of_single_subst_func_eq (f : func) 
     (df : typD  (tyArr (tyArr tyStack tyVal) (tyArr tyString tySubst)))
-    (Ho : open_funcS f = Some of_single_subst)
+    (Ho : open_funcS f = Some (of_single_subst typ))
     (Hf : funcAs f (tyArr (tyArr tyStack tyVal) (tyArr tyString tySubst)) = Some df) :
     df = singleSubstD.
   Proof.
@@ -1041,7 +1069,7 @@ Section MakeOpenSound.
 
   Lemma of_single_subst_eq tus tvs (e : expr typ func) 
     (df : ExprI.exprT tus tvs (typD (tyArr(tyArr tyStack tyVal) (tyArr tyString tySubst))))
-    (Ho : open_funcS e = Some of_single_subst)
+    (Ho : open_funcS e = Some (of_single_subst typ))
     (Hf :exprD' tus tvs (tyArr (tyArr tyStack tyVal) (tyArr tyString tySubst)) e = Some df) :
     df = fun us vs => singleSubstD.
   Proof.
