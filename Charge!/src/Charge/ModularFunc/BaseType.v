@@ -58,11 +58,6 @@ Section BaseTypeD'.
   Definition stringD (s : typD tyString) : string :=
     trmD s btString.
     
-  Definition pairE {A B : Type} {t u : typ} (e1 : typD t = A) (e2 : typD u = B) : typD (tyProd t u) = (A * B)%type :=
-    eq_ind (typD t) (fun X : Type => typD (tyProd t u) = (X * B)%type)
-      (eq_ind (typD u) (fun Y : Type => typD (tyProd t u) = (typD t * Y)%type)
-         (btProd t u) B e2) A e1.
-    
     
   Definition natR (n : nat) : typD tyNat :=
     trmR n btNat.

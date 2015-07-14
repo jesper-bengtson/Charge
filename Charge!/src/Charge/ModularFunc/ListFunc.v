@@ -1,3 +1,7 @@
+Add Rec LoadPath "/Users/jebe/git/coq-ext-lib/theories" as ExtLib.
+Add Rec LoadPath "/Users/jebe/git/mirror-core/theories" as MirrorCore.
+Add Rec LoadPath "/Users/jebe/git/Charge/Charge!/bin/Charge" as Charge.
+
 Require Import ExtLib.Core.RelDec.
 Require Import ExtLib.Data.Fun.
 Require Import ExtLib.Data.Map.FMapPositive.
@@ -12,11 +16,9 @@ Require Import MirrorCore.syms.SymSum.
 Require Import MirrorCore.Lambda.Expr.
 
 Require Import Charge.Logics.ILogic.
-Require Import Charge.ModularFunc.ListType.
-Require Import Charge.ModularFunc.BaseType.
-Require Import Charge.ModularFunc.BaseFunc.
+Require Import Charge.ModularFunc.Nat.
+Require Import Charge.ModularFunc.Prop.
 Require Import Charge.ModularFunc.Denotation.
-Require Import Charge.ModularFunc.SemiEqDecTyp.
 
 Require Import Charge.Tactics.Base.MirrorCoreTacs.
 
@@ -75,41 +77,7 @@ Section ListFuncSum.
 	          end
 	      end
 	}.
-
-	Global Instance ListFuncSumL (A : Type) : 
-		ListFunc typ (func + A) := {
-		  fNil t := inl (fNil t);
-	      fCons t := inl (fCons t);
-	      fLength t := inl (fLength t);
-	      fNoDup t := inl (fNoDup t);
-	      fIn t := inl (fIn t);
-          fMap t1 t2 := inl (fMap t1 t2);
-          fFold t1 t2 := inl (fFold t1 t2);
-          fZip t1 t2 := inl (fZip t1 t2);
-          
-          listS f := match f with
-          			   | inl f => listS f
-          			   | inr _ => None
-          			 end
-        }.
-
-	Global Instance ListFuncSumR (A : Type) : 
-		ListFunc typ (A + func) := {
-		  fNil t := inr (fNil t);
-	      fCons t := inr (fCons t);
-	      fLength t := inr (fLength t);
-	      fNoDup t := inr (fNoDup t);
-	      fIn t := inr (fIn t);
-          fMap t1 t2 := inr (fMap t1 t2);
-          fFold t1 t2 := inr (fFold t1 t2);
-          fZip t1 t2 := inr (fZip t1 t2);
          
-          listS f := match f with
-          			   | inr f => listS f
-          			   | inl _ => None
-          			 end
-        }.
-
     Global Instance ListFuncExpr :
     	ListFunc typ (expr typ func) := {
     	  fNil t := Inj (fNil t);
@@ -130,79 +98,122 @@ Section ListFuncSum.
 End ListFuncSum.
 
 Section ListFuncInst.
-	Context {typ : Type} {RType_typ : RType typ} 
-	        {BT : BaseType typ} {HTBD : BaseTypeD BT}
-	        {LT : ListType typ} {HTD: ListTypeD LT}.
-	Context {func : Type} {H : ListFunc typ func}.
-	Context {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
+  Context {typ : Type} {RType_typ : RType typ}.
+  Context {func : Type} {H : ListFunc typ func}.
+  Context {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
+  
+  Context {Typ2_tyArr : Typ2 _ Fun}.
+  Context {Typ2_tyProd : Typ2 _ prod}.
+  Context {Typ1_tyList : Typ1 _ list}.
+  Context {Typ0_tyProp : Typ0 _ Prop}.
+  Context {Typ0_tyNat : Typ0 _ nat}.
+  
+  Context {Typ0_tyPropOk : Typ0Ok Typ0_tyProp}.
+  
+  Let tyArr : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyArr.
+  Let tyProd : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyProd.
+  Let tyList : typ -> typ := @typ1 _ _ _ _.
+  Let tyProp : typ := @typ0 _ _ _ Typ0_tyProp.
+  Let tyNat : typ := @typ0 _ _ _ Typ0_tyNat.
 
-    Context {Typ2_tyArr : Typ2 _ Fun}.
-    Context {Typ0_tyProp : Typ0 _ Prop}.
-    
-    Context {Typ0_tyPropOk : Typ0Ok Typ0_tyProp}.
-
-    Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
-    Let tyProp : typ := @typ0 _ _ _ _.
-
-	Global Instance ListFuncInst : ListFunc typ (list_func typ) := {
-	  fNil := pNil;
-	  fCons := pCons;
-	  fLength := pLength;
-	  fNoDup := pNoDup;
-	  fIn := pIn;
-	  fMap := pMap;
-	  fFold := pFold;
-	  fZip := pZip;
-	  
-	  listS f := Some f
-	}.
-
-	Definition typeof_list_func lf :=
-		match lf with
-		  | pNil t => Some (tyList t)
-		  | pCons t => Some (tyArr t (tyArr (tyList t) (tyList t)))
-		  | pLength t => Some (tyArr (tyList t) tyNat)
-		  | pNoDup t => Some (tyArr (tyList t) tyProp)
-		  | pIn t => Some (tyArr t (tyArr (tyList t) tyProp))
-		  | pMap t1 t2 => Some (tyArr (tyArr t1 t2) (tyArr (tyList t1) (tyList t2)))
-		  | pFold t1 t2 => Some (tyArr (tyArr t2 (tyArr t1 t1)) (tyArr t1 (tyArr (tyList t2) t1))) 
-		  | pZip t1 t2 => Some (tyArr (tyList t1) (tyArr (tyList t2) (tyList (tyProd t1 t2))))
-		end.
-
-	Definition list_func_eq (a b : list_func typ) : option bool :=
-	  match a , b with
-	    | pNil t1, pNil t2 => Some (t1 ?[ eq ] t2)
-	    | pCons t1, pCons t2 => Some (t1 ?[ eq ] t2)
-	    | pLength t1, pLength t2 => Some (t1 ?[ eq ] t2)
-	    | pNoDup t1, pNoDup t2 => Some (t1 ?[ eq ] t2)
-	    | pIn t1, pIn t2 => Some (t1 ?[ eq ] t2)
-	    | pMap t1 t2, pMap t3 t4 => Some (t1 ?[ eq ] t3 &&
-	      								    t2 ?[ eq ] t4)%bool
-	    | pFold t1 t2, pFold t3 t4 => Some (t1 ?[ eq ] t3 &&
-	      								    t2 ?[ eq ] t4)%bool
-	    | pZip t1 t2, pZip t3 t4 => Some (t1 ?[ eq ] t3 &&
-	      								    t2 ?[ eq ] t4)%bool
-	    | _, _ => None
-	  end.
-
-    Global Instance RelDec_list_func : RelDec (@eq (list_func typ)) := {
-      rel_dec a b := match list_func_eq a b with 
-    	  		       | Some b => b 
-    		 	       | None => false 
-    			     end
+  Global Instance ListFuncInst : ListFunc typ (list_func typ) := 
+    {
+      fNil := pNil;
+      fCons := pCons;
+      fLength := pLength;
+      fNoDup := pNoDup;
+      fIn := pIn;
+      fMap := pMap;
+      fFold := pFold;
+      fZip := pZip;
+      
+      listS f := Some f
     }.
+
+  Definition typeof_list_func lf :=
+    match lf with
+      | pNil t => Some (tyList t)
+      | pCons t => Some (tyArr t (tyArr (tyList t) (tyList t)))
+      | pLength t => Some (tyArr (tyList t) tyNat)
+      | pNoDup t => Some (tyArr (tyList t) tyProp)
+      | pIn t => Some (tyArr t (tyArr (tyList t) tyProp))
+      | pMap t1 t2 => Some (tyArr (tyArr t1 t2) (tyArr (tyList t1) (tyList t2)))
+      | pFold t1 t2 => Some (tyArr (tyArr t2 (tyArr t1 t1)) (tyArr t1 (tyArr (tyList t2) t1))) 
+      | pZip t1 t2 => Some (tyArr (tyList t1) (tyArr (tyList t2) (tyList (tyProd t1 t2))))
+    end.
+
+  Definition list_func_eq (a b : list_func typ) : option bool :=
+    match a , b with
+      | pNil t1, pNil t2 => Some (t1 ?[ eq ] t2)
+      | pCons t1, pCons t2 => Some (t1 ?[ eq ] t2)
+      | pLength t1, pLength t2 => Some (t1 ?[ eq ] t2)
+      | pNoDup t1, pNoDup t2 => Some (t1 ?[ eq ] t2)
+      | pIn t1, pIn t2 => Some (t1 ?[ eq ] t2)
+      | pMap t1 t2, pMap t3 t4 => Some (t1 ?[ eq ] t3 &&
+	      				   t2 ?[ eq ] t4)%bool
+      | pFold t1 t2, pFold t3 t4 => Some (t1 ?[ eq ] t3 &&
+	      				     t2 ?[ eq ] t4)%bool
+      | pZip t1 t2, pZip t3 t4 => Some (t1 ?[ eq ] t3 &&
+	      				   t2 ?[ eq ] t4)%bool
+      | _, _ => None
+    end.
+
+  Global Instance RelDec_list_func : RelDec (@eq (list_func typ)) := 
+    {
+      rel_dec a b := match list_func_eq a b with 
+    	  	       | Some b => b 
+    		       | None => false 
+    		     end
+    }.
+
+  Definition listE {A : Type} {t : typ} (e : typD t = A) : typD (tyList t) = list A :=
+    eq_ind (typD t) (fun B : Type => typD (tyList t) = list B) (typ1_cast t) A e.
+
+  Definition listD {t : typ} (lst : typD (tyList t)) : list (typD t) :=
+    trmD lst (listE eq_refl).
+
+  Definition listR {t : typ} (lst : list (typD t)) : typD (tyList t) :=
+    trmR lst (listE eq_refl).
+
+  Lemma trmDR_cons (t : typ) A B (x : A) (xs : list A) (e1 : typD t = A) (e2 : typD t = B) :
+    (trmD (trmR (x :: xs) (listE e1)) (listE e2)) =
+      trmD (trmR x e1) e2 :: trmD (trmR xs (listE e1)) (listE e2). 
+  Proof.
+    admit.
+(*
+    unfold trmD, trmR, listE, eq_ind, eq_rect_r, eq_rect, eq_sym, id.
+    clear.
+    pose proof (@typ1_cast typ RType_typ list _ t).
+    unfold tyList.
+    rewrite H in *.
+    revert e1 e2.
+    generalize (typ1_cast t).
+    generalize dependent (typD t).
+    intros; subst.
+    destruct e2.
+    revert e.
+    rewrite H in *.
+    SearchAbout typ1.
+    unfold typ1.
+    generalize dependent (typD (typ1 t)).
+    generalize dependent (tyList t).
+    
+    generalize dependent (typD (tyList t)).
+    generalize dependent (typD t); intros; repeat subst. reflexivity.
+*)
+  Admitted.
 
   Definition nilD t : typD (tyList t) := listR nil.
   Definition consD t : typD (tyArr t (tyArr (tyList t) (tyList t))) :=
     tyArrR2 (fun (x : typD t) (xs : typD (tyList t)) =>
-      listR (cons x (trmD xs (listE eq_refl)))).
+               listR (cons x (trmD xs (listE eq_refl)))).
   
   Definition lengthD t := tyArrR (fun (xs : typD (tyList t)) => 
     natR (List.length (listD xs))).
-
+  
   Definition NoDupD t := 
-     tyArrR (fun (xs : typD (tyList t)) => PropR (NoDup (listD xs))).
-     
+    tyArrR (fun (xs : typD (tyList t)) => PropR (NoDup (listD xs))).
+  
   Definition InD t := 
     tyArrR2 (fun (x : typD t) (xs : typD (tyList t)) => 
       PropR (In x (listD xs))).
@@ -326,7 +337,7 @@ Section ListOps.
     destruct (expr_to_list e1_2). reflexivity.
     unfold mkCons.
     symmetry in Heqo.
-    forward.
+(*    forward.*)
 	admit.
   Admitted.
   
@@ -988,15 +999,15 @@ Section ListCases.
   Context {typ func : Type} {LF : ListFunc typ func}.
 
   Definition list_cases (e : expr typ func) (P : expr typ func -> Type)
-    (f_nil : forall t f, listS f = Some (pNil t) -> e = Inj f -> P e) 
-    (f_cons : forall t f x xs, listS f = Some (pCons t) -> e = App (App (Inj f) x) xs -> P e)
+    (f_nil : forall t f, listS f = Some (pNil t) -> P (Inj f)) 
+    (f_cons : forall t f x xs, listS f = Some (pCons t) -> P (App (App (Inj f) x) xs))
     (f_default : P e) : P e := 
     match e as e' return e = e' -> P e with
       | Inj f => 
         match listS f as e'' return listS f = e'' -> e = Inj f -> P e with
           | Some p => 
             match p as p' return listS f = Some p' -> e = Inj f -> P e with
-              | pNil t => fun eq1 eq2 =>  f_nil t f eq1 eq2
+              | pNil t => fun eq1 eq2 => eq_rect_r P (f_nil t f eq1) eq2
               | _ => fun _ _ => f_default
             end
           | _ => fun _ _ => f_default
@@ -1005,7 +1016,7 @@ Section ListCases.
         match listS f as e'' return listS f = e'' -> e = App (App (Inj f) x) xs -> P e with
           | Some p => 
             match p as p' return listS f = Some p' -> e = App (App (Inj f) x) xs -> P e with
-              | pCons t => fun eq1 eq2 => f_cons t f x xs eq1 eq2
+              | pCons t => fun eq1 eq2 => eq_rect_r P (f_cons t f x xs eq1) eq2
               | _ => fun _ _ => f_default
             end
           | _ => fun _ _ => f_default
@@ -1015,8 +1026,8 @@ Section ListCases.
     
   Fixpoint list_length (e : expr typ func) : nat :=
     @list_cases e _
-      (fun _ _ _ _ => 0)
-      (fun _ _ _ xs _ _ => S (list_length xs))
+      (fun _ _ _ => 0)
+      (fun _ _ _ xs _ => S (list_length xs))
       0.
     
 End ListCases.      
@@ -1034,55 +1045,57 @@ Section ListCasesRules.
  
   Context {LFOk : ListFuncOk typ func}.
 
-  Lemma list_case tus tvs (t : typ) (e : expr typ func) (P : expr typ func -> Type) (Q : P e -> Prop)
-    (f_nil : forall t f, listS f = Some (pNil t) -> e = Inj f -> P e) 
-    (f_cons : forall t f x xs, listS f = Some (pCons t) -> e = App (App (Inj f) x) xs -> P e)
+  Lemma list_case tus tvs (t : typ) (e : expr typ func) (P : expr typ func -> Type) (Q : forall e, P e -> Prop)
+    (f_nil : forall t f, listS f = Some (pNil t) -> P (Inj f)) 
+    (f_cons : forall t f x xs, listS f = Some (pCons t) -> P (App (App (Inj f) x) xs))
     (f_default : P e) 
     (HType : typeof_expr tus tvs e = Some (tyList t))
-    (Hdefault : Q (f_default))
-    (Hnil : forall f (eq1 : listS f = Some (pNil t)) (eq2 : e = Inj f), Q (f_nil t f eq1 eq2))
-    (Hcons : forall f x xs (eq1 : listS f = Some (pCons t)) (eq2 : e = App (App (Inj f) x) xs), Q (f_cons t f x xs eq1 eq2)) : 
-    	(Q (@list_cases typ func LF e P f_nil f_cons f_default)).
+    (Hdefault : Q e (f_default))
+    (Hnil : forall f (eq1 : listS f = Some (pNil t)), Q (Inj f) (f_nil t f eq1))
+    (Hcons : forall f x xs (eq1 : listS f = Some (pCons t)), Q (App (App (Inj f) x) xs) (f_cons t f x xs eq1)) : 
+    	(Q e (@list_cases typ func LF e P f_nil f_cons f_default)).
   Proof.
     destruct e; simpl; try apply Hdefault.
     { 
-       generalize (@eq_refl _ (listS f)).
+      generalize (@eq_refl _ (listS f)).
+      
       change (let x := listS f in 
-      forall e : listS f = x,
-Q
-  (match
-     x as e'' return (listS f = e'' -> Inj f = Inj f -> P (Inj f))
-   with
-   | Some p =>
-       match
-         p as p' return (listS f = Some p' -> Inj f = Inj f -> P (Inj f))
-       with
-       | pNil t =>
-           fun (eq1 : listS f = Some (pNil t)) (eq2 : Inj f = Inj f) =>
-           f_nil t f eq1 eq2
-       | pCons y =>
-           fun (_ : listS f = Some (pCons y)) (_ : Inj f = Inj f) =>
-           f_default
-       | pLength y =>
-           fun (_ : listS f = Some (pLength y)) (_ : Inj f = Inj f) =>
-           f_default
-       | pNoDup y =>
-           fun (_ : listS f = Some (pNoDup y)) (_ : Inj f = Inj f) =>
-           f_default
-       | pIn y =>
-           fun (_ : listS f = Some (pIn y)) (_ : Inj f = Inj f) => f_default
-       | pMap y y0 =>
-           fun (_ : listS f = Some (pMap y y0)) (_ : Inj f = Inj f) =>
-           f_default
-       | pFold y y0 =>
-           fun (_ : listS f = Some (pFold y y0)) (_ : Inj f = Inj f) =>
-           f_default
-       | pZip y y0 =>
-           fun (_ : listS f = Some (pZip y y0)) (_ : Inj f = Inj f) =>
-           f_default
-       end
-   | None => fun (_ : listS f = None) (_ : Inj f = Inj f) => f_default
-   end e eq_refl)).
+              forall e : listS f = x,
+                Q (Inj f)
+                  (match
+                      x as e'' return (listS f = e'' -> Inj f = Inj f -> P (Inj f))
+                    with
+                      | Some p =>
+                        match
+                          p as p' return (listS f = Some p' -> Inj f = Inj f -> P (Inj f))
+                        with
+                          | pNil t0 =>
+                            fun (eq1 : listS f = Some (pNil t0)) (eq2 : Inj f = Inj f) =>
+                              eq_rect_r P (f_nil t0 f eq1) eq2
+                          | pCons y =>
+                            fun (_ : listS f = Some (pCons y)) (_ : Inj f = Inj f) =>
+                              f_default
+                          | pLength y =>
+                            fun (_ : listS f = Some (pLength y)) (_ : Inj f = Inj f) =>
+                              f_default
+                          | pNoDup y =>
+                            fun (_ : listS f = Some (pNoDup y)) (_ : Inj f = Inj f) =>
+                              f_default
+                          | pIn y =>
+                            fun (_ : listS f = Some (pIn y)) (_ : Inj f = Inj f) =>
+                              f_default
+                          | pMap y y0 =>
+                            fun (_ : listS f = Some (pMap y y0)) (_ : Inj f = Inj f) =>
+                              f_default
+                          | pFold y y0 =>
+                            fun (_ : listS f = Some (pFold y y0)) (_ : Inj f = Inj f) =>
+                              f_default
+                          | pZip y y0 =>
+                            fun (_ : listS f = Some (pZip y y0)) (_ : Inj f = Inj f) =>
+                              f_default
+                        end
+                      | None => fun (_ : listS f = None) (_ : Inj f = Inj f) => f_default
+                    end e eq_refl)).
       destruct x; intros; try apply Hdefault.
       destruct l eqn:Heq; intros; try apply Hdefault.
       simpl in HType.
