@@ -83,8 +83,8 @@ Section PairFuncInst.
 	pairS f := Some f 
   }.
 
-  Definition typeof_pair_func bf :=
-    match bf with
+  Definition typeof_pair_func pf :=
+    match pf with
       | pPair t1 t2 => Some (tyArr t1 (tyArr t2 (tyProd t1 t2)))
     end.
   
@@ -228,13 +228,24 @@ Section PairFuncExprOk.
   Qed.
 
   Lemma bf_pair_func_type_eq (f : func) t u v df
-    (H1 : pairS f = Some (pPair t u)) (H2 : funcAs f v = Some df) :
+        (H1 : pairS f = Some (pPair t u)) (H2 : funcAs f v = Some df) :
     v = tyArr t (tyArr u (tyProd t u)).
   Proof.
     rewrite (bf_funcAsOk _ H1) in H2.
     unfold funcAs in H2; simpl in *.
     forward.
     rewrite <- r; reflexivity.
+  Qed.
+
+  Lemma pair_func_type_eq (f : func) (t u v : typ) 
+        (H1 : pairS f = Some (pPair t u)) (H2 : typeof_sym f = Some v) :
+    v = tyArr t (tyArr u (tyProd t u)).
+  Proof.
+    SearchAbout typeof_expr exprD'.
+    destruct (ExprFacts.typeof_expr_exprD' _ _ _ nil nil (Inj f) H2) as [x H].
+    autorewrite with exprD_rw in H.
+    simpl in H. forward.
+    eapply bf_pair_func_type_eq; eassumption.
   Qed.
 
   Lemma bf_pair_type_eq tus tvs (e : expr typ func) t u v df
@@ -299,3 +310,132 @@ Section MakePairFuncSound.
   Qed.
 
 End MakePairFuncSound.
+
+Section PairCases.
+  Context {typ func : Type} {LF : PairFunc typ func}.
+
+  Definition pair_cases (e : expr typ func) (P : expr typ func -> Type)
+    (f_prod : forall t u f a b, pairS f = Some (pPair t u) -> P (App (App (Inj f) a) b))
+    (f_default : P e) : P e := 
+    match e as e' return e = e' -> P e with
+      | App (App (Inj f) a) b =>
+        match pairS f as e'' return pairS f = e'' -> e = App (App (Inj f) a) b -> P e with
+          | Some p => 
+            match p as p' return pairS f = Some p' -> e = App (App (Inj f) a) b -> P e with
+              | pPair t u => fun eq1 eq2 => eq_rect_r P (f_prod t u f a b eq1) eq2
+            end
+          | _ => fun _ _ => f_default
+        end eq_refl
+      | _ => fun _ => f_default
+    end eq_refl.
+    
+End PairCases.      
+
+Section TypeOfApply.
+  Context {typ : Type} {RType_typ : RType typ}.
+
+  Context {Typ2_tyArr : Typ2 _ Fun}.
+  Context {Typ2Ok_tyArr : Typ2Ok Typ2_tyArr}.
+
+  Lemma type_of_apply_Some t u v (H : type_of_apply t u = Some v) : t = typ2 u v.
+
+    unfold type_of_apply in H.
+    destruct (typ2_match_case t) as [[a [b [pf H1]]] | H1].
+    unfold Rty in pf. subst.
+    rewrite typ2_match_iota in H.
+    unfold eq_sym in H.
+    forward. apply _.
+    specialize (H1 (fun _ => option typ)).
+    specialize (H1 (fun d r => match type_cast d u with | Some _ => Some r | None => None end)).
+    simpl in H1. specialize (H1 None). rewrite H in H1. congruence.
+  Qed.
+
+End TypeOfApply.
+
+
+
+Section PairInversion.
+  Context {typ func : Type} {PF : PairFunc typ func}.
+  Context {RType_typ : RType typ} {RTypeOk_typ : RTypeOk} {RSym_func : RSym func}.
+  
+  Context {HEq : RelDec (@eq typ)}.
+    
+  Context {Typ2_tyArr : Typ2 _ Fun}.
+  Context {Typ2_tyProd : Typ2 _ prod}.
+ 
+  Context {Typ2Ok_tyArr : Typ2Ok Typ2_tyArr}.
+  Context {Typ2Ok_tyProd : Typ2Ok Typ2_tyProd}.
+ 
+  Context {PFOk : PairFuncOk typ func}.
+  Context {RSym_funcOk : RSymOk RSym_func}.
+
+  Let tyArr : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyArr.
+  Let tyProd : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyProd.
+
+  Lemma pair_case tus tvs (t u : typ) (e : expr typ func) (P : expr typ func -> Type) (Q : forall e, P e -> Prop)
+    (f_pair : forall t u f a b, pairS f = Some (pPair t u) -> P (App (App (Inj f) a) b))
+    (f_default : P e) 
+    (HType : typeof_expr tus tvs e = Some (tyProd t u))
+    (Hdefault : Q e (f_default))
+    (Hcons : forall f a b (eq1 : pairS f = Some (pPair t u)), 
+               typeof_expr tus tvs a = Some t -> typeof_expr tus tvs b = Some u ->
+               TransitiveClosure.leftTrans (expr_acc (func := func)) a e ->
+               TransitiveClosure.leftTrans (expr_acc (func := func)) b e ->
+               Q (App (App (Inj f) a) b) (f_pair t u f a b eq1)) : 
+    (Q e (@pair_cases typ func PF e P f_pair f_default)).
+  Proof.
+    destruct e; simpl; try apply Hdefault.
+    destruct e1; simpl; try apply Hdefault.
+    destruct e1_1; simpl; try apply Hdefault.
+    generalize (@eq_refl _ (pairS f)).
+    change (let x := pairS f in 
+            forall e : pairS f = x,
+              Q (App (App (Inj f) e1_2) e2)
+                (match
+                    x as e''
+                    return
+                    (pairS f = e'' ->
+                     App (App (Inj f) e1_2) e2 = App (App (Inj f) e1_2) e2 ->
+                     P (App (App (Inj f) e1_2) e2))
+                  with
+                    | Some p =>
+                      match
+                        p as p'
+                        return
+                        (pairS f = Some p' ->
+                         App (App (Inj f) e1_2) e2 = App (App (Inj f) e1_2) e2 ->
+                         P (App (App (Inj f) e1_2) e2))
+                      with
+                        | pPair t0 u0 =>
+                          fun (eq1 : pairS f = Some (pPair t0 u0))
+                              (eq2 : App (App (Inj f) e1_2) e2 = App (App (Inj f) e1_2) e2)
+                          => eq_rect_r P (f_pair t0 u0 f e1_2 e2 eq1) eq2
+                      end
+                    | None =>
+                      fun (_ : pairS f = None)
+                          (_ : App (App (Inj f) e1_2) e2 = App (App (Inj f) e1_2) e2) =>
+                        f_default
+                  end e eq_refl)).
+    destruct x; intros; try apply Hdefault.
+    destruct p.
+    unfold eq_rect_r, eq_rect, eq_sym.
+    simpl in HType; forward; inv_all; subst.
+    assert (t4 = tyArr t0 (tyArr t1 (tyProd t0 t1)))  
+      by (eapply pair_func_type_eq; eassumption).
+    subst.
+    apply type_of_apply_Some in H2.
+    apply typ2_inj in H2; [|apply _].
+    destruct H2.
+    unfold Rty in *. subst.
+    apply type_of_apply_Some in HType.
+    apply typ2_inj in HType; [|apply _].
+    destruct HType.
+    apply typ2_inj in H3; [|apply _].
+    destruct H3.
+    unfold Rty in *; subst. subst.
+    apply Hcons. assumption. assumption.
+    apply TransitiveClosure.LTStep with (App (Inj f) e1_2); repeat constructor.
+    repeat constructor.
+  Qed.
+ 
+End PairInversion.
