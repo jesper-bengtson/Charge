@@ -3,6 +3,7 @@
 	<name>Charge!</name>
 	<comment></comment>
 	<projects>
+		<project>ChargeCore</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
