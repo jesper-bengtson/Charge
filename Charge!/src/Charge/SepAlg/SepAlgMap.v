@@ -2,11 +2,13 @@ Require Import Containers.Maps.
 Require Import Coq.Strings.String Ascii.
 Require Import Compare_dec.
 Require Import OrderedType.
-Require Import SepAlg UUSepAlg.
+Require Import ChargeCore.SepAlg.SepAlg. 
+Require Import ChargeCore.SepAlg.UUSepAlg.
+Require Import ChargeCore.Rel.
 (* This requires the Containers library from 
    http://coq.inria.fr/pylons/contribs/view/Containers/v8.4 *)
 Require Import MapInterface MapFacts.
-Require Import BILInsts.
+Require Import ChargeCore.Logics.BILInsts.
 
 (* String is an ordered type *)
 
@@ -412,8 +414,6 @@ Section SepAlgMap.
       | _ => subst; try intuition congruence
     end.
  
- Require Import SepAlg Rel.
-
   Definition MapEquiv A : Rel (Map [K, A]) := Equal.
   Local Existing Instance MapEquiv.
 

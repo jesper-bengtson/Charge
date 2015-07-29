@@ -1,11 +1,12 @@
--Q src ""
--Q bin ""
--Q /Users/jebe/git/coq-ext-lib/theories ExtLib
--Q /Users/jebe/git/mirror-core/theories MirrorCore
--I /Users/jebe/git/mirror-core/src ""
+-R src ""
+-R bin ""
+-R /Users/jebe/git/coq-ext-lib/theories ExtLib
+-R /Users/jebe/git/mirror-core/theories MirrorCore
+-R /Users/jebe/git/mirror-core/src ""
 KOPITIAM_0 = "SourceLoadPath src"
 KOPITIAM_1 = "DefaultOutput bin"
 KOPITIAM_2 = "AbstractLoadPath dk.itu.sdg.kopitiam/lp/coq/8.4"
 KOPITIAM_3 = "ExternalLoadPath /Users/jebe/git/coq-ext-lib/theories ExtLib"
 KOPITIAM_4 = "ExternalLoadPath /Users/jebe/git/mirror-core/theories MirrorCore"
 KOPITIAM_5 = "ExternalLoadPath /Users/jebe/git/mirror-core/src"
+KOPITIAM_6 = "ProjectLoadPath ChargeCore"
