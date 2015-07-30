@@ -7,7 +7,8 @@ Require Import ExtLib.Data.Fun.
 Require Import ExtLib.Data.List.
 Require Import ExtLib.Data.Option.
 Require Import ExtLib.Tactics.
-Require Import Charge.Logics.BILogic Charge.Logics.Pure.
+Require Import ChargeCore.Logics.BILogic.
+Require Import ChargeCore.Logics.Pure.
 Require Import MirrorCore.EnvI.
 Require Import MirrorCore.SymI.
 Require Import MirrorCore.TypesI.
