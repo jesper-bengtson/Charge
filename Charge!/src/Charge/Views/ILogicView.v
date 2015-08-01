@@ -1048,8 +1048,8 @@ Definition ilogic_ptrn_cases {T : Type}
                  (inj (ptrn_view _ (por (fptrnExists (pmap 
                                                         (fun x f => do_exists (fst x) 
                                                                               (snd x) f) get))
-                                        (fptrnExists (pmap 
-                                                        (fun x f => do_exists (fst x) 
+                                        (fptrnForall (pmap 
+                                                        (fun x f => do_forall (fst x) 
                                                                               (snd x) f) get))))))
             get).
 
