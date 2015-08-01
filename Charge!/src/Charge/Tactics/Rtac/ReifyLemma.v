@@ -27,7 +27,7 @@ Section ReifyLemma.
                  let (alls, e) := get_alls p in (t::alls, e) 
                else
                  (nil, e))
-               (ptrnForall get get))
+               (ptrnForall get (abs get (fun _ => get))))
          (nil, e)) e.
 
   Fixpoint get_impls (e : expr typ func) : list (expr typ func) * expr typ func :=

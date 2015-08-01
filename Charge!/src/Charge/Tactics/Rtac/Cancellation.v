@@ -37,11 +37,11 @@ Section Canceller.
   Context {uis_pure : expr typ func -> bool}.
 
   Definition sls : SepLogAndSpec typ func :=
-    {| is_pure := run_tptrn 
-                    (pdefault
-                       (pmap (fun _ => true)
-                             (inj (ptrn_view _ (por (fptrnTrue ignore) (fptrnFalse ignore)))))
-                       false)
+    {| is_pure e := run_tptrn 
+                      (pdefault
+                         (pmap (fun _ => true)
+                               (inj (ptrn_view _ (por (fptrnTrue ignore) (fptrnFalse ignore)))))
+                         (uis_pure e)) e
        ; is_emp := fun e => false
        ; is_star := run_tptrn 
                       (pdefault
