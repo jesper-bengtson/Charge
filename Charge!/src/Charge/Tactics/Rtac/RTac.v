@@ -4,8 +4,4 @@ Require Export Charge.Tactics.Rtac.EApply.
 Require Export Charge.Tactics.Rtac.Instantiate.
 Require Export Charge.Tactics.Rtac.Intro.
 Require Export Charge.Tactics.Rtac.Minify.
-Require Export Charge.Tactics.Rtac.PullConjunct.
 Require Export Charge.Tactics.Rtac.ReifyLemma.
-(*
-Require Export Charge.Tactics.Rtac.Subst.
-*)
