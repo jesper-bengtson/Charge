@@ -1,10 +1,10 @@
--R src ""
--R bin ""
--R /Users/jebe/git/coq-ext-lib/theories ExtLib
--R /Users/jebe/git/mirror-core/theories MirrorCore
--R /Users/jebe/git/Charge/Charge!/bin/Charge Charge
--R /Users/jebe/git/ChargeCore/ChargeCore/bin/ChargeCore ChargeCore
--R /Users/jebe/git/mirror-core/src ""
+-Q src/Charge Charge
+-Q coq-ext-lib/theories ExtLib
+-Q mirror-core/theories MirrorCore
+-Q ChargeCore/bin/ChargeCore ChargeCore
+
+-arg -type-in-type
+
 KOPITIAM_0 = "SourceLoadPath src"
 KOPITIAM_1 = "DefaultOutput bin"
 KOPITIAM_2 = "AbstractLoadPath dk.itu.sdg.kopitiam/lp/coq/8.4"
@@ -13,78 +13,23 @@ KOPITIAM_4 = "ExternalLoadPath /Users/jebe/git/mirror-core/theories MirrorCore"
 KOPITIAM_5 = "ExternalLoadPath /Users/jebe/git/mirror-core/src"
 KOPITIAM_6 = "ProjectLoadPath ChargeCore"
 
-src/Charge/SepAlg/SepAlgPfun.v
-src/Charge/SepAlg/SepAlgInsts.v
-src/Charge/SepAlg/SepAlg.v
 src/Charge/SepAlg/SepAlgMap.v
-src/Charge/SepAlg/UUSepAlg.v
-src/Charge/Tactics/Base/MirrorCoreTacs.v
-src/Charge/Tactics/Base/DenotationTacs.v
-src/Charge/Tactics/Base/BaseTacs.v
-src/Charge/Tactics/BILogic/BILogicTacs.v
-src/Charge/Tactics/Iterated.v
-src/Charge/Tactics/SepLogFold.v
-src/Charge/Tactics/Lists/NoDup.v
-src/Charge/Tactics/Lists/Zip.v
-src/Charge/Tactics/Lists/Length.v
-src/Charge/Tactics/Lists/In.v
-src/Charge/Tactics/Lists/Map.v
-src/Charge/Tactics/Lists/ListTacs.v
-src/Charge/Tactics/Lists/Fold.v
 src/Charge/Tactics/Rtac/Intro.v
 src/Charge/Tactics/Rtac/Minify.v
 src/Charge/Tactics/Rtac/Instantiate.v
 src/Charge/Tactics/Rtac/RTac.v
-src/Charge/Tactics/Rtac/PullConjunct.v
 src/Charge/Tactics/Rtac/Reflexivity.v
-src/Charge/Tactics/Rtac/PullQuant.v
 src/Charge/Tactics/Rtac/Apply.v
 src/Charge/Tactics/Rtac/ReifyLemma.v
 src/Charge/Tactics/Rtac/Cancellation.v
 src/Charge/Tactics/Rtac/EApply.v
 src/Charge/Tactics/SynSepLog.v
-src/Charge/Tactics/Open/OpenTacs.v
-src/Charge/Tactics/Open/Subst.v
-src/Charge/Tactics/PullConjunct/ILPullConjunct.v
 src/Charge/Tactics/SepLogFoldWithAnd.v
-src/Charge/Tactics/Model.v
-src/Charge/Tactics/PullQuant/BILPullQuant.v
-src/Charge/Tactics/PullQuant/ILPullQuant.v
-src/Charge/Tactics/PullQuant/EmbedPullQuant.v
+src/Charge/Tactics/SepLogFold.v
 src/Charge/Tactics/OrderedCanceller.v
-src/Charge/Tactics/ILogic/ILogicTacs.v
 src/Charge/Tactics/BILNormalize.v
-src/Charge/Tactics/ILEmbed/ILEmbedTacs.v
-src/Charge/Rel.v
-src/Charge/ModularFunc/BaseType.v
-src/Charge/ModularFunc/SubstType.v
-src/Charge/ModularFunc/BILogicFunc.v
-src/Charge/ModularFunc/ListType.v
-src/Charge/ModularFunc/ListFunc.v
-src/Charge/ModularFunc/SemiEqDecTyp.v
-src/Charge/ModularFunc/BaseFunc.v
-src/Charge/ModularFunc/EmbedFunc.v
-src/Charge/ModularFunc/OpenFunc.v
-src/Charge/ModularFunc/LaterFunc.v
-src/Charge/ModularFunc/Sum.v
-src/Charge/ModularFunc/Denotation.v
-src/Charge/ModularFunc/ILogicFunc.v
-src/Charge/Open/OptionILogic.v
-src/Charge/Open/Open.v
-src/Charge/Open/Subst.v
-src/Charge/Open/Stack.v
-src/Charge/Open/OpenILogic.v
-src/Charge/SetoidRewrite/ILSetoidRewrite.v
-src/Charge/SetoidRewrite/Base.v
-src/Charge/SetoidRewrite/AutoSetoidRewrite.v
-src/Charge/SetoidRewrite/EmbedSetoidRewrite.v
-src/Charge/SetoidRewrite/BILSetoidRewrite.v
-src/Charge/Logics/Pure.v
-src/Charge/Logics/ILInsts.v
-src/Charge/Logics/BILogic.v
-src/Charge/Logics/PureInsts.v
-src/Charge/Logics/IBILogic.v
-src/Charge/Logics/ILEmbed.v
-src/Charge/Logics/Later.v
-src/Charge/Logics/BILInsts.v
-src/Charge/Logics/ILogic.v
+src/Charge/Tactics/Iterated.v
+src/Charge/Tactics/Views/BILogicView.v
+src/Charge/Tactics/Views/EmbedView.v
+src/Charge/Tactics/Views/ILogicViewView.v
+src/Charge/Tactics/Views/SubstView.v
