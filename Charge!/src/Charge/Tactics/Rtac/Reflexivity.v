@@ -2,9 +2,6 @@ Require Import MirrorCore.SymI.
 Require Import MirrorCore.Lambda.Expr.
 Require Import MirrorCore.RTac.Core.
 
-Require Import Charge.ModularFunc.BaseFunc.
-Require Import Charge.ModularFunc.SemiEqDecTyp.
-
 Require Import ExtLib.Tactics.
 Require Import ExtLib.Data.HList.
 

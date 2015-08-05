@@ -78,7 +78,7 @@ Section conjunctives.
   Variable sym : Type.
   Variable RSym_sym : RSym sym.
 
-  Let Expr_expr : Expr _ (expr typ sym) := Expr_expr.
+  Let Expr_expr : Expr _ (expr typ sym) := Expr_expr _ _ _ _.
   Local Existing Instance Expr_expr.
 
   Record conjunctives : Type :=
@@ -271,7 +271,6 @@ generalize (@iterated_base_cons _ SSL.(e_true) SSL.(e_and)
           congruence. } }
 *) admit. }
     Qed.
-
     Lemma iterated_base_true_and_star_emp
     : forall us vs ps,
         match
@@ -422,7 +421,6 @@ generalize (@iterated_base_cons _ SSL.(e_true) SSL.(e_and)
           destruct (exprD_e_empOk SSLO us vs) as [ ? [ ? ? ] ].
           congruence. } }
     Qed.
-
     Theorem conjunctives_to_expr_conjunctives_to_expr_star
     : forall tvs us c cE,
         exprD' us tvs (conjunctives_to_expr c) SL = Some cE ->
@@ -813,7 +811,6 @@ generalize (@iterated_base_cons _ SSL.(e_true) SSL.(e_and)
 (*
     Variable SLS : SepLogSpec sym.
     Variable slsok : SepLogSpecOk RSym_sym SL SLS ILO BILO.
-
 (*
     Theorem SepLogArgsOk_conjunctives
     : SepLogArgsOk RSym_sym SL SepLogArgs_normalize SLS R_conjunctives.
@@ -976,16 +973,13 @@ Module demo.
       | fref 1%positive => true
       | _ => false
     end.
-
   Definition SepLogSpec_demo : SepLogSpec ilfunc :=
     Build_SepLogSpec (fun _ => false) is_emp is_star.
-
   Definition inj_emp := Inj (ilf_true (tyType 1)).
   Definition inj_star a b :=
     Eval compute in apps (Inj (fref 1%positive)) (a :: b :: nil).
   Definition inj_and a b :=
     Eval compute in apps (Inj (fref 2%positive)) (a :: b :: nil).
-
   Definition test := fun x => normalize SepLogSpec_demo x nil nil.
   Eval compute in  test inj_emp.
   Eval compute in  test (inj_star inj_emp inj_emp).

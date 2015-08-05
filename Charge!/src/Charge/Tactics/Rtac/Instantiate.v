@@ -4,11 +4,12 @@ Require Import MirrorCore.Lambda.ExprSubst.
 
 Section InstantiateTac.
 	Context {typ func : Type}.
-	Context {EU : ExprUVar (expr typ func)}.
+	Context {RType_typ : RType typ}.
+	Context {E : Expr RType_typ (expr typ func)}.
 
 	Definition INSTANTIATE := 
-		@INSTANTIATE typ (expr typ func) EU.
+		@INSTANTIATE typ (expr typ func) RType_typ E.
 
 End InstantiateTac.
 
-Implicit Arguments INSTANTIATE [[EU]].
+Implicit Arguments INSTANTIATE [[RType_typ] [E]].
