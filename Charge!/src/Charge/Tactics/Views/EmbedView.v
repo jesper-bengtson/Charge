@@ -17,7 +17,7 @@ Require Import MirrorCore.Views.Ptrns.
 Require Import ChargeCore.Logics.ILogic.
 Require Import ChargeCore.Logics.ILEmbed.
 
-Require Import Charge.Views.ILogicView.
+Require Import Charge.Tactics.Views.ILogicView.
 
 Require Import Coq.Bool.Bool.
 

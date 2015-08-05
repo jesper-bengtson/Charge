@@ -8,7 +8,7 @@ Require Import MirrorCore.TypesI.
 Require Import MirrorCore.Views.Ptrns.
 Require Import MirrorCore.Views.FuncView.
 
-Require Import Charge.Views.ILogicView.
+Require Import Charge.Tactics.Views.ILogicView.
 
 Section IntroTac.
   Context {typ func subst : Type}.

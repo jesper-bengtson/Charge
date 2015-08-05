@@ -1,6 +1,9 @@
 (** This file implements cancellation for separation logic.
  **)
 Require Coq.Lists.List.
+Require Import Relations Morphisms.
+Require Import RelationClasses.
+
 Require ExtLib.Data.Option.
 Require Import ExtLib.Tactics.
 
@@ -32,9 +35,6 @@ Section iterated.
     destruct ls; simpl; intros; try congruence.
     destruct (iterated ls); congruence.
   Qed.
-
-  Require Import Relations Morphisms.
-  Require Import RelationClasses.
 
   Hypothesis R : relation T.
   Hypothesis Reflexive_R : Reflexive R.

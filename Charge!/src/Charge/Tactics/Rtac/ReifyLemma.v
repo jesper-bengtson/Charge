@@ -8,7 +8,7 @@ Require Import MirrorCore.Reify.Reify.
 Require Import MirrorCore.Views.Ptrns.
 Require Import MirrorCore.Views.FuncView.
 
-Require Import Charge.Views.ILogicView.
+Require Import Charge.Tactics.Views.ILogicView.
 
 Section ReifyLemma.
   Context {typ func : Type} {HIL : FuncView func (ilfunc typ)}.

@@ -23,9 +23,9 @@ Require Import MirrorCore.Views.StringView.
 Require Import MirrorCore.Views.ListView.
 Require Import MirrorCore.Views.ProdView.
 
-Require Import Charge.Views.ILogicView.
-Require Import Charge.Views.BILogicView.
-Require Import Charge.Views.EmbedView.
+Require Import Charge.Tactics.Views.ILogicView.
+Require Import Charge.Tactics.Views.BILogicView.
+Require Import Charge.Tactics.Views.EmbedView.
 
 Require Import ChargeCore.Logics.ILogic.
 Require Import ChargeCore.Open.Stack.

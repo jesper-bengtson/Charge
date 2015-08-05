@@ -13,7 +13,7 @@ Require Import Coq.Classes.Morphisms.
 Require Import ExtLib.Data.Positive.
 Require Import ExtLib.Data.HList.
 Require Import ExtLib.Tactics.
-Require Import BILogic ILogic Pure.
+From ChargeCore.Logics Require Import BILogic ILogic Pure.
 Require Import MirrorCore.EnvI.
 Require Import MirrorCore.SymI.
 Require Import MirrorCore.ExprI.

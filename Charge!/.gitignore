@@ -1,1 +1,6 @@
 /bin
+Makefile.coq
+#*#
+ChargeCore
+coq-ext-lib
+mirror-core

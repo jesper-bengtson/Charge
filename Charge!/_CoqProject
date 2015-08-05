@@ -2,6 +2,7 @@
 -Q coq-ext-lib/theories ExtLib
 -Q mirror-core/theories MirrorCore
 -Q ChargeCore/bin/ChargeCore ChargeCore
+-I mirror-core/src
 
 -arg -type-in-type
 
@@ -32,5 +33,5 @@ src/Charge/Tactics/Iterated.v
 src/Charge/Tactics/PullQuant/PullQuantRtac.v
 src/Charge/Tactics/Views/BILogicView.v
 src/Charge/Tactics/Views/EmbedView.v
-src/Charge/Tactics/Views/ILogicViewView.v
+src/Charge/Tactics/Views/ILogicView.v
 src/Charge/Tactics/Views/SubstView.v
