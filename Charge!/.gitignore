@@ -1,5 +1,8 @@
-/bin
+bin
 Makefile.coq
+*.v.d
+*.glob
+*.aux
 #*#
 ChargeCore
 coq-ext-lib
