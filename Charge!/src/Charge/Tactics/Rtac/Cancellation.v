@@ -37,61 +37,56 @@ Section Canceller.
   Context {uis_pure : expr typ func -> bool}.
 
   Definition sls : SepLogAndSpec typ func :=
-    {| is_pure e := run_tptrn 
-                      (pdefault
-                         (pmap (fun _ => true)
-                               (inj (ptrn_view _ (por (fptrnTrue ignore) (fptrnFalse ignore)))))
-                         (uis_pure e)) e
-       ; is_emp := fun e => false
-       ; is_star := run_tptrn 
-                      (pdefault
-                         (pmap (fun _ => true) (ptrnStar ignore ignore ignore))
-                         false)
-       ; is_and := run_tptrn 
-                     (pdefault
-                        (pmap (fun _ => true) (ptrnAnd ignore ignore ignore))
-                        false)
-    |}.
+  {| is_pure e := run_default
+                    (pmap (fun _ => true)
+                          (inj (ptrn_view _ (por (fptrnTrue ignore) (fptrnFalse ignore)))))
+                    (uis_pure e) e
+   ; is_emp := fun e =>
+                 run_default (pmap (fun _ => true)
+                                   (inj (ptrn_view _ (fptrnEmp ignore)))) false e
+   ; is_star := run_default
+                  (pmap (fun _ => true) (ptrnStar ignore ignore ignore))
+                  false
+   ; is_and := run_default
+                 (pmap (fun _ => true) (ptrnAnd ignore ignore ignore))
+                 false
+   |}.
 
-  Let doUnifySepLog c (tus tvs : EnvI.tenv typ) (s : ctx_subst (typ := typ) (expr := expr typ func) c) (e1 e2 : expr typ func)
+  Let doUnifySepLog c (tus tvs : EnvI.tenv typ)
+      (s : ctx_subst (typ := typ) (expr := expr typ func) c)
+      (e1 e2 : expr typ func)
   : option (ctx_subst c) :=
     @exprUnify (ctx_subst c) typ func RType_typ RSym_func Typ2_typ _ _ 10 tus tvs 0 e1 e2 tyLogic s.
 
   Let ssl : SynSepLog typ func :=
-    {| e_star := fun l r =>
-                   let lt := run_tptrn 
-                               (pdefault 
-                                  (inj (ptrn_view _ (pmap (fun _ => true) (fptrnEmp ignore))))
-                                  false) l in
-                   let rt := run_tptrn
-                               (pdefault 
-                                  (inj (ptrn_view _ (pmap (fun _ => true) (fptrnEmp ignore))))
-                                  false) r in
-                   match lt, rt with
-                    | true, true => mkEmp tyLogic
-                    | true, false => l
-                    | false, true => r
-                    | false, false => mkAnd tyLogic l r
-                    end
-       ; e_emp := mkEmp tyLogic
-       ; e_and := fun l r =>
-                    let lt := run_tptrn 
-                                (pdefault 
-                                   (inj (ptrn_view _ (pmap (fun _ => true) (fptrnTrue ignore))))
-                                   false) l in
-                    let rt := run_tptrn
-                                (pdefault 
-                                   (inj (ptrn_view _ (pmap (fun _ => true) (fptrnTrue ignore))))
-                                   false) r in
-                    match lt, rt with
-                    | true, true => mkTrue tyLogic
-                    | true, false => l
-                    | false, true => r
-                    | false, false => mkAnd tyLogic l r
-                    end
-       ; e_true := mkTrue tyLogic
-    |}.
-  
+  {| e_star := fun l r =>
+                 let lt := sls.(is_emp) l in
+                 let rt := sls.(is_emp) r in
+                 match lt, rt with
+                 | true, true => mkEmp tyLogic
+                 | true, false => r
+                 | false, true => l
+                 | false, false => mkStar tyLogic l r
+                 end
+   ; e_emp := mkEmp tyLogic
+   ; e_and := fun l r =>
+                let lt := run_tptrn 
+                            (pdefault 
+                               (inj (ptrn_view _ (pmap (fun _ => true) (fptrnTrue ignore))))
+                               false) l in
+                let rt := run_tptrn
+                            (pdefault 
+                               (inj (ptrn_view _ (pmap (fun _ => true) (fptrnTrue ignore))))
+                               false) r in
+                match lt, rt with
+                | true, true => mkTrue tyLogic
+                | true, false => r
+                | false, true => l
+                | false, false => mkAnd tyLogic l r
+                end
+   ; e_true := mkTrue tyLogic
+   |}.
+
   Definition eproveTrue c (s : ctx_subst (typ := typ) (expr := expr typ func) c) : 
     expr typ func -> option (ctx_subst c) :=
     run_tptrn
