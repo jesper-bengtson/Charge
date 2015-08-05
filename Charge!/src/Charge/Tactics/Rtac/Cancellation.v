@@ -12,8 +12,8 @@ Require Import Charge.Tactics.OrderedCanceller.
 Require Import Charge.Tactics.BILNormalize.
 Require Import Charge.Tactics.SynSepLog.
 Require Import Charge.Tactics.SepLogFoldWithAnd.
-Require Import Charge.Views.ILogicView.
-Require Import Charge.Views.BILogicView.
+Require Import Charge.Tactics.Views.ILogicView.
+Require Import Charge.Tactics.Views.BILogicView.
 
 Require Import MirrorCore.Views.FuncView.
 Require Import MirrorCore.Views.Ptrns.
@@ -45,10 +45,10 @@ Section Canceller.
                  run_default (pmap (fun _ => true)
                                    (inj (ptrn_view _ (fptrnEmp ignore)))) false e
    ; is_star := run_default
-                  (pmap (fun _ => true) (ptrnStar ignore ignore ignore))
+                  (pmap (fun _ => true) (inj (ptrn_view _ (fptrnStar ignore))))
                   false
    ; is_and := run_default
-                 (pmap (fun _ => true) (ptrnAnd ignore ignore ignore))
+                 (pmap (fun _ => true) (inj (ptrn_view _ (fptrnAnd ignore))))
                  false
    |}.
 
