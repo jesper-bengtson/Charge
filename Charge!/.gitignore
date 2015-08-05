@@ -7,3 +7,5 @@ Makefile.coq
 ChargeCore
 coq-ext-lib
 mirror-core
+_CoqProject
+_CoqPath
