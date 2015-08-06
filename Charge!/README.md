@@ -27,6 +27,10 @@ of MirrorCore, include the following in the ```_CoqPath``` file:
 -I ../relative/path/to/mirror-core/src
 ```
 
+In Coq 8.5 all paths inside this file should be written with ```-Q``` since
+Coq uses ```-Q``` to include ```user-contrib``` which is where packages are
+installed.
+
 For convenience, we recommend making symbolic links in this directory or the
 parent directory.
 
