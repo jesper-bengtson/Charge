@@ -278,57 +278,6 @@ Section parametric.
                            * CoreK.rtacK typ (expr typ func)) :=
     run_default get nil.
 
-  (** TODO(gmalecha): Move this *)
-  Definition appl {typ func T U : Type}
-        (f : ptrn (expr typ func) T)
-        (g : ptrn (expr typ func) (T -> U)) : ptrn (expr typ func) U :=
-          fun e _T good bad =>
-      match e with
-      | ExprCore.Var a => bad (ExprCore.Var a)
-      | Inj a => bad (Inj a)
-      | App l r =>
-        Mbind (Mrebuild (fun x => App x r) (f l))
-              (fun x : T =>
-                 Mmap (fun y : T -> U => y x)
-                      (Mrebuild (App l) (g r))) good bad
-      | Abs a b => bad (Abs a b)
-      | ExprCore.UVar a => bad (ExprCore.UVar a)
-      end.
-
-  Theorem ptrn_ok_appl
-  : forall {typ func T U}
-           (f : ptrn (expr typ func) T)
-           (g : ptrn (expr typ func) (T -> U)),
-      ptrn_ok f -> ptrn_ok g ->
-      ptrn_ok (appl f g).
-  Proof using.
-    intros; red.
-    destruct x; simpl;
-    try solve [ right; compute; reflexivity ].
-    destruct (H0 x2) as [ [ ? ? ] | ? ]; clear H0.
-    { destruct (H x1) as [ [ ? ? ] | ? ]; clear H.
-      { left. exists (x x0).
-        unfold Succeeds in *.
-        intros. simpl.
-        unfold Mmap, Mbind, Mrebuild.
-        setoid_rewrite H0. setoid_rewrite H1. reflexivity. }
-      { right.
-        unfold Succeeds, Fails in *.
-        intros; simpl.
-        unfold Mmap, Mbind, Mrebuild.
-        setoid_rewrite H0. reflexivity. } }
-    { right.
-      destruct (H x1) as [ [ ? ? ] | ? ]; clear H.
-      { unfold Succeeds, Fails in *.
-        intros; simpl.
-        unfold Mmap, Mbind, Mrebuild.
-        setoid_rewrite H0. setoid_rewrite H1. reflexivity. }
-      { unfold Succeeds, Fails in *.
-        intros; simpl.
-        unfold Mmap, Mbind, Mrebuild.
-        setoid_rewrite H0. reflexivity. } }
-  Qed.
-
   Definition the_lemmas
   : expr typ func -> list (rw_lemma typ func (expr typ func) *
                            CoreK.rtacK typ (expr typ func)) :=
