@@ -30,7 +30,6 @@ Require Import Charge.Views.EmbedView.
 Require Import ChargeCore.Logics.ILogic.
 Require Import ChargeCore.Open.Stack.
 Require Import ChargeCore.Open.Subst.
-Require Import ChargeCore.Rel.
 
 Require Import Coq.Strings.String.
 Require Import Coq.Bool.Bool.
