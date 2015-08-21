@@ -828,7 +828,7 @@ Section parametric.
     bottom_up (is_reflR is_refl)
               (is_transR is_trans)
               (pull_all_quant)
-              (fun e r => rw_ret (get_respectful e r))
+              get_respectful
               e (Rinj (Inj (fEntails l))).
 
 (*
