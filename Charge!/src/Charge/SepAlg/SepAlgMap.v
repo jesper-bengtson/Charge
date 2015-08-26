@@ -1,13 +1,13 @@
 Require Import Containers.Maps.
 Require Import Coq.Strings.String Ascii.
 Require Import Compare_dec.
-Require Import OrderedType.
+Require Import Containers.OrderedType.
 Require Import ChargeCore.SepAlg.SepAlg. 
 Require Import ChargeCore.SepAlg.UUSepAlg.
 Require Import ChargeCore.Rel.
 (* This requires the Containers library from 
    http://coq.inria.fr/pylons/contribs/view/Containers/v8.4 *)
-Require Import MapInterface MapFacts.
+Require Import Containers.MapInterface Containers.MapFacts.
 Require Import ChargeCore.Logics.BILInsts.
 
 (* String is an ordered type *)
@@ -419,7 +419,8 @@ Section SepAlgMap.
 
   Definition MapSepAlg A : SepAlg (Map [K, A]).
   Proof.
-  	esplit. 
+    esplit.
+    + eauto with typeclass_instances.
     + intros * H3 k; SepOpSolve.  
     + intros * H2 H3.
       exists (fold add b c).
@@ -437,7 +438,7 @@ Section SepAlgMap.
 	  apply H2; SepOpSolve.
 	+ intros * H2 H3 k. simpl in *. SepOpSolve.
   Qed.
-  
+
   Local Existing Instance MapSepAlg.
 
   Definition UUMapSepAlg A : @UUSepAlg (Map [K, A]) _ _.

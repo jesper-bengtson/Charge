@@ -23,6 +23,7 @@ Section parametric.
   Context {Typ0_Prop : Typ0 _ Prop}.
   Context {Typ0Ok_Fun : Typ0Ok Typ0_Prop}.
   Variable RelDec_typ : RelDec (@eq typ).
+  Variable RelDec_Correct_typ : RelDec_Correct RelDec_typ.
   Variable lops : logic_ops.
   Variable lopsOk : logic_opsOk lops.
   Context {ViewFunc_ilogic : FuncView func (ilfunc typ)}.
@@ -53,91 +54,11 @@ Section parametric.
   Require Import MirrorCore.Util.Forwardy.
   Require Import ExtLib.Tactics.
 
-
-  (** TODO: This should move **)
-  Section is_trans_refl.
-
-    Lemma Refl_pointwise : forall {T U : Type} (R : T -> T -> Prop),
-      Reflexive R -> Reflexive (pointwise_relation (A:=U) R).
-    Proof using.
-      compute. auto.
-    Qed.
-
-    Lemma Trans_pointwise : forall {T U : Type} (R : T -> T -> Prop),
-        Transitive R -> Transitive (pointwise_relation (A:=U) R).
-    Proof using.
-      compute. eauto.
-    Qed.
-
-    Variable is_trans : expr typ func -> bool.
-    Fixpoint is_transR (r : @R typ (expr typ func)) : bool :=
-      match r with
-      | Rinj r => is_trans r
-      | Rpointwise _ x => is_transR x
-      | Rflip r => is_transR r
-      | _ => false
-      end.
-
-    Definition is_reflR := is_transR.
-
-    Hypothesis is_transOk : forall r t rD,
-        is_trans r = true -> RbaseD r t = Some rD -> Transitive rD.
-
-    Theorem is_transROk : forall r t rD,
-        is_transR r = true -> RD RbaseD r t = Some rD -> Transitive rD.
-    Proof.
-      induction r; simpl; intros; eauto; try congruence.
-      { simpl. intros.
-        arrow_case_any; try congruence.
-        clear H1. red in x1; subst.
-        simpl in H0.
-        autorewrite_with_eq_rw_in H0.
-        forwardy.
-        inv_all. subst.
-        red. intros.
-        revert H1 H3.
-        autorewrite_with_eq_rw.
-        unfold pointwise_relation.
-        eapply IHr in H; [ | eassumption ].
-        intros. eauto. }
-      { simpl. intros.
-        forwardy.
-        inv_all; subst.
-        red. intros. unfold flip. eapply IHr; eauto. }
-    Qed.
-
-    Hypothesis is_reflOk : forall r t rD,
-        is_trans r = true -> RbaseD r t = Some rD -> Reflexive rD.
-
-    Theorem is_reflROk : forall r t rD,
-        is_reflR r = true -> RD RbaseD r t = Some rD -> Reflexive rD.
-    Proof using Typ2Ok_Fun is_reflOk.
-      induction r; simpl; intros; eauto; try congruence.
-      { arrow_case_any; try congruence.
-        clear H1. red in x1; subst.
-        simpl in H0.
-        autorewrite_with_eq_rw_in H0.
-        forwardy.
-        inv_all. subst.
-        red. intros.
-        autorewrite_with_eq_rw.
-        unfold pointwise_relation.
-        eapply IHr in H; [ | eassumption ].
-        intros. eauto. }
-      { simpl. intros.
-        forwardy.
-        inv_all; subst.
-        red. intros. unfold flip. eapply IHr; eauto. }
-    Qed.
-
-  End is_trans_refl.
-
-
   Definition mrw : Type -> Type :=
     @mrw typ func.
 
   Definition lem_pull_ex_nat_and_left (l_t : typ * typ)
-  : rw_lemma (typ:=typ) (func:=func) (expr typ func) :=
+  : rw_lemma typ func (expr typ func) :=
     let '(l,t) := l_t in
   {| Lemma.vars := typ2 t l :: l :: nil
    ; Lemma.premises := nil
@@ -154,7 +75,7 @@ Section parametric.
   |}.
 
   Definition lem_pull_ex_nat_and_right (l_t : typ * typ)
-  : rw_lemma (typ:=typ) (func:=func) (expr typ func) :=
+  : rw_lemma typ func (expr typ func) :=
     let '(l,t) := l_t in
   {| Lemma.vars := typ2 t l :: l :: nil
    ; Lemma.premises := nil
@@ -169,170 +90,134 @@ Section parametric.
                     |}
   |}.
 
-  Definition is_refl :=
-    is_reflR (run_default
-                (inj (FuncView.ptrn_view _ (pmap (fun _ => true)
-                                                 (fptrnEntails ignore))))
-                false).
-
-
-  Theorem run_default_sound
-  : forall {X T} (P : X -> T -> Prop) (p : ptrn X T) (d : T) x,
-      ptrn_ok p ->
-      (forall res,
-          Succeeds x p res ->
-          P x res) ->
-      P x d ->
-      P x (run_default p d x).
-  Proof using.
-    intros.
-    change (@run_default X T) with (fun p d => @run_tptrn X T (pdefault p d)).
-    unfold run_tptrn.
-    unfold pdefault.
-    destruct (H x).
-    { destruct H2. red in H2.
-      rewrite H2. auto. }
-    { red in H2. rewrite H2. auto. }
-  Qed.
+  Definition is_refl : expr typ func -> bool :=
+    run_default
+      (inj (FuncView.ptrn_view _ (pmap (fun _ => true)
+                                       (fptrnEntails ignore))))
+      false.
 
   Theorem is_reflOk
   : forall r t rD,
       is_refl r = true ->
-      RD RbaseD r t = Some rD ->
+      RbaseD r t = Some rD ->
       Reflexive rD.
   Proof.
-    eapply is_reflROk.
-    { do 3 intro.
-      eapply (fun P => @run_default_sound _ _ P
-                                              (inj (typ:=typ)
-                                                   (ptrn_view ViewFunc_ilogic
-                                                              (pmap (fun _ : unit => true) (fptrnEntails ignore)))) false r).
-      { eapply ptrn_ok_inj.
-        eapply ptrn_view_ok.
-        eapply ptrn_ok_pmap.
-        eapply fptrnEntails_ok. }
-      { intros. ptrnE.
-        eapply Succeeds_ptrn_view in H3. 2: eassumption.
-        { forward_reason. ptrnE.
-          unfold RbaseD, exprD in H1. simpl in H1.
-          unfold ExprDsimul.ExprDenote.exprD' in H1.
-          rewrite <- (@fv_compat _ _ ViewFunc_ilogic _ _ _ _ ViewFuncOk_ilogic) in H1.
-          unfold symAs, typeof_sym in H1. simpl in H1.
-          rewrite castD_option in H1.
-          destruct (lops x2) eqn:Hlops; try congruence.
-          forwardy; inv_all; subst.
-          assert (t = x2).
-          { clear - y2 Typ2Ok_Fun.
-            eapply typ2_inj in y2. tauto. eauto. }
-          subst.
-          unfold entailsR.
-          unfold exprT_Inj.
-          rewrite (UIP_refl y2).
-          simpl.
-          rewrite castDR.
-          specialize (lopsOk x2).
-          rewrite Hlops in lopsOk.
-          eauto. }
+    do 3 intro.
+    unfold is_refl.
+    eapply (fun P => @run_default_sound _ _ P
+                       (inj (typ:=typ)
+                            (ptrn_view ViewFunc_ilogic
+                                       (pmap (fun _ : unit => true) (fptrnEntails ignore)))) false r).
+    { (* This is a Coq bug *)
+      eapply ptrn_ok_inj.
+      eapply ptrn_view_ok.
+      eapply ptrn_ok_pmap.
+      eapply fptrnEntails_ok. }
+    { intros. ptrnE.
+      eapply Succeeds_ptrn_view in H3. 2: eassumption.
+      { forward_reason. ptrnE.
+        unfold RbaseD, exprD in H1. simpl in H1.
+        unfold ExprDsimul.ExprDenote.exprD' in H1.
+        rewrite <- (@fv_compat _ _ ViewFunc_ilogic _ _ _ _ ViewFuncOk_ilogic) in H1.
+        unfold symAs, typeof_sym in H1. simpl in H1.
+        rewrite castD_option in H1.
+        destruct (lops x2) eqn:Hlops; try congruence.
+        forwardy; inv_all; subst.
+        assert (t = x2).
+        { clear - y2 Typ2Ok_Fun.
+          eapply typ2_inj in y2. tauto. eauto. }
+        subst.
+        unfold entailsR.
+        unfold exprT_Inj.
+        rewrite (UIP_refl y2).
+        simpl.
+        rewrite castDR.
+        specialize (lopsOk x2).
+        rewrite Hlops in lopsOk.
+        eauto. }
       { eapply ptrn_ok_pmap.
         eapply fptrnEntails_ok. } }
-    { simpl. intros; congruence. } }
+    { simpl. intros; congruence. }
   Qed.
 
+  Definition is_trans : expr typ func -> bool :=
+    is_refl.
 
-  Definition is_trans :=
-    is_transR (run_default
-                 (inj (FuncView.ptrn_view _ (pmap (fun _ => true) (fptrnEntails ignore))))
-                 false).
+  Theorem is_transOk
+  : forall r t rD,
+      is_trans r = true ->
+      RbaseD r t = Some rD ->
+      Transitive rD.
+  Proof.
+    do 3 intro.
+    unfold is_trans, is_refl.
+    eapply (fun P => @run_default_sound _ _ P
+                       (inj (typ:=typ)
+                            (ptrn_view ViewFunc_ilogic
+                                       (pmap (fun _ : unit => true) (fptrnEntails ignore)))) false r).
+    { (* This is a Coq bug *)
+      eapply ptrn_ok_inj.
+      eapply ptrn_view_ok.
+      eapply ptrn_ok_pmap.
+      eapply fptrnEntails_ok. }
+    { intros. ptrnE.
+      eapply Succeeds_ptrn_view in H3. 2: eassumption.
+      { forward_reason. ptrnE.
+        unfold RbaseD, exprD in H1. simpl in H1.
+        unfold ExprDsimul.ExprDenote.exprD' in H1.
+        rewrite <- (@fv_compat _ _ ViewFunc_ilogic _ _ _ _ ViewFuncOk_ilogic) in H1.
+        unfold symAs, typeof_sym in H1. simpl in H1.
+        rewrite castD_option in H1.
+        destruct (lops x2) eqn:Hlops; try congruence.
+        forwardy; inv_all; subst.
+        assert (t = x2).
+        { clear - y2 Typ2Ok_Fun.
+          eapply typ2_inj in y2. tauto. eauto. }
+        subst.
+        unfold entailsR.
+        unfold exprT_Inj.
+        rewrite (UIP_refl y2).
+        simpl.
+        rewrite castDR.
+        specialize (lopsOk x2).
+        rewrite Hlops in lopsOk.
+        eapply PreOrder_Transitive. }
+      { eapply ptrn_ok_pmap.
+        eapply fptrnEntails_ok. } }
+    { simpl. intros; congruence. }
+  Qed.
 
-
-(*
-Definition get_respectful_only_all_ex :=
-  do_respectful (expr_eq_sdec (typ:=typ) (func:=func) _ rel_dec)
-    ((Inj (Ex tyNat), Rrespects (Rpointwise tyNat (Rinj (Inj Impl))) (Rinj (Inj Impl))) ::
-     (Inj (All tyNat), Rrespects (Rpointwise tyNat (Rinj (Inj Impl))) (Rinj (Inj Impl))) ::
-     nil).
-*)
-
-  (** TODO: Make patterns for relations **)
-  Definition ptrnRinj {X T : Type} (p : ptrn X T) : ptrn (@R typ X) T :=
-    fun r _T good bad =>
-      match r with
-      | Rinj a => p a _T good (fun x => bad (Rinj x))
-      | Rrespects a b => bad (Rrespects a b)
-      | Rpointwise a b => bad (Rpointwise a b)
-      | Rflip a => bad (Rflip a)
-      end.
-
-  Definition ptrnRflip {X T : Type} (p : ptrn (@R typ X) T)
-  : ptrn (@R typ X) T :=
-    fun r _T good bad =>
-      match r with
-      | Rinj a => bad (Rinj a)
-      | Rrespects a b => bad (Rrespects a b)
-      | Rpointwise a b => bad (Rpointwise a b)
-      | Rflip a => p a _T good (fun x => bad (Rflip x))
-      end.
-
-  Definition ptrnRrespectsL {X T U : Type}
-             (pd : ptrn (@R typ X) (T -> U))
-             (pr : ptrn (@R typ X) T)
-  : ptrn (@R typ X) U :=
-    fun r _T good bad =>
-      match r with
-      | Rinj a => bad (Rinj a)
-      | Rrespects a b => pr b _T (fun x => pd a _T (fun y => good (y x))
-                                              (fun a => bad (Rrespects a b)))
-                            (fun b => bad (Rrespects a b))
-      | Rpointwise a b => bad (Rpointwise a b)
-      | Rflip a => bad (Rflip a)
-      end.
-
-  Definition ptrnRpointwiseL {X T U : Type}
-             (pd : ptrn typ (T -> U))
-             (pr : ptrn (@R typ X) T)
-  : ptrn (@R typ X) U :=
-    fun r _T good bad =>
-      match r with
-      | Rinj a => bad (Rinj a)
-      | Rpointwise a b => pr b _T (fun x => pd a _T (fun y => good (y x))
-                                              (fun a => bad (Rpointwise a b)))
-                            (fun b => bad (Rpointwise a b))
-      | Rrespects a b => bad (Rrespects a b)
-      | Rflip a => bad (Rflip a)
-      end.
+  Definition if_entails (t : typ) Y (X : expr typ func) : mrw (list (R typ (expr typ func))) :=
+    run_default (inj (ptrn_view _ (pmap (fun t' => if t ?[ eq ] t' then rw_ret Y else rw_fail)
+                                        (fptrnEntails get)))) (rw_fail) X.
 
   (** This function defines what terms respect what relations **)
   Definition get_respectful
-             (e : expr typ func) (r : R (typ:=typ) (expr typ func))
-  : list (R (typ:=typ) (expr typ func)) :=
-    let if_entails Y X :=
-        run_default (inj (ptrn_view _ (pmap (fun _ =>
-                                               Y) (fptrnEntails get)))) nil X
-    in
+             (e : expr typ func) (r : R typ (expr typ func))
+  : mrw (list (R typ (expr typ func))) :=
     run_default (Ptrns.inj (ptrn_view _
          (pors
-           (pmap (fun l_t => let '(l,t) := l_t in
+           (pmap (fun t_l => let '(t,l) := t_l in
                              match r with
                              | Rinj X
                              | Rflip (Rinj X) =>
-                               if_entails (Rrespects (Rpointwise t r) r :: nil)
-                                          X
-                             | _ => nil
+                               if_entails l (Rpointwise t r :: nil) X
+                             | _ => rw_fail
                              end) (fptrnExists get) ::
             pmap (fun l => match r with
                             | Rinj X
                             | Rflip (Rinj X) =>
-                              if_entails (Rrespects r (Rrespects r r) :: nil) X
-                            | _ => nil
+                              if_entails l (r :: r :: nil) X
+                            | _ => rw_fail
                             end) (por (fptrnAnd get) (fptrnOr get)) ::
             pmap (fun l => match r with
                             | Rinj X
                             | Rflip (Rinj X) =>
-                              if_entails (Rrespects (Rflip' r) (Rrespects r r) :: nil) X
-                            | _ => nil
+                              if_entails l (Rflip' r :: r :: nil) X
+                            | _ => rw_fail
                             end) (fptrnImpl get) ::
             nil))))
-       nil
+       (rw_fail)
        e.
 
   (* This was necessary for post-processing the substitution *)
@@ -357,17 +242,17 @@ Definition get_respectful_only_all_ex :=
   (** TODO(gmalecha): Move this *)
   Definition using_prewrite_db
              (ls : expr typ func ->
-                   list (rw_lemma(typ:=typ) (func:=func) (expr typ func) *
+                   list (rw_lemma typ func (expr typ func) *
                          CoreK.rtacK typ (expr typ func)))
-    : expr typ func -> R (typ:=typ) Rbase -> mrw (expr typ func) :=
+    : expr typ func -> R typ Rbase -> mrw (expr typ func) :=
       fun e r =>
         for_tactic (fun e => using_rewrite_db' expr_sdec (ls e) e r) e.
 
 
   Definition the_rewrites
-             (lems : list (rw_lemma (typ:=typ) (func:=func) (expr typ func) *
+             (lems : list (rw_lemma typ func (expr typ func) *
                            CoreK.rtacK typ (expr typ func)))
-  : expr typ func -> R (typ:=typ) Rbase -> mrw (Progressing (expr typ func)) :=
+  : expr typ func -> R typ Rbase -> mrw (Progressing (expr typ func)) :=
     fun e r =>
       rw_bind
         (@using_rewrite_db typ func _ _ _ _ (expr typ func)
@@ -377,9 +262,9 @@ Definition get_respectful_only_all_ex :=
 
   Definition the_prewrites
              (lems : expr typ func ->
-                     list ((rw_lemma(typ:=typ) (func:=func) (expr typ func) *
-                         CoreK.rtacK typ (expr typ func))))
-  : expr typ func -> R (typ:=typ) Rbase -> mrw (Progressing (expr typ func)) :=
+                     list (rw_lemma typ func (expr typ func) *
+                           CoreK.rtacK typ (expr typ func)))
+  : expr typ func -> R typ Rbase -> mrw (Progressing (expr typ func)) :=
     fun e r =>
       rw_bind
         (@using_prewrite_db lems (Red.beta e) r)
@@ -387,65 +272,14 @@ Definition get_respectful_only_all_ex :=
 
   Definition poly_apply
              (get : ptrn (expr typ func)
-                         (list (rw_lemma (typ:=typ) (func:=func) (expr typ func) *
+                         (list (rw_lemma typ func (expr typ func) *
                                 CoreK.rtacK typ (expr typ func))))
-  : expr typ func -> list (rw_lemma (typ:=typ) (func:=func) (expr typ func)
+  : expr typ func -> list (rw_lemma typ func (expr typ func)
                            * CoreK.rtacK typ (expr typ func)) :=
     run_default get nil.
 
-  (** TODO(gmalecha): Move this *)
-  Definition appl {typ func T U : Type}
-        (f : ptrn (expr typ func) T)
-        (g : ptrn (expr typ func) (T -> U)) : ptrn (expr typ func) U :=
-          fun e _T good bad =>
-      match e with
-      | ExprCore.Var a => bad (ExprCore.Var a)
-      | Inj a => bad (Inj a)
-      | App l r =>
-        Mbind (Mrebuild (fun x => App x r) (f l))
-              (fun x : T =>
-                 Mmap (fun y : T -> U => y x)
-                      (Mrebuild (App l) (g r))) good bad
-      | Abs a b => bad (Abs a b)
-      | ExprCore.UVar a => bad (ExprCore.UVar a)
-      end.
-
-  Theorem ptrn_ok_appl
-  : forall {typ func T U}
-           (f : ptrn (expr typ func) T)
-           (g : ptrn (expr typ func) (T -> U)),
-      ptrn_ok f -> ptrn_ok g ->
-      ptrn_ok (appl f g).
-  Proof using.
-    intros; red.
-    destruct x; simpl;
-    try solve [ right; compute; reflexivity ].
-    destruct (H0 x2) as [ [ ? ? ] | ? ]; clear H0.
-    { destruct (H x1) as [ [ ? ? ] | ? ]; clear H.
-      { left. exists (x x0).
-        unfold Succeeds in *.
-        intros. simpl.
-        unfold Mmap, Mbind, Mrebuild.
-        setoid_rewrite H0. setoid_rewrite H1. reflexivity. }
-      { right.
-        unfold Succeeds, Fails in *.
-        intros; simpl.
-        unfold Mmap, Mbind, Mrebuild.
-        setoid_rewrite H0. reflexivity. } }
-    { right.
-      destruct (H x1) as [ [ ? ? ] | ? ]; clear H.
-      { unfold Succeeds, Fails in *.
-        intros; simpl.
-        unfold Mmap, Mbind, Mrebuild.
-        setoid_rewrite H0. setoid_rewrite H1. reflexivity. }
-      { unfold Succeeds, Fails in *.
-        intros; simpl.
-        unfold Mmap, Mbind, Mrebuild.
-        setoid_rewrite H0. reflexivity. } }
-  Qed.
-
   Definition the_lemmas
-  : expr typ func -> list (rw_lemma (expr typ func) *
+  : expr typ func -> list (rw_lemma typ func (expr typ func) *
                            CoreK.rtacK typ (expr typ func)) :=
     poly_apply (por
                   (appr (appl (inj (ptrn_view _ (fptrnAnd ignore)))
@@ -457,16 +291,16 @@ Definition get_respectful_only_all_ex :=
   (** TODO(gmalecha): Move this **)
   Fixpoint repeatFunc (n : nat)
            (p : expr typ func -> Progressing (expr typ func))
-  : (expr typ func -> R (typ:=typ) (expr typ func) ->
+  : (expr typ func -> R typ (expr typ func) ->
      mrw (Progressing (expr typ func))) ->
-    expr typ func -> R (typ:=typ) (expr typ func) ->
+    expr typ func -> R typ (expr typ func) ->
     mrw (Progressing (expr typ func)) :=
     match n with
     | 0 => fun f e r =>
              rw_bind (f e r)
                      (fun e' =>
                         match e' with
-                        | NoProgress _ => rw_ret (p e)
+                        | NoProgress => rw_ret (p e)
                         | Progress e' => rw_ret (Progress e')
                         end)
     | S n => fun f e r =>
@@ -474,23 +308,484 @@ Definition get_respectful_only_all_ex :=
                  (f e r)
                  (fun e' =>
                     match e' with
-                    | NoProgress _ => rw_ret (p e)
+                    | NoProgress => rw_ret (p e)
                     | Progress e' => repeatFunc n (@Progress _) f e' r
                     end)
     end.
 
-  Require Import MirrorCore.Lambda.Red.
-
   Definition pull_all_quant :=
-    repeatFunc 300 (fun _ => NoProgress _)
+    repeatFunc 300 (fun _ => NoProgress)
                (fun e r =>
-                  bottom_up is_refl is_trans (the_prewrites the_lemmas)
-                            (fun e r => rw_ret (get_respectful e r)) e r).
+                  bottom_up (is_reflR is_refl)
+                            (is_transR is_trans)
+                            (the_prewrites the_lemmas)
+                            (get_respectful) e r).
+
+  Lemma if_entails_sound : forall t X r a b c d e f g h i,
+      @if_entails t X r a b c d e f g = Some (h,i) ->
+      g = i /\ h = X /\ r = Inj (f_insert (ilf_entails t)).
+  Proof.
+    intros. revert H.
+    unfold if_entails.
+    eapply run_default_sound; eauto 100 with typeclass_instances.
+    { intros. ptrnE.
+      eapply Succeeds_ptrn_view in H2; eauto 100 with typeclass_instances.
+      destruct H2 as [ ? [ ? ? ] ].
+      subst. ptrnE.
+      consider (t ?[ eq ] x).
+      { intros. inversion H0; clear H0; subst.
+        split; auto. }
+      { inversion 2. } }
+    { inversion 1. }
+  Qed.
+
+  Lemma acc_fold_right
+    : forall t ts t',
+      TransitiveClosure.leftTrans (tyAcc (typ:=typ))
+                                  t (fold_right (typ2 (F:=Fun)) t (t'::ts)).
+  Proof.
+    induction ts.
+    { simpl; intros. constructor. eapply tyAcc_typ2R; eauto. }
+    { intros. specialize IHts.
+      specialize (IHts a).
+      simpl. eapply TransitiveClosure.leftTrans_rightTrans.
+      eapply TransitiveClosure.RTStep.
+      eapply TransitiveClosure.leftTrans_rightTrans. eassumption.
+      eapply tyAcc_typ2R; eauto. }
+  Qed.
+
+  Lemma Rty_fold_right
+    : forall y x ts,
+      Rty (fold_right (typ2 (F:=Fun)) x ts) (typ2 y x) ->
+      ts = y :: nil.
+  Proof.
+    intros. red in H.
+    destruct ts; simpl in *.
+    { eapply AppN.tyArr_circ_R in H; eauto. destruct H. }
+    eapply typ2_inj in H; eauto.
+    destruct H. destruct H.
+    destruct ts.
+    { reflexivity. }
+    { exfalso.
+      generalize (acc_fold_right x ts t0).
+      assert (well_founded (TransitiveClosure.leftTrans (tyAcc (typ:=typ)))).
+      { eapply Relation.wf_leftTrans.
+        eapply wf_tyAcc; eauto. }
+      intro. eapply Facts.wf_anti_sym in H.
+      rewrite H0 in H1.
+      eapply H. eassumption. }
+  Qed.
+
+  Lemma Rty_fold_right2
+    : forall y x z ts,
+      Rty (fold_right (typ2 (F:=Fun)) x ts) (typ2 y (typ2 z x)) ->
+      ts = y :: z :: nil.
+  Proof.
+    intros. red in H.
+    destruct ts.
+    { exfalso.
+      simpl in *.
+      assert (well_founded (TransitiveClosure.leftTrans (tyAcc (typ:=typ)))).
+      { eapply Relation.wf_leftTrans.
+        eapply wf_tyAcc; eauto. }
+      eapply Facts.wf_anti_sym in H0.
+      eapply H0. instantiate (1 := x).
+      rewrite H at 2.
+      eapply TransitiveClosure.leftTrans_rightTrans.
+      eapply TransitiveClosure.RTStep.
+      2: eapply tyAcc_typ2R; eauto.
+      constructor.
+      eapply tyAcc_typ2R; eauto. }
+    simpl in H.
+    apply typ2_inj in H; eauto. destruct H.
+    destruct H.
+    eapply Rty_fold_right in H0. subst. reflexivity.
+  Qed.
+
+  Lemma RbaseD_entails'
+    : forall t t' rD,
+      RbaseD (Inj (f_insert (ilf_entails t'))) t = Some rD ->
+      t = t' /\
+      exists L,
+        lops t = _Some L /\
+        rD = ILogic.lentails.
+  Proof.
+    unfold RbaseD, exprD; simpl.
+    intros. autorewrite with exprD_rw in H.
+    simpl in H.
+    rewrite <- (@fv_compat _ _ _ _ _ _ _ ViewFuncOk_ilogic) in H.
+    unfold symAs, typeof_sym in H. simpl in H.
+    rewrite castD_option in H.
+    destruct (lops t') eqn:heq; try solve [ inversion H ].
+    forwardy.
+    inv_all. subst.
+    Rty_inv. Rty_inv. split; auto.
+    eexists; split; eauto.
+    rewrite type_cast_refl in H by eauto.
+    inv_all.
+    simpl in H.
+    unfold entailsR. simpl. unfold id.
+    rewrite castDR. auto.
+  Qed.
+
+  Lemma RbaseD_entails
+    : forall t rD,
+      RbaseD (Inj (f_insert (ilf_entails t))) t = Some rD ->
+      exists L,
+        lops t = _Some L /\
+        rD = ILogic.lentails.
+  Proof.
+    unfold RbaseD, exprD; simpl.
+    intros. autorewrite with exprD_rw in H.
+    simpl in H.
+    rewrite <- (@fv_compat _ _ _ _ _ _ _ ViewFuncOk_ilogic) in H.
+    unfold symAs, typeof_sym in H. simpl in H.
+    rewrite castD_option in H.
+    destruct (lops t); try solve [ inversion H ].
+    eexists; split; eauto.
+    rewrite type_cast_refl in H by eauto.
+    inv_all.
+    simpl in H.
+    unfold entailsR in H.
+    rewrite castDR in H. auto.
+  Qed.
+
+  Lemma binary_inference
+  : let rs_log := @RSym_ilfunc typ _ _ _ _ lops in
+    forall (X : ilfunc typ) t x ts r rD x0,
+      (r = Rinj (Inj (f_insert (ilf_entails x))) \/
+       r = Rflip (Rinj (Inj (f_insert (ilf_entails x))))) ->
+      RD RbaseD r t = Some rD ->
+      symAs X (fold_right (typ2 (F:=Fun)) t ts) = Some x0 ->
+      typeof_sym X = Some (typ2 (F:=Fun) x (typ2 (F:=Fun) x x)) ->
+      t = x /\ ts = t :: t :: nil.
+  Proof.
+    unfold symAs, RbaseD, exprD; simpl.
+    destruct 1; simpl; subst; simpl; intros.
+    { generalize dependent (funcD lops X).
+      rewrite H1.
+      intros. forwardy.
+      clear H2 H0.
+      autorewrite with exprD_rw in H. simpl in H.
+      rewrite <- (@fv_compat _ _ _ _ _ _ _ ViewFuncOk_ilogic) in H.
+      unfold symAs, typeof_sym in H; simpl in H.
+      rewrite castD_option in H.
+      destruct (lops x); [ inversion H | ].
+      forwardy.
+      inv_all. subst.
+      Rty_inv. Rty_inv.
+      split; auto.
+      eapply Rty_fold_right2.
+      eauto. }
+    { generalize dependent (funcD lops X).
+      rewrite H1.
+      intros. forwardy.
+      clear H2 H0.
+      autorewrite with exprD_rw in H. simpl in H.
+      rewrite <- (@fv_compat _ _ _ _ _ _ _ ViewFuncOk_ilogic) in H.
+      unfold symAs, typeof_sym in H; simpl in H.
+      rewrite castD_option in H.
+      destruct (lops x); [ inversion H | ].
+      forwardy.
+      inv_all. subst.
+      Rty_inv. Rty_inv.
+      split; auto.
+      eapply Rty_fold_right2.
+      eauto. }
+  Qed.
+
+  (** It would be nice if we could prove this more quickly *)
+  Theorem get_respectful_sound
+  : respectful_spec RbaseD get_respectful.
+  Proof.
+    red. intros.
+    generalize dependent e. intro.
+    unfold get_respectful.
+    eapply run_default_sound.
+    { eauto 100 with typeclass_instances. }
+    { intros.
+      ptrnE.
+      eapply Succeeds_ptrn_view in H3; eauto 100 with typeclass_instances.
+      destruct H3 as [ ? [ ? ? ] ].
+      repeat (ptrnE; try match goal with
+                         | H : _ \/ _ |- _ => destruct H
+                         end).
+      { assert (exists X, (r = Rinj X \/ r = Rflip (Rinj X)) /\
+                   if_entails t0 (Rpointwise t r :: nil) X tvs' (getUVars ctx) (getVars ctx) (length (getUVars ctx))
+                              (length (getVars ctx)) cs = Some (rs, cs')).
+        { destruct r; eauto; try solve [ inversion H1 ].
+          destruct r; eauto; try solve [ inversion H1 ]. }
+        clear H1. destruct H. destruct H.
+        eapply if_entails_sound in H1.
+        destruct H1 as [ ? [ ? ? ] ]. subst.
+        split; auto. intros.
+        forward.
+        simpl.
+        autorewrite with exprD_rw in H2. simpl in H2.
+        forwardy. inv_all. subst.
+
+        assert (t1 = t0 /\ ts = typ2 t t0 :: nil).
+        { eapply ExprFacts.symAs_typeof_sym in H3.
+          simpl in H3.
+          destruct (lops t0) eqn:Heq; [ inversion H3 | ].
+          inv_all.
+          assert (t1 = t0).
+          { destruct H; subst.
+            simpl in H1.
+            eapply RbaseD_entails' in H1; tauto.
+            simpl in H1.
+            forwardy.
+            eapply RbaseD_entails' in H; tauto. }
+          subst. split; auto.
+          eapply Rty_fold_right. symmetry. eassumption. }
+        destruct H4; subst.
+        simpl.
+        repeat rewrite typ2_match_iota by eauto.
+        rewrite type_cast_refl by eauto.
+        rewrite H1.
+        autorewrite_with_eq_rw.
+        split; [ reflexivity | ].
+        intros.
+        eapply Pure_pctxD; eauto. intros.
+        unfold Morphisms.Proper.
+        autorewrite_with_eq_rw.
+
+        destruct H; subst.
+        { eapply RbaseD_entails in H1.
+          destruct H1 as [ ? [ ? ? ] ].
+          subst.
+          unfold symAs in H3.
+          simpl in H3.
+          rewrite H in H3.
+          rewrite type_cast_refl in H3 by eauto.
+          inv_all. subst.
+          simpl.
+          unfold respectful, existsR.
+          specialize (lopsOk t0). rewrite H in lopsOk.
+          clear - lopsOk.
+          unfold castR. simpl.
+          generalize (typ2_cast (typ2 t t0) t0).
+          generalize (typ2_cast t t0).
+          generalize (typD (typ2 t t0)).
+          generalize (typD (typ2 (typ2 t t0) t0)).
+          intros; subst. simpl in *.
+          eapply ILogic.lexists_lentails_m.
+          red. intros. eapply H. }
+        { simpl in H1. forwardy.
+          eapply RbaseD_entails in H.
+          destruct H as [ ? [ ? ? ] ].
+          subst.
+          unfold symAs in H3.
+          simpl in H3.
+          rewrite H in H3.
+          rewrite type_cast_refl in H3 by eauto.
+          inv_all. subst.
+          simpl.
+          unfold respectful, existsR.
+          specialize (lopsOk t0). rewrite H in lopsOk.
+          clear - lopsOk.
+          unfold castR. simpl.
+          generalize (typ2_cast (typ2 t t0) t0).
+          generalize (typ2_cast t t0).
+          generalize (typD (typ2 t t0)).
+          generalize (typD (typ2 (typ2 t t0) t0)).
+          intros; subst. simpl in *.
+          eapply ILogic.lexists_lentails_m.
+          red. intros. eapply H. } }
+      { (* AND *)
+        assert (exists X, (r = Rinj X \/ r = Rflip (Rinj X)) /\
+                   if_entails x (r :: r :: nil) X tvs' (getUVars ctx) (getVars ctx) (length (getUVars ctx))
+                              (length (getVars ctx)) cs = Some (rs, cs')).
+        { destruct r; eauto; try solve [ inversion H1 ].
+          destruct r; eauto; try solve [ inversion H1 ]. }
+        clear H1. destruct H. destruct H.
+        eapply if_entails_sound in H1.
+        destruct H1 as [ ? [ ? ? ] ]. subst.
+        split; auto. intros.
+        forward.
+        simpl.
+        autorewrite with exprD_rw in H2. simpl in H2.
+        forwardy. inv_all. subst.
+        generalize (@binary_inference (ilf_and x) _ _ _ _ _ _ H H1 H3).
+        unfold symAs, typeof_sym in H3; simpl in H3.
+        simpl.
+        destruct (lops x) eqn:Hlops; try solve [ inversion H3 ].
+        intro Hx; specialize (Hx eq_refl); destruct Hx; subst.
+        simpl.
+        rewrite type_cast_refl in * by eauto.
+        inv_all. subst.
+        repeat rewrite typ2_match_iota by eauto.
+        rewrite H1.
+        autorewrite_with_eq_rw.
+        split; [ reflexivity | ].
+        intros.
+        eapply Pure_pctxD; eauto. intros.
+        unfold Morphisms.Proper.
+        autorewrite_with_eq_rw.
+
+        destruct H; subst.
+        { eapply RbaseD_entails in H1.
+          destruct H1 as [ ? [ ? ? ] ].
+          rewrite Hlops in H. inversion H; clear H; subst.
+          specialize (lopsOk x).
+          rewrite Hlops in lopsOk.
+          clear - lopsOk.
+          unfold respectful, andR, castR. simpl.
+          generalize (typ2_cast x (typ2 x x)).
+          generalize (typ2_cast x x).
+          generalize (typD (typ2 x x)).
+          generalize (typD (typ2 x (typ2 x x))).
+          intros; subst; simpl.
+          intros. rewrite H. rewrite H0. reflexivity. }
+        { simpl in H1. forwardy.
+          eapply RbaseD_entails in H.
+          destruct H as [ ? [ ? ? ] ].
+          inv_all; subst.
+          specialize (lopsOk x).
+          rewrite Hlops in lopsOk.
+          rewrite Hlops in H. inversion H. subst.
+          clear - lopsOk.
+          unfold respectful, andR, castR. simpl.
+          generalize (typ2_cast x (typ2 x x)).
+          generalize (typ2_cast x x).
+          generalize (typD (typ2 x x)).
+          generalize (typD (typ2 x (typ2 x x))).
+          intros; subst; simpl.
+          intros. unfold flip in *.
+          rewrite H. rewrite H0. reflexivity. } }
+      { (* OR *)
+        assert (exists X, (r = Rinj X \/ r = Rflip (Rinj X)) /\
+                   if_entails x (r :: r :: nil) X tvs' (getUVars ctx) (getVars ctx) (length (getUVars ctx))
+                              (length (getVars ctx)) cs = Some (rs, cs')).
+        { destruct r; eauto; try solve [ inversion H1 ].
+          destruct r; eauto; try solve [ inversion H1 ]. }
+        clear H1. destruct H. destruct H.
+        eapply if_entails_sound in H1.
+        destruct H1 as [ ? [ ? ? ] ]. subst.
+        split; auto. intros.
+        forward.
+        simpl.
+        autorewrite with exprD_rw in H2. simpl in H2.
+        forwardy. inv_all. subst.
+        generalize (@binary_inference (ilf_or x) _ _ _ _ _ _ H H1 H3).
+        unfold symAs, typeof_sym in H3; simpl in H3.
+        simpl.
+        destruct (lops x) eqn:Hlops; try solve [ inversion H3 ].
+        intro Hx; specialize (Hx eq_refl); destruct Hx; subst.
+        simpl.
+        rewrite type_cast_refl in * by eauto.
+        inv_all. subst.
+        repeat rewrite typ2_match_iota by eauto.
+        rewrite H1.
+        autorewrite_with_eq_rw.
+        split; [ reflexivity | ].
+        intros.
+        eapply Pure_pctxD; eauto. intros.
+        unfold Morphisms.Proper.
+        autorewrite_with_eq_rw.
+
+        destruct H; subst.
+        { eapply RbaseD_entails in H1.
+          destruct H1 as [ ? [ ? ? ] ].
+          rewrite Hlops in H. inversion H; clear H; subst.
+          specialize (lopsOk x).
+          rewrite Hlops in lopsOk.
+          clear - lopsOk.
+          unfold respectful, orR, castR. simpl.
+          generalize (typ2_cast x (typ2 x x)).
+          generalize (typ2_cast x x).
+          generalize (typD (typ2 x x)).
+          generalize (typD (typ2 x (typ2 x x))).
+          intros; subst; simpl.
+          intros. rewrite H. rewrite H0. reflexivity. }
+        { simpl in H1. forwardy.
+          eapply RbaseD_entails in H.
+          destruct H as [ ? [ ? ? ] ].
+          inv_all; subst.
+          specialize (lopsOk x).
+          rewrite Hlops in lopsOk.
+          rewrite Hlops in H. inversion H. subst.
+          clear - lopsOk.
+          unfold respectful, orR, castR. simpl.
+          generalize (typ2_cast x (typ2 x x)).
+          generalize (typ2_cast x x).
+          generalize (typD (typ2 x x)).
+          generalize (typD (typ2 x (typ2 x x))).
+          intros; subst; simpl.
+          intros. unfold flip in *.
+          rewrite H. rewrite H0. reflexivity. } }
+      { (* Implication *)
+        assert (exists X, (r = Rinj X \/ r = Rflip (Rinj X)) /\
+                   if_entails x (Rflip' r :: r :: nil) X tvs' (getUVars ctx) (getVars ctx) (length (getUVars ctx))
+                              (length (getVars ctx)) cs = Some (rs, cs')).
+        { destruct r; eauto; try solve [ inversion H1 ].
+          destruct r; eauto; try solve [ inversion H1 ]. }
+        clear H1. destruct H. destruct H.
+        eapply if_entails_sound in H1.
+        destruct H1 as [ ? [ ? ? ] ]. subst.
+        split; auto. intros.
+        forward.
+        simpl.
+        autorewrite with exprD_rw in H2. simpl in H2.
+        forwardy. inv_all. subst.
+        generalize (@binary_inference (ilf_impl x) _ _ _ _ _ _ H H1 H3).
+        unfold symAs, typeof_sym in H3; simpl in H3.
+        simpl.
+        destruct (lops x) eqn:Hlops; try solve [ inversion H3 ].
+        intro Hx; specialize (Hx eq_refl); destruct Hx; subst.
+        simpl.
+        rewrite type_cast_refl in * by eauto.
+        inv_all. subst.
+        repeat rewrite typ2_match_iota by eauto.
+        rewrite RD_Rflip'_Rflip. simpl.
+        rewrite H1.
+        autorewrite_with_eq_rw.
+        split; [ reflexivity | ].
+        intros.
+        eapply Pure_pctxD; eauto. intros.
+        unfold Morphisms.Proper.
+        autorewrite_with_eq_rw.
+
+        destruct H; subst.
+        { eapply RbaseD_entails in H1.
+          destruct H1 as [ ? [ ? ? ] ].
+          rewrite Hlops in H. inversion H; clear H; subst.
+          specialize (lopsOk x).
+          rewrite Hlops in lopsOk.
+          clear - lopsOk.
+          unfold respectful, implR, castR. simpl.
+          generalize (typ2_cast x (typ2 x x)).
+          generalize (typ2_cast x x).
+          generalize (typD (typ2 x x)).
+          generalize (typD (typ2 x (typ2 x x))).
+          intros; subst; simpl.
+          unfold flip in *.
+          intros. rewrite <- H. rewrite H0. reflexivity. }
+        { simpl in H1. forwardy.
+          eapply RbaseD_entails in H.
+          destruct H as [ ? [ ? ? ] ].
+          inv_all; subst.
+          specialize (lopsOk x).
+          rewrite Hlops in lopsOk.
+          rewrite Hlops in H. inversion H. subst.
+          clear - lopsOk.
+          unfold respectful, implR, castR. simpl.
+          generalize (typ2_cast x (typ2 x x)).
+          generalize (typ2_cast x x).
+          generalize (typD (typ2 x x)).
+          generalize (typD (typ2 x (typ2 x x))).
+          intros; subst; simpl.
+          intros. unfold flip in *.
+          rewrite <- H. rewrite H0. reflexivity. } } }
+    { inversion 1. }
+  Qed.
 
   Definition quant_pull (l : typ) (e : expr typ func)
   : mrw (Progressing (expr typ func)) :=
-    bottom_up is_refl is_trans (pull_all_quant)
-              (fun e r => rw_ret (get_respectful e r))
+    bottom_up (is_reflR is_refl)
+              (is_transR is_trans)
+              (pull_all_quant)
+              get_respectful
               e (Rinj (Inj (fEntails l))).
 
 (*

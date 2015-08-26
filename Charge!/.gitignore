@@ -1,1 +1,11 @@
-/bin
+bin
+Makefile.coq
+*.v.d
+*.glob
+*.aux
+#*#
+ChargeCore
+coq-ext-lib
+mirror-core
+_CoqProject
+_CoqPath

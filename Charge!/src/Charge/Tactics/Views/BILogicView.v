@@ -1,3 +1,6 @@
+Require Import Coq.Strings.String.
+Require Import Coq.Bool.Bool.
+
 Require Import ExtLib.Core.RelDec.
 Require Import ExtLib.Data.Fun.
 Require Import ExtLib.Tactics.
@@ -18,11 +21,10 @@ Require Import MirrorCore.Views.Ptrns.
 Require Import ChargeCore.Logics.ILogic.
 Require Import ChargeCore.Logics.BILogic.
 
-Require Import Charge.Views.ILogicView.
+Require Import Charge.Tactics.Views.ILogicView.
 
-Require Import Coq.Strings.String.
-Require Import Coq.Bool.Bool.
-Require Import FunctionalExtensionality.
+Require Import Coq.Logic.FunctionalExtensionality.
+
 
 Set Implicit Arguments.
 Set Strict Implicit.
@@ -60,7 +62,7 @@ Section BILogicFuncInst.
     
   Definition bilogic_opsOk (l : bilogic_ops) : Prop :=
     forall g, match is g, l g return Prop with
-                | Some T, Some U => BILogic (typD g)
+                | _Some T, Some U => BILogic (typD g)
                 | _, _ => True
               end.
 
