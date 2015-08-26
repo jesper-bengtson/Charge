@@ -1,18 +1,13 @@
 -Q src/Charge Charge
+<<<<<<< HEAD:Charge!/_CoqProject
 -Q coq-ext-lib/theories ExtLib
 -Q mirror-core/theories MirrorCore
 -Q ChargeCore/bin/ChargeCore ChargeCore
 -Q /Users/jebe/coq/user-contrib ""
 
+=======
+>>>>>>> 78eba388e676b4efcb4417d9f834a1c1990d2092:Charge!/_CoqConfig
 -arg -type-in-type
-
-KOPITIAM_0 = "SourceLoadPath src"
-KOPITIAM_1 = "DefaultOutput bin"
-KOPITIAM_2 = "AbstractLoadPath dk.itu.sdg.kopitiam/lp/coq/8.4"
-KOPITIAM_3 = "ExternalLoadPath /Users/jebe/git/coq-ext-lib/theories ExtLib"
-KOPITIAM_4 = "ExternalLoadPath /Users/jebe/git/mirror-core/theories MirrorCore"
-KOPITIAM_5 = "ExternalLoadPath /Users/jebe/git/mirror-core/src"
-KOPITIAM_6 = "ProjectLoadPath ChargeCore"
 
 src/Charge/SepAlg/SepAlgMap.v
 src/Charge/Tactics/Rtac/Intro.v
@@ -33,5 +28,5 @@ src/Charge/Tactics/Iterated.v
 src/Charge/Tactics/PullQuant/PullQuantRtac.v
 src/Charge/Tactics/Views/BILogicView.v
 src/Charge/Tactics/Views/EmbedView.v
-src/Charge/Tactics/Views/ILogicViewView.v
+src/Charge/Tactics/Views/ILogicView.v
 src/Charge/Tactics/Views/SubstView.v
