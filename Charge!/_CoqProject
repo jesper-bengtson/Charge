@@ -2,6 +2,7 @@
 -Q coq-ext-lib/theories ExtLib
 -Q mirror-core/theories MirrorCore
 -Q ChargeCore/bin/ChargeCore ChargeCore
+-Q /Users/jebe/coq/user-contrib ""
 
 -arg -type-in-type
 

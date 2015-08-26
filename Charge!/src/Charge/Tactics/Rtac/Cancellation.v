@@ -12,8 +12,8 @@ Require Import Charge.Tactics.OrderedCanceller.
 Require Import Charge.Tactics.BILNormalize.
 Require Import Charge.Tactics.SynSepLog.
 Require Import Charge.Tactics.SepLogFoldWithAnd.
-Require Import Charge.Tactics.Views.ILogicView.
-Require Import Charge.Tactics.Views.BILogicView.
+Require Import Charge.Views.ILogicView.
+Require Import Charge.Views.BILogicView.
 
 Require Import MirrorCore.Views.FuncView.
 Require Import MirrorCore.Views.Ptrns.

@@ -7,7 +7,9 @@ Require Import MirrorCore.Views.Ptrns.
 Require Import MirrorCore.Lambda.Ptrns.
 Require Import MirrorCore.Views.FuncView.
 Require Import MirrorCore.RTac.IdtacK.
-Require Import Charge.Tactics.Views.ILogicView.
+(*
+Set Printing Universes.
+Require Import Charge.Views.ILogicView.
 
 Set Implicit Arguments.
 Set Strict Implicit.
@@ -501,3 +503,4 @@ Definition get_respectful_only_all_ex :=
        end.
 *)
 End parametric.
+*)

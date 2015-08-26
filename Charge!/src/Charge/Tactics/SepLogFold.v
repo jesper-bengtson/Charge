@@ -7,7 +7,8 @@ Require Import ExtLib.Data.List.
 Require Import ExtLib.Data.Option.
 Require Import ExtLib.Structures.Traversable.
 Require Import ExtLib.Tactics.
-Require Import BILogic Pure.
+Require Import ChargeCore.Logics.BILogic.
+Require Import ChargeCore.Logics.Pure.
 Require Import MirrorCore.EnvI.
 Require Import MirrorCore.SymI.
 Require Import MirrorCore.TypesI.

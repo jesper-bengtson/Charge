@@ -2,7 +2,9 @@
  **)
 Require Import Coq.Classes.Morphisms.
 Require Import ExtLib.Tactics.
-Require Import BILogic ILogic Pure.
+Require Import ChargeCore.Logics.ILogic.
+Require Import ChargeCore.Logics.BILogic.
+Require Import ChargeCore.Logics.Pure.
 Require Import MirrorCore.EnvI.
 Require Import MirrorCore.SymI.
 Require Import MirrorCore.TypesI.

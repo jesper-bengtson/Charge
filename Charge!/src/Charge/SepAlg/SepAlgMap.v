@@ -1,3 +1,5 @@
+
+
 Require Import Containers.Maps.
 Require Import Coq.Strings.String Ascii.
 Require Import Compare_dec.
@@ -591,3 +593,4 @@ Lemma map_sa_mul_combined_subheap {A : Type} {a a1 a2 b : Map [K, A]}
 Qed.
 
 End SepAlgMap.
+
