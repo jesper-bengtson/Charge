@@ -14,6 +14,8 @@ Require Import MirrorCore.Lambda.Expr.
 Require Import MirrorCore.Lambda.ExprVariables.
 Require Import MirrorCore.Lambda.ExprTac.
 Require Import MirrorCore.Lambda.Ptrns.
+Require Import MirrorCore.Lambda.RedAll.
+Require Import MirrorCore.Lambda.AppN.
 Require Import MirrorCore.SymI.
 Require Import MirrorCore.syms.SymSum.
 Require Import MirrorCore.Views.FuncView.
@@ -22,6 +24,7 @@ Require Import MirrorCore.Views.ApplicativeView.
 Require Import MirrorCore.Views.StringView.
 Require Import MirrorCore.Views.ListView.
 Require Import MirrorCore.Views.ProdView.
+Require Import MirrorCore.RTac.RTac.
 
 Require Import Charge.Views.ILogicView.
 Require Import Charge.Views.BILogicView.
@@ -123,9 +126,8 @@ Section SubstFuncInst.
     repeat rewrite rel_dec_correct; try intuition congruence.
   Qed.
   
-	
   Definition stack_getR : typD (tyArr tyVar (tyArr tyStack tyVal)) :=
-    castR id (Fun var (Fun Tstack val)) (fun x s => s x).
+    castR id (Fun var (Fun Tstack val)) stack_get.
 
   Definition stack_setR : typD (tyArr tyVar (tyArr tyVal (tyArr tyStack tyStack))) :=
     castR id (Fun var (Fun val (Fun Tstack Tstack))) stack_add.
@@ -188,7 +190,7 @@ Section MakeSubst.
   Definition fTruncSubst := f_insert of_trunc_subst.
   
   Definition mkNull : expr typ func := Inj fNull.
-  Definition mkStackGet : expr typ func := Inj fStackGet.
+  Definition mkStackGet x : expr typ func := App (Inj fStackGet) x.
   Definition mkStackSet : expr typ func := Inj fStackSet.
   Definition mkApplySubst t : expr typ func := Inj (fApplySubst t).
   Definition mkSingleSubst : expr typ func := Inj fSingleSubst.
@@ -553,11 +555,11 @@ Section SubstTac.
   
   
   Definition red_apply_subst (x : string) (f : expr typ func) : expr typ func :=
-    run_tptrn (pdefault (por (pmap (fun y_e => let '(y, e) := y_e in
-                                               if x ?[ eq ] y then e else mkString x)
-                                   (ptrnSingleSubst (ptrnString Ptrns.get) Ptrns.get))
+    run_tptrn (pdefault (por (pmap (fun e_y => let '(e, y) := e_y in
+                                               if x ?[ eq ] y then e else mkStackGet (mkString x))
+                                   (ptrnSingleSubst Ptrns.get (ptrnString Ptrns.get)))
                              (pmap (fun sub => do_subst x sub) (ptrnSubst Ptrns.get)))
-                        (mkString x)) f.
+                        (mkStackGet (mkString x))) f.
   Definition rop {X T : Type} (l r : ptrn X T) := por r l.
   
   Definition red_push_substF
@@ -570,7 +572,7 @@ Section SubstTac.
                                                            fptrnStackGet)))
                             (inj (ptrn_view FV_string (fptrnString Ptrns.get))))
                       (por (applicative_ptrn_cases
-                              (fun _ e => e)
+                              (fun t e => mkPure t e)
                               (fun t u p q =>
                                  mkAp t u
                                       (red_push_subst (tyArr t u) p sub)
@@ -607,7 +609,7 @@ Section SubstTac.
                                                          fptrnStackGet)))
                           (inj (ptrn_view FV_string (fptrnString Ptrns.get))))
                     (por (applicative_ptrn_cases
-                            (fun _ e => e)
+                            (fun t e => mkPure t e)
                             (fun t u p q =>
                                mkAp t u
                                     (red_push_subst (tyArr t u) p sub)
@@ -642,4 +644,5 @@ Section SubstTac.
                                        red_push_subst t e sub)
                        (ptrnApplySubst Ptrns.get Ptrns.get Ptrns.get))).
 
+  Definition SUBST := SIMPLIFY (typ := typ) (fun _ _ _ _ => beta_all (fun x e args => red_subst (apps e args))).
 End SubstTac.
