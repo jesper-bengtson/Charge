@@ -7,7 +7,7 @@ Require Import MirrorCore.Views.Ptrns.
 Require Import MirrorCore.Lambda.Ptrns.
 Require Import MirrorCore.Views.FuncView.
 Require Import MirrorCore.RTac.IdtacK.
-(*
+
 Set Printing Universes.
 Require Import Charge.Views.ILogicView.
 
@@ -798,4 +798,4 @@ Section parametric.
        end.
 *)
 End parametric.
-*)
+
