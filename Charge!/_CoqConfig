@@ -1,12 +1,4 @@
 -Q src/Charge Charge
-<<<<<<< HEAD:Charge!/_CoqProject
--Q coq-ext-lib/theories ExtLib
--Q mirror-core/theories MirrorCore
--Q ChargeCore/bin/ChargeCore ChargeCore
--Q /Users/jebe/coq/user-contrib ""
-
-=======
->>>>>>> 78eba388e676b4efcb4417d9f834a1c1990d2092:Charge!/_CoqConfig
 -arg -type-in-type
 
 src/Charge/SepAlg/SepAlgMap.v
@@ -26,7 +18,7 @@ src/Charge/Tactics/OrderedCanceller.v
 src/Charge/Tactics/BILNormalize.v
 src/Charge/Tactics/Iterated.v
 src/Charge/Tactics/PullQuant/PullQuantRtac.v
-src/Charge/Tactics/Views/BILogicView.v
-src/Charge/Tactics/Views/EmbedView.v
-src/Charge/Tactics/Views/ILogicView.v
-src/Charge/Tactics/Views/SubstView.v
+src/Charge/Views/BILogicView.v
+src/Charge/Views/EmbedView.v
+src/Charge/Views/ILogicView.v
+src/Charge/Views/SubstView.v
