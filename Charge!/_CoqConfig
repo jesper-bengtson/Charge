@@ -1,12 +1,4 @@
 -Q src/Charge Charge
-<<<<<<< HEAD:Charge!/_CoqProject
--Q coq-ext-lib/theories ExtLib
--Q mirror-core/theories MirrorCore
--Q ChargeCore/bin/ChargeCore ChargeCore
--Q /Users/jebe/coq/user-contrib ""
-
-=======
->>>>>>> 78eba388e676b4efcb4417d9f834a1c1990d2092:Charge!/_CoqConfig
 -arg -type-in-type
 
 src/Charge/SepAlg/SepAlgMap.v
