@@ -18,7 +18,7 @@ src/Charge/Tactics/OrderedCanceller.v
 src/Charge/Tactics/BILNormalize.v
 src/Charge/Tactics/Iterated.v
 src/Charge/Tactics/PullQuant/PullQuantRtac.v
-src/Charge/Tactics/Views/BILogicView.v
-src/Charge/Tactics/Views/EmbedView.v
-src/Charge/Tactics/Views/ILogicView.v
-src/Charge/Tactics/Views/SubstView.v
+src/Charge/Views/BILogicView.v
+src/Charge/Views/EmbedView.v
+src/Charge/Views/ILogicView.v
+src/Charge/Views/SubstView.v
