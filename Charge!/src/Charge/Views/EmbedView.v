@@ -34,7 +34,7 @@ Section EmbedFuncInst.
   Context {RType_typ : RType typ} {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
   Context {RType_typOk : RTypeOk}.
 
-  Context {Typ2_tyArr : Typ2 _ Fun}.
+  Context {Typ2_tyArr : Typ2 _ RFun}.
   Context {Typ0_tyProp : Typ0 _ Prop}.
 
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
@@ -78,7 +78,7 @@ Section EmbedFuncInst.
   Qed.
 
  Definition embedD t u (EIL : EmbedOp (typD t) (typD u)) := 
-   castR id (Fun (typD t) (typD u)) (@embed _ _ EIL).
+   castR id (RFun (typD t) (typD u)) (@embed _ _ EIL).
 
  Definition funcD (f : embed_func typ) : match typeof_embed_func f return Type with
 					 | Some t => typD t

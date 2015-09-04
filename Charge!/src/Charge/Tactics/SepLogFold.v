@@ -2,7 +2,6 @@
  ** makes star, emp, and pure assertions apparent.
  **)
 (* Require Import ExtLib.Data.Positive. *)
-Require Import ExtLib.Data.Fun.
 Require Import ExtLib.Data.List.
 Require Import ExtLib.Data.Option.
 Require Import ExtLib.Structures.Traversable.
@@ -24,7 +23,7 @@ Set Strict Implicit.
 Section seplog_fold.
   Variable typ : Type.
   Variable RType_typ : RType typ.
-  Variable Typ2_Fun : Typ2 _ Fun.
+  Variable Typ2_Fun : Typ2 _ RFun.
   Variable sym : Type.
   Variable RSym_sym : RSym sym.
 

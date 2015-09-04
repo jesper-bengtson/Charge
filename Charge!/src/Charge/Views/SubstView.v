@@ -1,6 +1,5 @@
 Require Import ExtLib.Core.RelDec.
 Require Import ExtLib.Structures.Applicative.
-Require Import ExtLib.Data.Fun.
 Require Import ExtLib.Data.String.
 Require Import ExtLib.Data.Map.FMapPositive.
 Require Import ExtLib.Data.SumN.
@@ -63,7 +62,7 @@ Section SubstFuncInst.
 
   Context {Typ0_tyVal : Typ0 _ val}.
   Context {Typ0_tyVar : Typ0 _ var}.
-  Context {Typ2_tyArr : Typ2 _ Fun}.
+  Context {Typ2_tyArr : Typ2 _ RFun}.
   Context {Typ2_tyProd : Typ2 _ prod}.
   Context {Typ1_tyList : Typ1 _ list}.
   Context {Typ0_tyProp : Typ0 _ Prop}.
@@ -80,9 +79,9 @@ Section SubstFuncInst.
   Local Notation "'tyExpr'" := (tyArr tyStack tyVal).
   Local Notation "'tySubstList'" := (tyList (tyProd tyVar (tyArr tyStack tyVal))).
 
-  Local Notation "'Tstack'" := (Fun var val).
-  Local Notation "'Tsubst'" := (Fun var (Fun (Fun var val) val)).
-  Local Notation "'Texpr'" := (Fun (Fun var val) val).
+  Local Notation "'Tstack'" := (RFun var val).
+  Local Notation "'Tsubst'" := (RFun var (RFun (RFun var val) val)).
+  Local Notation "'Texpr'" := (RFun (RFun var val) val).
   Local Notation "'Tsubstlist'" := (list (var * Texpr)).
         
   Definition stack := @stack (typD tyVar) (typD tyVal).
@@ -127,24 +126,24 @@ Section SubstFuncInst.
   Qed.
   
   Definition stack_getR : typD (tyArr tyVar (tyArr tyStack tyVal)) :=
-    castR id (Fun var (Fun Tstack val)) stack_get.
+    castR id (RFun var (RFun Tstack val)) stack_get.
 
   Definition stack_setR : typD (tyArr tyVar (tyArr tyVal (tyArr tyStack tyStack))) :=
-    castR id (Fun var (Fun val (Fun Tstack Tstack))) stack_add.
+    castR id (RFun var (RFun val (RFun Tstack Tstack))) stack_add.
   
   Definition applySubstR (t : typ) : typD (tyArr (tyArr tyStack t) 
                                                  (tyArr tySubst (tyArr tyStack t))) :=
-    castR id (Fun (Fun Tstack (typD t)) (Fun Tsubst (Fun Tstack (typD t)))) 
+    castR id (RFun (RFun Tstack (typD t)) (RFun Tsubst (RFun Tstack (typD t)))) 
           apply_subst.
 
   Definition singleSubstR : typD (tyArr tyExpr (tyArr tyVar tySubst)) :=
-    castR id (Fun Texpr (Fun var Tsubst)) subst1.
+    castR id (RFun Texpr (RFun var Tsubst)) subst1.
 
   Definition parSubstR : typD (tyArr tySubstList tySubst) :=
-    castR id (Fun Tsubstlist Tsubst) substl_aux.
+    castR id (RFun Tsubstlist Tsubst) substl_aux.
 
   Definition truncSubstR : typD (tyArr tySubstList tySubst) :=
-    castR id (Fun Tsubstlist Tsubst) substl_trunc_aux.
+    castR id (RFun Tsubstlist Tsubst) substl_trunc_aux.
 	   
   Definition open_func_symD f : match typeof_subst_func f return Type with
 	                        | Some t => typD t
@@ -509,7 +508,7 @@ Section SubstTac.
 
   Context {Typ0_tyVal : Typ0 _ val}.
   Context {Typ0_tyString : Typ0 _ string}.
-  Context {Typ2_tyArr : Typ2 _ Fun}.
+  Context {Typ2_tyArr : Typ2 _ RFun}.
   Context {Typ2_tyProd : Typ2 _ prod}.
   Context {Typ1_tyList : Typ1 _ list}.
   Context {Typ0_tyProp : Typ0 _ Prop}.
