@@ -12,7 +12,7 @@ Section AutoTac.
 	Context {typ func : Type}.
 	Context {RType_typ : RType typ}.
 	Context {Typ0_typ : Typ0 RType_typ Prop}.
-	Context {Typ2_typ : Typ2 RType_typ Fun}.
+	Context {Typ2_typ : Typ2 RType_typ (fun A B : Type => A -> B)}.
 	Context {RSym_func : @RSym _ RType_typ func}.
 	Context {E : Expr RType_typ (expr typ func)}.
 	Context {EU : ExprUVar (expr typ func)}.
