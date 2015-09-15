@@ -1,5 +1,4 @@
 Require Import ExtLib.Core.RelDec.
-Require Import ExtLib.Data.Fun.
 Require Import ExtLib.Data.Nat.
 Require Import ExtLib.Data.Bool.
 Require Import ExtLib.Data.String.
@@ -54,7 +53,7 @@ Section ILogicFuncInst.
   Context {typ func : Type}.
   Context {HR : RType typ} {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
 
-  Context {Typ2_tyArr : Typ2 _ Fun}.
+  Context {Typ2_tyArr : Typ2 _ RFun}.
   Context {Typ0_tyProp : Typ0 _ Prop}.
 
   Context {Typ2Ok_tyArr : Typ2Ok Typ2_tyArr}.
@@ -191,7 +190,7 @@ Section ILogicFuncInst.
     generalize dependent (typD u).
     intros; subst.
     destruct ilpOk as [HTrue _].
-    unfold Fun in *.
+    unfold RFun in *.
 	apply functional_extensionality; intros; rewrite HTrue; reflexivity.
   Qed.    
 
@@ -240,7 +239,7 @@ Section ILogicFuncInst.
     generalize dependent (typD u).
     intros; subst.
     destruct ilpOk as [_ [HFalse _]].
-    unfold Fun in *.
+    unfold RFun in *.
 	apply functional_extensionality; intros; rewrite HFalse; reflexivity.
   Qed.    
 
@@ -439,17 +438,17 @@ Section ILogicFuncInst.
  Definition trueR {t : typ} {IL : ILogicOps (typD t)} := @ltrue (typD t) IL.
  Definition falseR {t : typ} {IL : ILogicOps (typD t)} := @lfalse (typD t) IL.
  Definition andR {t : typ} {IL : ILogicOps (typD t)} :=
-   castR id (Fun (typD t) (Fun (typD t) (typD t))) (@land (typD t) IL).
+   castR id (RFun (typD t) (RFun (typD t) (typD t))) (@land (typD t) IL).
  Definition orR {t : typ} {IL : ILogicOps (typD t)} :=
-   castR id (Fun (typD t) (Fun (typD t) (typD t))) (@lor (typD t) IL).
+   castR id (RFun (typD t) (RFun (typD t) (typD t))) (@lor (typD t) IL).
  Definition implR {t : typ} {IL : ILogicOps (typD t)} :=
-   castR id (Fun (typD t) (Fun (typD t) (typD t))) (@limpl (typD t) IL).
+   castR id (RFun (typD t) (RFun (typD t) (typD t))) (@limpl (typD t) IL).
  Definition entailsR {t : typ} {IL : ILogicOps (typD t)} :=
-   castR id (Fun (typD t) (Fun (typD t) Prop)) (@lentails (typD t) IL).
+   castR id (RFun (typD t) (RFun (typD t) Prop)) (@lentails (typD t) IL).
  Definition existsR {t u : typ} {IL : ILogicOps (typD t)} :=
-   castR id (Fun (Fun (typD u) (typD t)) (typD t)) (@lexists (typD t) IL (typD u)).
+   castR id (RFun (RFun (typD u) (typD t)) (typD t)) (@lexists (typD t) IL (typD u)).
  Definition forallR {t u : typ} {IL : ILogicOps (typD t)} :=
-   castR id (Fun (Fun (typD u) (typD t)) (typD t)) (@lforall (typD t) IL (typD u)).
+   castR id (RFun (RFun (typD u) (typD t)) (typD t)) (@lforall (typD t) IL (typD u)).
  
  Implicit Arguments trueR [[t] [IL]].
  Implicit Arguments falseR [[t] [IL]].

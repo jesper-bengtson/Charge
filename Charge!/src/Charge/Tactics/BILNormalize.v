@@ -76,7 +76,7 @@ End lemmas.
 Section conjunctives.
   Variable typ : Type.
   Variable RType_typ : RType typ.
-  Variable Typ2_Fun : Typ2 _ Fun.
+  Variable Typ2_Fun : Typ2 _ RFun.
   Variable sym : Type.
   Variable RSym_sym : RSym sym.
 

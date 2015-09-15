@@ -20,7 +20,7 @@ Section parametric.
   Context {RTypeOk_typ : RTypeOk}.
   Context {RSym_func : RSym func}.
   Context {RSymOk_func : RSymOk RSym_func}.
-  Context {Typ2_Fun : Typ2 _ Fun}.
+  Context {Typ2_Fun : Typ2 _ RFun}.
   Context {Typ2Ok_Fun : Typ2Ok Typ2_Fun}.
   Context {Typ0_Prop : Typ0 _ Prop}.
   Context {Typ0Ok_Fun : Typ0Ok Typ0_Prop}.
@@ -40,8 +40,8 @@ Section parametric.
   : Typ2 _ F -> Typ0 _ A -> Typ0 _ B -> Typ0 _ (F A B) := _.
 
   Instance Typ0_rel (t : typ) : Typ0 _ (typD t -> typD t -> Prop).
-  eapply Typ2_App2 with (F:=Fun); eauto with typeclass_instances.
-  eapply Typ2_App2 with (F:=Fun); eauto with typeclass_instances.
+  eapply Typ2_App2 with (F:=RFun); eauto with typeclass_instances.
+  eapply Typ2_App2 with (F:=RFun); eauto with typeclass_instances.
   Defined.
 
   Definition RbaseD (e : expr typ func) (t : typ)
@@ -344,7 +344,7 @@ Section parametric.
   Lemma acc_fold_right
     : forall t ts t',
       TransitiveClosure.leftTrans (tyAcc (typ:=typ))
-                                  t (fold_right (typ2 (F:=Fun)) t (t'::ts)).
+                                  t (fold_right (typ2 (F:=RFun)) t (t'::ts)).
   Proof.
     induction ts.
     { simpl; intros. constructor. eapply tyAcc_typ2R; eauto. }
@@ -358,7 +358,7 @@ Section parametric.
 
   Lemma Rty_fold_right
     : forall y x ts,
-      Rty (fold_right (typ2 (F:=Fun)) x ts) (typ2 y x) ->
+      Rty (fold_right (typ2 (F:=RFun)) x ts) (typ2 y x) ->
       ts = y :: nil.
   Proof.
     intros. red in H.
@@ -380,7 +380,7 @@ Section parametric.
 
   Lemma Rty_fold_right2
     : forall y x z ts,
-      Rty (fold_right (typ2 (F:=Fun)) x ts) (typ2 y (typ2 z x)) ->
+      Rty (fold_right (typ2 (F:=RFun)) x ts) (typ2 y (typ2 z x)) ->
       ts = y :: z :: nil.
   Proof.
     intros. red in H.
@@ -458,8 +458,8 @@ Section parametric.
       (r = Rinj (Inj (f_insert (ilf_entails x))) \/
        r = Rflip (Rinj (Inj (f_insert (ilf_entails x))))) ->
       RD RbaseD r t = Some rD ->
-      symAs X (fold_right (typ2 (F:=Fun)) t ts) = Some x0 ->
-      typeof_sym X = Some (typ2 (F:=Fun) x (typ2 (F:=Fun) x x)) ->
+      symAs X (fold_right (typ2 (F:=RFun)) t ts) = Some x0 ->
+      typeof_sym X = Some (typ2 (F:=RFun) x (typ2 (F:=RFun) x x)) ->
       t = x /\ ts = t :: t :: nil.
   Proof.
     unfold symAs, RbaseD, exprD; simpl.

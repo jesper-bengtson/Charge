@@ -1,7 +1,6 @@
 (** This is a simple cancellation procedure based on
  ** an ordering of the elements on the right hand side.
  **)
-Require Import ExtLib.Data.Fun.
 Require Import ExtLib.Tactics.
 Require Import MirrorCore.TypesI.
 Require Import MirrorCore.SymI.
@@ -25,7 +24,7 @@ Set Strict Implicit.
 Section ordered_cancel.
   Variable typ : Type.
   Variable RType_typ : RType typ.
-  Variable Typ2_Fun : Typ2 _ Fun.
+  Variable Typ2_Fun : Typ2 _ RFun.
   Variable func : Type.
   Variable RSym_func : RSym func.
 
@@ -773,7 +772,7 @@ End ordered_cancel.
 Section simple_ordering.
   Variable typ : Type.
   Variable RType_typ : RType typ.
-  Variable Typ2_Fun : Typ2 _ Fun.
+  Variable Typ2_Fun : Typ2 _ RFun.
   Variable func : Type.
   Variable RSym_func : RSym func.
 

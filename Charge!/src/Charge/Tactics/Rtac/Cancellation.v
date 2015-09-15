@@ -27,7 +27,7 @@ Section Canceller.
   Context {FVIL : FuncView func (ilfunc typ)}.
   Context {FVBIL : FuncView func (bilfunc typ)}.
   Context {RType_typ : RType typ} {RelDec_typ : RelDec (@eq typ)}.
-  Context {Typ2_typ : Typ2 RType_typ Fun}.
+  Context {Typ2_typ : Typ2 RType_typ RFun}.
   Context {RSym_func : @RSym _ RType_typ func}.
   Existing Instance Expr_expr.
   Context {SS : Subst subst (expr typ func)}.

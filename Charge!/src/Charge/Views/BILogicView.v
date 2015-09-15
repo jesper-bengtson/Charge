@@ -2,7 +2,6 @@ Require Import Coq.Strings.String.
 Require Import Coq.Bool.Bool.
 
 Require Import ExtLib.Core.RelDec.
-Require Import ExtLib.Data.Fun.
 Require Import ExtLib.Tactics.
 Require Import ExtLib.Tactics.Consider.
 Require Import ExtLib.Data.Map.FMapPositive.
@@ -47,7 +46,7 @@ Section BILogicFuncInst.
   Context {typ func : Type}.
   Context {HR : RType typ} {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
   
-  Context {Typ2_tyArr : Typ2 _ Fun}.
+  Context {Typ2_tyArr : Typ2 _ RFun}.
   Context {Typ0_tyProp : Typ0 _ Prop}.
   
   Context {Typ2Ok_tyArr : Typ2Ok Typ2_tyArr}.
@@ -177,7 +176,7 @@ Section BILogicFuncInst.
     generalize dependent (typD u).
     intros; subst.
     destruct bilpOk as [HEmp _].
-    unfold Fun in *.
+    unfold RFun in *.
 	apply functional_extensionality; intros; rewrite HEmp; reflexivity.
   Qed.    
 
@@ -312,8 +311,8 @@ Section BILogicFuncInst.
   Qed.
 
  Definition empR t BIL := @empSP (typD t) BIL.
- Definition starR t BIL := castR id (Fun (typD t) (Fun (typD t) (typD t))) (@sepSP (typD t) BIL).
- Definition wandR t BIL := castR id (Fun (typD t) (Fun (typD t) (typD t))) (@wandSP (typD t) BIL).
+ Definition starR t BIL := castR id (RFun (typD t) (RFun (typD t) (typD t))) (@sepSP (typD t) BIL).
+ Definition wandR t BIL := castR id (RFun (typD t) (RFun (typD t) (typD t))) (@wandSP (typD t) BIL).
  
  Definition funcD (f : bilfunc typ) : match typeof_bilfunc f return Type with
 							       | Some t => typD t
