@@ -59,6 +59,9 @@ Section parametric.
   Definition mrw : Type -> Type :=
     @mrw typ func.
 
+  (* Polymorhic Lemmas are stated as functions from types
+   * to lemmas. Here are two examples of them.
+   *)
   Definition lem_pull_ex_nat_and_left (l_t : typ * typ)
   : rw_lemma typ func (expr typ func) :=
     let '(l,t) := l_t in
@@ -92,12 +95,17 @@ Section parametric.
                     |}
   |}.
 
+  (* This is the implementation of deciding reflexivity of a relation.
+   * Note that in this approach, we only define reflexivity for Rbase,
+   * i.e. expr, the rewriter contains functions to lift this to R.
+   *)
   Definition is_refl : expr typ func -> bool :=
     run_default
       (inj (FuncView.ptrn_view _ (pmap (fun _ => true)
                                        (fptrnEntails ignore))))
       false.
 
+  (* This proof is boring but unfortunately longer that in should be. *)
   Theorem is_reflOk
   : forall r t rD,
       is_refl r = true ->
@@ -142,6 +150,10 @@ Section parametric.
     { simpl. intros; congruence. }
   Qed.
 
+  (* This is analagous to above but for transitive relations.
+   * For our purposes here, it is just entails which is also transitive,
+   * so we use the same function as above.
+   *)
   Definition is_trans : expr typ func -> bool :=
     is_refl.
 
@@ -189,11 +201,19 @@ Section parametric.
     { simpl. intros; congruence. }
   Qed.
 
-  Definition if_entails (t : typ) Y (X : expr typ func) : mrw (list (R typ (expr typ func))) :=
-    run_default (inj (ptrn_view _ (pmap (fun t' => if t ?[ eq ] t' then rw_ret Y else rw_fail)
-                                        (fptrnEntails get)))) (rw_fail) X.
+  (* This function just returns Y if X is an entails, otherwise it fails. *)
+  Definition if_entails {T} (t : typ) (Y : T) (X : expr typ func)
+  : mrw T :=
+    run_default
+      (inj (ptrn_view _
+                      (pmap (fun t' => if t ?[ eq ] t'
+                                       then rw_ret Y else rw_fail)
+                            (fptrnEntails get)))) (rw_fail) X.
 
-  (** This function defines what terms respect what relations **)
+  (** This function defines what terms respect what relations.
+   ** The reason that it is somewhat complicated is that it handles
+   ** both [entails] and [flip entails].
+   **)
   Definition get_respectful
              (e : expr typ func) (r : R typ (expr typ func))
   : mrw (list (R typ (expr typ func))) :=
@@ -221,8 +241,12 @@ Section parametric.
             nil))))
        (rw_fail)
        e.
+  (* We can build this from lemmas. It will be less efficient, but it is
+   * painful enough to prove that it is certainly worthwhile.
+   *)
 
-  (* This was necessary for post-processing the substitution *)
+  (* This was necessary for post-processing the substitution.
+   *)
   Definition simple_reduce (e : expr typ func) : expr typ func :=
     run_default
       (pmap (fun abcd => let '(a,(b,(c,d),e)) := abcd in
@@ -251,6 +275,7 @@ Section parametric.
         for_tactic (fun e => using_rewrite_db' expr_sdec (ls e) e r) e.
 
 
+  (* This is a convenience function for performing rewrites *)
   Definition the_rewrites
              (lems : list (rw_lemma typ func (expr typ func) *
                            CoreK.rtacK typ (expr typ func)))
@@ -262,6 +287,12 @@ Section parametric.
                            lems (Red.beta e) r)
         (fun e' => rw_ret (Progress (simple_reduce e'))).
 
+  (* This is a convenience function for performing rewrites for
+   * polymorphic lemmas. Note that the function computes a list
+   * of lemmas from an expression rather than taking a list of
+   * functions from expr to lemma, i.e. a list of polymorphic
+   * lemmas. This is mostly just for efficiency.
+   *)
   Definition the_prewrites
              (lems : expr typ func ->
                      list (rw_lemma typ func (expr typ func) *
@@ -323,8 +354,9 @@ Section parametric.
                             (the_prewrites the_lemmas)
                             (get_respectful) e r).
 
-  Lemma if_entails_sound : forall t X r a b c d e f g h i,
-      @if_entails t X r a b c d e f g = Some (h,i) ->
+  (* This is just the soundness of [if_entails] *)
+  Lemma if_entails_sound : forall T t X r a b c d e f g h i,
+      @if_entails T t X r a b c d e f g = Some (h,i) ->
       g = i /\ h = X /\ r = Inj (f_insert (ilf_entails t)).
   Proof.
     intros. revert H.
@@ -341,6 +373,7 @@ Section parametric.
     { inversion 1. }
   Qed.
 
+  (* This is just a helper lemma *)
   Lemma acc_fold_right
     : forall t ts t',
       TransitiveClosure.leftTrans (tyAcc (typ:=typ))
@@ -356,6 +389,7 @@ Section parametric.
       eapply tyAcc_typ2R; eauto. }
   Qed.
 
+  (* Same as above *)
   Lemma Rty_fold_right
     : forall y x ts,
       Rty (fold_right (typ2 (F:=RFun)) x ts) (typ2 y x) ->
@@ -378,6 +412,7 @@ Section parametric.
       eapply H. eassumption. }
   Qed.
 
+  (* Same as above *)
   Lemma Rty_fold_right2
     : forall y x z ts,
       Rty (fold_right (typ2 (F:=RFun)) x ts) (typ2 y (typ2 z x)) ->
@@ -404,8 +439,11 @@ Section parametric.
     eapply Rty_fold_right in H0. subst. reflexivity.
   Qed.
 
+  (* This is essentially the view function for ilf_entails but it includes
+   * type information.
+   *)
   Lemma RbaseD_entails'
-    : forall t t' rD,
+  : forall t t' rD,
       RbaseD (Inj (f_insert (ilf_entails t'))) t = Some rD ->
       t = t' /\
       exists L,
@@ -430,8 +468,9 @@ Section parametric.
     rewrite castDR. auto.
   Qed.
 
+  (* A special case of the above *)
   Lemma RbaseD_entails
-    : forall t rD,
+  : forall t rD,
       RbaseD (Inj (f_insert (ilf_entails t))) t = Some rD ->
       exists L,
         lops t = _Some L /\
@@ -452,6 +491,9 @@ Section parametric.
     rewrite castDR in H. auto.
   Qed.
 
+  (* Here is the main annoying lemma about inverting binary operators.
+   * It is generic so it should be reusable, but it is still a bit annoying.
+   *)
   Lemma binary_inference
   : let rs_log := @RSym_ilfunc typ _ _ _ _ lops in
     forall (X : ilfunc typ) t x ts r rD x0,
@@ -496,7 +538,12 @@ Section parametric.
       eauto. }
   Qed.
 
-  (** It would be nice if we could prove this more quickly *)
+  (* It would be nice if we could prove this more quickly. Building
+   * [get_respectful] out of smaller pieces would certainly help, but it
+   * would not be as efficient. Perhaps we can use some combination of
+   * optimization and reduction to build the efficient implementation
+   * from the easy one and prove them equal.
+   *)
   Theorem get_respectful_sound
   : respectful_spec RbaseD get_respectful.
   Proof.
@@ -782,6 +829,8 @@ Section parametric.
     { inversion 1. }
   Qed.
 
+  (* Here is the final quantifier puller. *)
+(*
   Definition quant_pull (l : typ) (e : expr typ func)
   : mrw (Progressing (expr typ func)) :=
     bottom_up (is_reflR is_refl)
@@ -789,6 +838,108 @@ Section parametric.
               (pull_all_quant)
               get_respectful
               e (Rinj (Inj (fEntails l))).
+*)
+
+  Definition quant_pull_tac : rtac typ (expr typ func) :=
+    @auto_setoid_rewrite_bu
+      typ func Rbase (Rflip (Rinj (Inj (fEntails (typ0 (F:=Prop))))))
+      (is_reflR is_refl)
+      (is_transR is_trans)
+      (pull_all_quant)
+      get_respectful.
+
+  Lemma expr_sdec_sound
+  : forall a b : expr typ func, expr_sdec a b = true -> a = b.
+  Proof.
+    eapply expr_eq_sdec_ok; eauto.
+    unfold func_sdec.
+    intros. generalize (sym_eqbOk a b); eauto with typeclass_instances.
+    destruct (sym_eqb a b); intros; subst; auto.
+    inversion H.
+  Qed.
+
+  Lemma RbaseD_same_type
+  : forall (r : expr typ func) (t1 t2 : typ)
+     (rD1 : typD t1 -> typD t1 -> Prop) (rD2 : typD t2 -> typD t2 -> Prop),
+   RbaseD r t1 = Some rD1 -> RbaseD r t2 = Some rD2 -> t1 = t2.
+  Proof.
+    unfold RbaseD. unfold castD. intros r t1 t2 rD1 rD2.
+    autorewrite_with_eq_rw.
+    destruct (exprD nil nil r (typ0 (F:=typD t1 -> typD t1 -> Prop))) eqn:?; try congruence.
+    destruct (exprD nil nil r (typ0 (F:=typD t2 -> typD t2 -> Prop))) eqn:?; try congruence.
+    intros. inv_all. subst.
+    unfold exprD in *. simpl in *.
+    forwardy.
+    eapply exprD_typeof_Some in H; eauto with typeclass_instances.
+    inv_all. subst.
+    eapply exprD_typeof_eq in H; eauto.
+    inv_all. assumption.
+  Qed.
+
+  Lemma repeatFunc_sound
+    : forall base rec,
+      (setoid_rewrite_spec RbaseD (fun e _ => rw_ret (base e))) ->
+      setoid_rewrite_spec RbaseD rec ->
+      forall n,
+        setoid_rewrite_spec RbaseD (repeatFunc n base rec).
+  Proof.
+    induction n.
+    { simpl. intros.
+      admit. }
+    { simpl. intros.
+      admit. }
+  Admitted.
+
+  Theorem quant_pull_tac_sound
+  : lops (typ0 (F:=Prop)) = _Some (@castR _ _ ILogic.ILogicOps _ _ ILogic.ILogicOps_Prop) ->
+    rtac_sound quant_pull_tac.
+  Proof.
+    unfold quant_pull_tac. intro.
+    eapply auto_setoid_rewrite_bu_sound
+      with (Rbase_eq := expr_sdec)
+           (RbaseD := RbaseD);
+      eauto using expr_sdec_sound, RbaseD_same_type,
+                  is_reflROk, is_reflOk, is_transROk, is_transOk,
+                  get_respectful_sound.
+    { simpl. unfold RbaseD.
+      unfold exprD. simpl. rewrite exprD'_Inj by eauto with typeclass_instances.
+      unfold fEntails.
+      erewrite <- @fv_compat with (Sym_A := RSym_ilfunc lops)
+            by eauto with typeclass_instances.
+      unfold symAs. simpl. unfold typeof_sym. simpl.
+      rewrite H.
+      rewrite type_cast_refl by eauto with typeclass_instances.
+      simpl. unfold entailsR.
+      rewrite castD_option.
+      f_equal. rewrite castDR.
+      unfold ILogic.lentails. unfold castR.
+      clear.
+      destruct (eq_sym (typ0_cast (F:=Prop))). reflexivity. }
+    { unfold pull_all_quant.
+      (** TODO(gmalecha): This isn't quite complete, something is missing here *)
+      eapply repeatFunc_sound.
+      { red. red. unfold rw_ret. simpl.
+        inversion 1; subst.
+        intros; split; auto.
+        intros.
+        destruct (pctxD cs') eqn:?; trivial.
+        simpl.
+        destruct (ExprDsimul.ExprDenote.exprD' (getUVars ctx) (tvs' ++ getVars ctx) t e).
+        { split; [ reflexivity | ].
+          intros.
+          eapply Pure_pctxD; eauto.
+          
+          admit. }
+        { auto. } }
+      { eapply bottom_up_sound
+          with (Rbase_eq := expr_sdec)
+               (RbaseD := RbaseD);
+        eauto using expr_sdec_sound, RbaseD_same_type,
+                    is_reflROk, is_reflOk, is_transROk, is_transOk,
+                    get_respectful_sound.
+        admit. (** TODO(gmalecha): Not quite complete! *)
+    } }
+  Admitted.
 
 (*
   Time Eval vm_compute
@@ -797,5 +948,5 @@ Section parametric.
        | None => tt
        end.
 *)
-End parametric.
 
+End parametric.
