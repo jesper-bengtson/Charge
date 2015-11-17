@@ -32,7 +32,7 @@ Section Canceller.
   Existing Instance Expr_expr.
   Context {SS : Subst subst (expr typ func)}.
   Context {SU : SubstUpdate subst (expr typ func)}.
-  Context {SO : SubstOk SS}.
+  Context {SO : @SubstOk _ _ _ _ _ SS}.
 
   Context {uis_pure : expr typ func -> bool}.
 
@@ -96,8 +96,7 @@ Section Canceller.
 
   Definition is_solved (e1 e2 : conjunctives typ func) : bool :=
     match e1 , e2 with
-      | {| spatial := e1s ; star_true := t ; pure := _ |}
-        , {| spatial := nil ; star_true := t' ; pure := nil |} =>
+      | Build_conjunctives e1s t _, Build_conjunctives nil t' nil =>
         if t' then
           (** ... |- true **)
           true

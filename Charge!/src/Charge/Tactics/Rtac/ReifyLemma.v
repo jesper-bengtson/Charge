@@ -59,7 +59,7 @@ Ltac reify_lemma_aux reify T :=
   let e := eval simpl in e in
                           refine e
                         in
-                          reify_expr reify k [ True ] [ T ].
+                          reify_expr reify k [[ True ]] [[ T ]].
 
 Ltac reify_lemma reify e :=
   let T := type of e in reify_lemma_aux reify T.

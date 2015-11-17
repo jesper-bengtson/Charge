@@ -14,7 +14,7 @@ Section AutoTac.
   Context {Typ0_typ : Typ0 RType_typ Prop}.
   Context {Typ2_typ : Typ2 RType_typ RFun}.
   Context {RSym_func : @RSym _ RType_typ func}.
-  Context {E : Expr RType_typ (expr typ func)}.
+  Context {E : @Expr _ RType_typ (expr typ func)}.
   Context {EU : ExprUVar (expr typ func)}.
 
   Definition APPLY :=

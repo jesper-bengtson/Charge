@@ -7,13 +7,12 @@ Require Import MirrorCore.Views.Ptrns.
 Require Import MirrorCore.Lambda.Ptrns.
 Require Import MirrorCore.Views.FuncView.
 Require Import MirrorCore.RTac.IdtacK.
-Add Rec LoadPath "/Users/jebe/git/ChargeCore/ChargeCore/bin/ChargeCore" as ChargeCore. 
 
 Require Import Charge.Views.ILogicView.
 
 Set Implicit Arguments.
 Set Strict Implicit.
-
+(*
 Section parametric.
   Context {typ func : Type}.
   Context {RType_typ : RType typ}.
@@ -279,7 +278,6 @@ Section parametric.
                    ]. }
     { intros.
       ptrnE.
-      eapply Succeeds_abs in H4.
       { forward_reason.
         subst.
         ptrnE.
@@ -289,7 +287,7 @@ Section parametric.
         intros.
         destruct (typ2_match_case x).
         { forward_reason. rewrite H1 in H0.
-          red in x4; subst.
+          red in x5; subst.
           simpl in H0.
           forwardy. red in y; subst.
           revert H2.
@@ -298,8 +296,8 @@ Section parametric.
           autorewrite with exprD_rw in H4.
           forwardy. inv_all; subst.
           erewrite exprD_typeof_Some by eassumption.
-          generalize (Red.beta_sound tus (x5 :: tvs) x10 y3).
-          generalize (Red.beta_sound tus (x5 :: tvs) x7 y).
+          generalize (Red.beta_sound tus (x4 :: tvs) x10 y3).
+          generalize (Red.beta_sound tus (x4 :: tvs) x7 y).
           rewrite H8. rewrite H5. intros; forwardy.
           erewrite exprD_typeof_Some by eassumption.
           rewrite type_of_apply_ok.
@@ -319,10 +317,10 @@ Section parametric.
           clear - H3 H10 H11.
           intros. unfold AbsAppI.exprT_App.
           autorewrite_with_eq_rw.
-          generalize dependent (typ2_cast x5 x3).
-          generalize dependent (typ2_cast (typ2 x5 x3) t).
-          generalize dependent (typD (typ2 x5 x3)).
-          generalize dependent (typD (typ2 (typ2 x5 x3) t)).
+          generalize dependent (typ2_cast x4 x3).
+          generalize dependent (typ2_cast (typ2 x4 x3) t).
+          generalize dependent (typD (typ2 x4 x3)).
+          generalize dependent (typD (typ2 (typ2 x4 x3) t)).
           intros; subst. simpl in *.
           inv_all. subst.
           unfold AbsAppI.exprT_App. autorewrite_with_eq_rw.
@@ -331,15 +329,8 @@ Section parametric.
           rewrite <- H10; clear H10.
           rewrite <- H11; clear H11.
           reflexivity. }
-        { rewrite H1 in H0. inversion H0. } }
-      { eapply ptrn_ok_get. }
-      { intros; repeat first [ eapply ptrn_ok_pmap
-                     | eapply ptrn_ok_app
-                     | eapply ptrn_ok_abs; intros
-                     | eapply ptrn_ok_get
-                     ]. } }
+        { rewrite H1 in H0. inversion H0. } } }
   Qed.
-
 
   (* This is a convenience function for performing rewrites *)
   Definition the_rewrites
@@ -1239,3 +1230,4 @@ Section parametric.
 *)
 
 End parametric.
+*)

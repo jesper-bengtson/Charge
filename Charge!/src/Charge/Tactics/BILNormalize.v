@@ -80,7 +80,7 @@ Section conjunctives.
   Variable sym : Type.
   Variable RSym_sym : RSym sym.
 
-  Let Expr_expr : Expr _ (expr typ sym) := Expr_expr _ _ _ _.
+  Let Expr_expr : Expr _ (expr typ sym) := Expr_expr.
   Local Existing Instance Expr_expr.
 
   Record conjunctives : Type :=

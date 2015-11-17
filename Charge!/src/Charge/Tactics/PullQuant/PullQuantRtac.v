@@ -12,7 +12,7 @@ Require Import Charge.Views.ILogicView.
 
 Set Implicit Arguments.
 Set Strict Implicit.
-
+(*
 Section parametric.
   Context {typ func : Type}.
   Context {RType_typ : RType typ}.
@@ -1228,3 +1228,4 @@ Section parametric.
 *)
 
 End parametric.
+*)
