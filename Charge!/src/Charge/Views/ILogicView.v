@@ -1058,7 +1058,7 @@ Definition ilogic_ptrn_cases {T : Type}
                                                         (fun x f => do_forall (fst x) 
                                                                               (snd x) f) get))))))
             get).
-
+Check run_ptrn.
 Definition ilogic_cases {T : Type}
            (do_true : typ -> T)
            (do_false : typ -> T)
@@ -1067,8 +1067,8 @@ Definition ilogic_cases {T : Type}
            (do_impl : typ -> expr typ func -> expr typ func -> T)
            (do_exists : typ -> typ -> expr typ func -> T)
            (do_forall : typ -> typ -> expr typ func -> T)
-           (do_default : T) : Ptrns.tptrn (expr typ func) T :=
-  pdefault (ilogic_ptrn_cases
+           (do_default : T) :=
+  run_ptrn (ilogic_ptrn_cases
               do_true do_false do_and do_or do_impl do_exists do_forall)
            do_default.
            

@@ -523,17 +523,17 @@ Section SubstTac.
   Definition red_substF (red_subst : string -> expr typ func -> expr typ func) (x : string)
              (sub : expr typ func) : expr typ func := 
     Eval compute in
-      run_tptrn (list_cases
+      run_ptrn (list_cases
                    (fun _ => mkString x)
                    (fun _ p ps =>
-                      run_tptrn (pdefault_id (pmap (fun t_y_e => let '(t, y, e) := t_y_e in
+                      run_ptrn_id (pmap (fun t_y_e => let '(t, y, e) := t_y_e in
                                                                  if x ?[ eq ] y then
                                                                    e
                                                              else
                                                                red_subst x ps)
                                                    (ptrnPair ignore (ptrnString Ptrns.get) 
-                                                             Ptrns.get))) p)
-                   (mkString x)) sub.
+                                                             Ptrns.get)) p) sub)
+                   (mkString x).
   
   Fixpoint do_subst (x : string) (sub : expr typ func) {struct sub} : expr typ func :=
     red_substF (do_subst) x sub.

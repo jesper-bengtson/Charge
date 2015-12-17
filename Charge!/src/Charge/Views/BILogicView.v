@@ -540,8 +540,8 @@ Section BILogicPtrn.
              (do_emp : typ -> T)
              (do_star : typ -> expr typ func -> expr typ func -> T)
              (do_wand : typ -> expr typ func -> expr typ func -> T)
-             (do_default : T) : Ptrns.tptrn (expr typ func) T :=
-      pdefault (bilogic_ptrn_cases
+             (do_default : T) :=
+      run_ptrn (bilogic_ptrn_cases
                   do_emp do_star do_wand)
                do_default.
 End BILogicPtrn.
