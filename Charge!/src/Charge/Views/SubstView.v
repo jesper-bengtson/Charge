@@ -49,7 +49,7 @@ Inductive subst_func {typ : Type} :=
 | of_single_subst
 | of_subst
 | of_trunc_subst.
-    
+
 Implicit Arguments subst_func [].
 
 Section SubstFuncInst.
@@ -66,14 +66,14 @@ Section SubstFuncInst.
   Context {Typ2_tyProd : Typ2 _ prod}.
   Context {Typ1_tyList : Typ1 _ list}.
   Context {Typ0_tyProp : Typ0 _ Prop}.
-  
+
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyArr.
   Let tyProd : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyProd.
   Let tyList : typ -> typ := @typ1 _ _ _ Typ1_tyList.
   Let tyProp : typ := @typ0 _ _ _ Typ0_tyProp.
   Let tyVal : typ := @typ0 _ _ _ Typ0_tyVal.
   Let tyVar : typ := @typ0 _ _ _ Typ0_tyVar.
-  
+
   Local Notation "'tyStack'" := (tyArr tyVar tyVal).
   Local Notation "'tySubst'" := (tyArr tyVar (tyArr tyStack tyVal)).
   Local Notation "'tyExpr'" := (tyArr tyStack tyVal).
@@ -83,7 +83,7 @@ Section SubstFuncInst.
   Local Notation "'Tsubst'" := (RFun var (RFun (RFun var val) val)).
   Local Notation "'Texpr'" := (RFun (RFun var val) val).
   Local Notation "'Tsubstlist'" := (list (var * Texpr)).
-        
+
   Definition stack := @stack (typD tyVar) (typD tyVal).
 
   Global Instance typDValNull : ValNull (typD tyVal).
@@ -92,7 +92,7 @@ Section SubstFuncInst.
     rewrite typ0_cast.
     apply _.
   Qed.
-  
+
   Definition typeof_subst_func (f : subst_func typ) : option typ :=
     match f with
     | of_apply_subst t => Some (tyArr (tyArr tyStack t) (tyArr tySubst (tyArr tyStack t)))
@@ -124,16 +124,16 @@ Section SubstFuncInst.
     destruct x; destruct y; simpl; try rewrite andb_true_iff;
     repeat rewrite rel_dec_correct; try intuition congruence.
   Qed.
-  
+
   Definition stack_getR : typD (tyArr tyVar (tyArr tyStack tyVal)) :=
     castR id (RFun var (RFun Tstack val)) stack_get.
 
   Definition stack_setR : typD (tyArr tyVar (tyArr tyVal (tyArr tyStack tyStack))) :=
     castR id (RFun var (RFun val (RFun Tstack Tstack))) stack_add.
-  
-  Definition applySubstR (t : typ) : typD (tyArr (tyArr tyStack t) 
+
+  Definition applySubstR (t : typ) : typD (tyArr (tyArr tyStack t)
                                                  (tyArr tySubst (tyArr tyStack t))) :=
-    castR id (RFun (RFun Tstack (typD t)) (RFun Tsubst (RFun Tstack (typD t)))) 
+    castR id (RFun (RFun Tstack (typD t)) (RFun Tsubst (RFun Tstack (typD t))))
           apply_subst.
 
   Definition singleSubstR : typD (tyArr tyExpr (tyArr tyVar tySubst)) :=
@@ -144,7 +144,7 @@ Section SubstFuncInst.
 
   Definition truncSubstR : typD (tyArr tySubstList tySubst) :=
     castR id (RFun Tsubstlist Tsubst) substl_trunc_aux.
-	   
+
   Definition open_func_symD f : match typeof_subst_func f return Type with
 	                        | Some t => typD t
 	                        | None => unit
@@ -187,7 +187,7 @@ Section MakeSubst.
   Definition fSingleSubst := f_insert of_single_subst.
   Definition fSubst := f_insert of_subst.
   Definition fTruncSubst := f_insert of_trunc_subst.
-  
+
   Definition mkNull : expr typ func := Inj fNull.
   Definition mkStackGet x : expr typ func := App (Inj fStackGet) x.
   Definition mkStackSet : expr typ func := Inj fStackSet.
@@ -195,7 +195,7 @@ Section MakeSubst.
   Definition mkSingleSubst : expr typ func := Inj fSingleSubst.
   Definition mkSubst : expr typ func := Inj fSubst.
   Definition mkTruncSubst : expr typ func := Inj fTruncSubst.
-  
+
   Definition fptrnNull : ptrn (subst_func typ) unit :=
     fun f U good bad =>
       match f with
@@ -207,7 +207,7 @@ Section MakeSubst.
       | of_subst => bad of_subst
       | of_trunc_subst => bad of_trunc_subst
       end.
-  
+
   Definition fptrnStackGet : ptrn (subst_func typ) unit :=
     fun f U good bad =>
       match f with
@@ -219,7 +219,7 @@ Section MakeSubst.
       | of_subst => bad of_subst
       | of_trunc_subst => bad of_trunc_subst
       end.
-  
+
   Definition fptrnStackSet : ptrn (subst_func typ) unit :=
     fun f U good bad =>
       match f with
@@ -231,7 +231,7 @@ Section MakeSubst.
       | of_subst => bad of_subst
       | of_trunc_subst => bad of_trunc_subst
       end.
-  
+
   Definition fptrnApplySubst {T : Type} (p : Ptrns.ptrn typ T) : ptrn (subst_func typ) T :=
     fun f U good bad =>
       match f with
@@ -243,7 +243,7 @@ Section MakeSubst.
       | of_subst => bad of_subst
       | of_trunc_subst => bad of_trunc_subst
       end.
-  
+
   Definition fptrnSingleSubst : ptrn (subst_func typ) unit :=
     fun f U good bad =>
       match f with
@@ -255,7 +255,7 @@ Section MakeSubst.
       | of_subst => bad of_subst
       | of_trunc_subst => bad of_trunc_subst
       end.
-  
+
   Definition fptrnSubst : ptrn (subst_func typ) unit :=
     fun f U good bad =>
       match f with
@@ -267,7 +267,7 @@ Section MakeSubst.
       | of_subst => good tt
       | of_trunc_subst => bad of_trunc_subst
       end.
-  
+
   Definition fptrnTruncSubst : ptrn (subst_func typ) unit :=
     fun f U good bad =>
       match f with
@@ -279,14 +279,14 @@ Section MakeSubst.
       | of_subst => bad of_subst
       | of_trunc_subst => good tt
       end.
-  
+
   Global Instance fptrnNull_ok {T : Type} : ptrn_ok fptrnNull.
   Proof.
     red; intros.
     destruct x; simpl; try (right; unfold Fails; reflexivity).
     left; exists tt; compute; reflexivity.
   Qed.
-  
+
   Global Instance fptrnStackGet_ok {T : Type} : ptrn_ok fptrnStackGet.
   Proof.
     red; intros.
@@ -341,7 +341,7 @@ Section MakeSubst.
     destruct f; congruence.
   Qed.
 
-  Lemma Succeeds_fptrnStackGet (f : subst_func typ) (res : unit) 
+  Lemma Succeeds_fptrnStackGet (f : subst_func typ) (res : unit)
         (H : Succeeds f fptrnStackGet res) :
     f = of_stack_get /\ res = tt.
   Proof.
@@ -424,7 +424,7 @@ Section MakeSubst.
       s_elim := @Succeeds_fptrnStackSet f res
     }.
 
-  Global Instance fptrnCons_SucceedsE {T : Type} {f : subst_func typ} 
+  Global Instance fptrnCons_SucceedsE {T : Type} {f : subst_func typ}
          {p : ptrn typ T} {res : T} {pok : ptrn_ok p} :
     SucceedsE f (fptrnApplySubst p) res := {
       s_result := exists t, Succeeds t p res /\ f = of_apply_subst t;
@@ -453,33 +453,33 @@ End MakeSubst.
 
 Section SubstPtrn.
   Context {typ func : Type} {FV : FuncView func (subst_func typ)}.
-  
+
   Definition ptrnNull : ptrn (expr typ func) unit :=
     inj (ptrn_view _ fptrnNull).
 
   Definition ptrnStackGet {A B : Type}
-             (a : ptrn (expr typ func) A) 
+             (a : ptrn (expr typ func) A)
              (b : ptrn (expr typ func) B) : ptrn (expr typ func) (A * B) :=
-    pmap (fun t_a_b => let '(t, a, b) := t_a_b in (a, b)) 
+    pmap (fun t_a_b => let '(t, a, b) := t_a_b in (a, b))
          (app (app (inj (ptrn_view _ fptrnStackGet)) a) b).
 
   Definition ptrnStackSet {A B C : Type}
-             (a : ptrn (expr typ func) A) 
+             (a : ptrn (expr typ func) A)
              (b : ptrn (expr typ func) B)
              (c : ptrn (expr typ func) C) : ptrn (expr typ func) (A * B * C) :=
-    pmap (fun t_a_b_c => let '(t, a, b, c) := t_a_b_c in (a, b, c)) 
+    pmap (fun t_a_b_c => let '(t, a, b, c) := t_a_b_c in (a, b, c))
          (app (app (app (inj (ptrn_view _ fptrnStackSet)) a) b) c).
 
   Definition ptrnApplySubst {A B T : Type}
              (p : ptrn typ T)
-             (a : ptrn (expr typ func) A) 
+             (a : ptrn (expr typ func) A)
              (b : ptrn (expr typ func) B) : ptrn (expr typ func) (T * A * B) :=
     app (app (inj (ptrn_view _ (fptrnApplySubst p))) a) b.
 
   Definition ptrnSingleSubst {A B : Type}
-             (a : ptrn (expr typ func) A) 
+             (a : ptrn (expr typ func) A)
              (b : ptrn (expr typ func) B) : ptrn (expr typ func) (A * B) :=
-    pmap (fun t_a_b => let '(t, a, b) := t_a_b in (a, b)) 
+    pmap (fun t_a_b => let '(t, a, b) := t_a_b in (a, b))
          (app (app (inj (ptrn_view _ fptrnSingleSubst)) a) b).
 
   Definition ptrnSubst {A : Type}
@@ -512,7 +512,7 @@ Section SubstTac.
   Context {Typ2_tyProd : Typ2 _ prod}.
   Context {Typ1_tyList : Typ1 _ list}.
   Context {Typ0_tyProp : Typ0 _ Prop}.
-  
+
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyArr.
   Let tyProd : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyProd.
   Let tyList : typ -> typ := @typ1 _ _ _ Typ1_tyList.
@@ -521,127 +521,124 @@ Section SubstTac.
   Let tyString : typ := @typ0 _ _ _ Typ0_tyString.
 
   Definition red_substF (red_subst : string -> expr typ func -> expr typ func) (x : string)
-             (sub : expr typ func) : expr typ func := 
+  : expr typ func -> expr typ func :=
     Eval compute in
-      run_ptrn (list_cases
-                   (fun _ => mkString x)
-                   (fun _ p ps =>
-                      run_ptrn_id (pmap (fun t_y_e => let '(t, y, e) := t_y_e in
-                                                                 if x ?[ eq ] y then
-                                                                   e
-                                                             else
-                                                               red_subst x ps)
-                                                   (ptrnPair ignore (ptrnString Ptrns.get) 
-                                                             Ptrns.get)) p) sub)
-                   (mkString x).
-  
+      list_cases
+        (fun _ => mkString x)
+        (fun _ p ps =>
+           run_ptrn_id (pmap (fun t_y_e => let '(t, y, e) := t_y_e in
+                                           if x ?[ eq ] y then
+                                             e
+                                           else
+                                             red_subst x ps)
+                             (ptrnPair ignore (ptrnString Ptrns.get)
+                                       Ptrns.get)) p)
+        (mkString x).
+
   Fixpoint do_subst (x : string) (sub : expr typ func) {struct sub} : expr typ func :=
     red_substF (do_subst) x sub.
-  
+
   Definition red_substF' (red_subst : string -> expr typ func -> expr typ func) (x : string)
-             (sub : expr typ func) : expr typ func := 
-    run_tptrn (list_cases
-                 (fun _ => mkString x)
-                 (fun _ p ps =>
-                    run_tptrn (pdefault_id (pmap (fun t_y_e => let '(t, y, e) := t_y_e in
-                                                               if x ?[ eq ] y then
-                                                                 e
-                                                               else
-                                                                 red_subst x ps)
-                                                 (ptrnPair ignore (ptrnString Ptrns.get) 
-                                                           Ptrns.get))) p)
-                 (mkString x)) sub.
-  
-  
+  : expr typ func -> expr typ func :=
+    list_cases
+      (fun _ => mkString x)
+      (fun _ p ps =>
+         run_ptrn_id (pmap (fun t_y_e => let '(t, y, e) := t_y_e in
+                                         if x ?[ eq ] y then
+                                           e
+                                         else
+                                           red_subst x ps)
+                           (ptrnPair ignore (ptrnString Ptrns.get)
+                                     Ptrns.get)) p)
+      (mkString x).
+
+
   Definition red_apply_subst (x : string) (f : expr typ func) : expr typ func :=
-    run_tptrn (pdefault (por (pmap (fun e_y => let '(e, y) := e_y in
-                                               if x ?[ eq ] y then e else mkStackGet (mkString x))
-                                   (ptrnSingleSubst Ptrns.get (ptrnString Ptrns.get)))
-                             (pmap (fun sub => do_subst x sub) (ptrnSubst Ptrns.get)))
-                        (mkStackGet (mkString x))) f.
+    run_ptrn (por (pmap (fun e_y => let '(e, y) := e_y in
+                                    if x ?[ eq ] y then e else mkStackGet (mkString x))
+                        (ptrnSingleSubst Ptrns.get (ptrnString Ptrns.get)))
+                  (pmap (fun sub => do_subst x sub) (ptrnSubst Ptrns.get)))
+             (mkStackGet (mkString x)) f.
   Definition rop {X T : Type} (l r : ptrn X T) := por r l.
-  
+
   Definition red_push_substF
              (red_push_subst : typ -> expr typ func -> expr typ func -> expr typ func)
              (t : typ) (e sub : expr typ func) : expr typ func :=
     Eval compute -[red_apply_subst] in
-      run_tptrn (pdefault 
-                   (rop
-                      (appr (inj (ptrn_view FV_subst (pmap (fun _ s => red_apply_subst s sub) 
-                                                           fptrnStackGet)))
-                            (inj (ptrn_view FV_string (fptrnString Ptrns.get))))
-                      (por (applicative_ptrn_cases
-                              (fun t e => mkPure t e)
-                              (fun t u p q =>
-                                 mkAp t u
-                                      (red_push_subst (tyArr t u) p sub)
-                                      (red_push_subst t q sub)))
-                           (por (ilogic_ptrn_cases
-                                   (fun t => mkTrue t)
-                                   (fun t => mkFalse t)
-                                   (fun t p q => 
-                                      mkAnd t (red_push_subst t p sub) (red_push_subst t q sub))
-                                   (fun t p q => 
-                                      mkOr t (red_push_subst t p sub) (red_push_subst t q sub))
-                                   (fun t p q => 
-                                      mkImpl t (red_push_subst t p sub) (red_push_subst t q sub))
-                                   mkExists
-                                   mkForall)
-                                (por (bilogic_ptrn_cases
-                                        (fun t => mkEmp t)
-                                        (fun t p q =>
-                                           mkStar t (red_push_subst t p sub) (red_push_subst t q sub))
-                                        (fun t p q =>
-                                           mkWand t (red_push_subst t p sub) (red_push_subst t q sub)))
-                                     (appr (inj (ptrn_view FV_embed (fptrnEmbed (pmap (fun x e => mkEmbed (fst x) (snd x) (red_push_subst (snd x) e sub)) Ptrns.get)))) 
-                                           Ptrns.get)))))
-                 (App (App (mkApplySubst t) e) sub)) e.
+      run_ptrn (rop
+                  (appr (inj (ptrn_view FV_subst (pmap (fun _ s => red_apply_subst s sub)
+                                                       fptrnStackGet)))
+                        (inj (ptrn_view FV_string (fptrnString Ptrns.get))))
+                  (por (applicative_ptrn_cases
+                          (fun t e => mkPure t e)
+                          (fun t u p q =>
+                             mkAp t u
+                                  (red_push_subst (tyArr t u) p sub)
+                                  (red_push_subst t q sub)))
+                       (por (ilogic_ptrn_cases
+                               (fun t => mkTrue t)
+                               (fun t => mkFalse t)
+                               (fun t p q =>
+                                  mkAnd t (red_push_subst t p sub) (red_push_subst t q sub))
+                               (fun t p q =>
+                                  mkOr t (red_push_subst t p sub) (red_push_subst t q sub))
+                               (fun t p q =>
+                                  mkImpl t (red_push_subst t p sub) (red_push_subst t q sub))
+                               mkExists
+                               mkForall)
+                            (por (bilogic_ptrn_cases
+                                    (fun t => mkEmp t)
+                                    (fun t p q =>
+                                       mkStar t (red_push_subst t p sub) (red_push_subst t q sub))
+                                    (fun t p q =>
+                                       mkWand t (red_push_subst t p sub) (red_push_subst t q sub)))
+                                 (appr (inj (ptrn_view FV_embed (fptrnEmbed (pmap (fun x e => mkEmbed (fst x) (snd x) (red_push_subst (snd x) e sub)) Ptrns.get))))
+                                       Ptrns.get)))))
+                  (App (App (mkApplySubst t) e) sub) e.
 
   Fixpoint red_push_subst (t : typ) (e sub : expr typ func) {struct e} :=
     red_push_substF red_push_subst t e sub.
-  
+
   Lemma red_push_subst_eta (t : typ) (e sub : expr typ func) :
     red_push_subst t e sub =
-    run_tptrn (pdefault 
-                 (rop
-                    (appr (inj (ptrn_view FV_subst (pmap (fun _ s => red_apply_subst s sub) 
-                                                         fptrnStackGet)))
-                          (inj (ptrn_view FV_string (fptrnString Ptrns.get))))
-                    (por (applicative_ptrn_cases
-                            (fun t e => mkPure t e)
-                            (fun t u p q =>
-                               mkAp t u
-                                    (red_push_subst (tyArr t u) p sub)
-                                    (red_push_subst t q sub)))
-                         (por (ilogic_ptrn_cases
-                                 (fun t => mkTrue t)
-                                 (fun t => mkFalse t)
-                                 (fun t p q => 
-                                    mkAnd t (red_push_subst t p sub) (red_push_subst t q sub))
-                                 (fun t p q => 
-                                    mkOr t (red_push_subst t p sub) (red_push_subst t q sub))
-                                 (fun t p q => 
-                                    mkImpl t (red_push_subst t p sub) (red_push_subst t q sub))
-                                 mkExists
-                                 mkForall)
-                              (por (bilogic_ptrn_cases
-                                      (fun t => mkEmp t)
-                                      (fun t p q =>
-                                         mkStar t (red_push_subst t p sub) (red_push_subst t q sub))
-                                      (fun t p q =>
-                                         mkWand t (red_push_subst t p sub) (red_push_subst t q sub)))
-                                   (appr (inj (ptrn_view FV_embed (fptrnEmbed (pmap (fun x e => mkEmbed (fst x) (snd x) (red_push_subst (snd x) e sub)) Ptrns.get)))) 
-                                         Ptrns.get)))))
-                 (App (App (mkApplySubst t) e) sub)) e.
+    run_ptrn (rop
+                (appr (inj (ptrn_view FV_subst (pmap (fun _ s => red_apply_subst s sub)
+                                                     fptrnStackGet)))
+                      (inj (ptrn_view FV_string (fptrnString Ptrns.get))))
+                (por (applicative_ptrn_cases
+                        (fun t e => mkPure t e)
+                        (fun t u p q =>
+                           mkAp t u
+                                (red_push_subst (tyArr t u) p sub)
+                                (red_push_subst t q sub)))
+                     (por (ilogic_ptrn_cases
+                             (fun t => mkTrue t)
+                             (fun t => mkFalse t)
+                             (fun t p q =>
+                                mkAnd t (red_push_subst t p sub) (red_push_subst t q sub))
+                             (fun t p q =>
+                                mkOr t (red_push_subst t p sub) (red_push_subst t q sub))
+                             (fun t p q =>
+                                mkImpl t (red_push_subst t p sub) (red_push_subst t q sub))
+                             mkExists
+                             mkForall)
+                          (por (bilogic_ptrn_cases
+                                  (fun t => mkEmp t)
+                                  (fun t p q =>
+                                     mkStar t (red_push_subst t p sub) (red_push_subst t q sub))
+                                  (fun t p q =>
+                                     mkWand t (red_push_subst t p sub) (red_push_subst t q sub)))
+                               (appr (inj (ptrn_view FV_embed (fptrnEmbed (pmap (fun x e => mkEmbed (fst x) (snd x) (red_push_subst (snd x) e sub)) Ptrns.get))))
+                                     Ptrns.get)))))
+                  (App (App (mkApplySubst t) e) sub) e.
   Proof.
     destruct e; simpl; reflexivity.
   Qed.
-    
+
   Definition red_subst : expr typ func -> expr typ func :=
-    run_tptrn (pdefault_id 
-                 (pmap (fun t_e_sub => let '(t, e, sub) := t_e_sub in
-                                       red_push_subst t e sub)
-                       (ptrnApplySubst Ptrns.get Ptrns.get Ptrns.get))).
+    run_ptrn_id (pmap (fun t_e_sub => let '(t, e, sub) := t_e_sub in
+                                      red_push_subst t e sub)
+                      (ptrnApplySubst Ptrns.get Ptrns.get Ptrns.get)).
 
   Definition SUBST := SIMPLIFY (typ := typ) (fun _ _ _ _ => beta_all (fun x e args => red_subst (apps e args))).
 End SubstTac.

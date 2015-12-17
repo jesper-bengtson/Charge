@@ -19,8 +19,7 @@ Section ReifyLemma.
   Let tyProp : typ := @typ0 _ _ _ _.
 
   Fixpoint get_alls (e : expr typ func) : list typ * expr typ func :=
-    run_tptrn
-      (pdefault
+    run_ptrn
          (pmap (fun t_t'_p =>
                let '(t, t', p) := t_t'_p in
                if t' ?[ eq ] tyProp then
@@ -28,11 +27,10 @@ Section ReifyLemma.
                else
                  (nil, e))
                (ptrnForall get (abs get (fun _ => get))))
-         (nil, e)) e.
+         (nil, e) e.
 
   Fixpoint get_impls (e : expr typ func) : list (expr typ func) * expr typ func :=
-    run_tptrn
-      (pdefault
+    run_ptrn
          (pmap (fun t_p_q =>
                let '(t, p, q) := t_p_q in
                if t ?[ eq ] tyProp then
@@ -40,15 +38,15 @@ Section ReifyLemma.
                else
                  (nil, e))
                (ptrnImpl get get get))
-         (nil, e)) e.
+         (nil, e) e.
 
   Definition convert_to_lemma (e : expr typ func)
     : lemma typ (expr typ func) (expr typ func) :=
     let (alls, e) := get_alls e in
     let (impls, e) := get_impls e in
 	  {| vars := rev alls
-	     ; premises := impls
-	     ; concl := e |}.
+           ; premises := impls
+	   ; concl := e |}.
 
 End ReifyLemma.
 

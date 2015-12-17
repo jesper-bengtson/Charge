@@ -15,19 +15,18 @@ Section IntroTac.
   Context {HIL : FuncView func (ilfunc typ)}.
   Context {EV : ExprVar (expr typ func)}.
   Context {EU : ExprUVar (expr typ func)}.
-  
+
   Definition fintro : expr typ func -> option (@OpenAs typ (expr typ func)) :=
-    run_tptrn
-      (ilogic_cases
-         (fun _ => None)
-         (fun _ => None)
-         (fun _ _ _ => None)
-         (fun _ _ _ => None)
-         (fun _ P Q => Some (AsHy P Q))
-         (fun t _ P => Some (AsEx t (fun x => beta (App P x))))
-         (fun t _ P => Some (AsAl t (fun x => beta (App P x))))
-         None).
-  
+    ilogic_cases
+      (fun _ => None)
+      (fun _ => None)
+      (fun _ _ _ => None)
+      (fun _ _ _ => None)
+      (fun _ P Q => Some (AsHy P Q))
+      (fun t _ P => Some (AsEx t (fun x => beta (App P x))))
+      (fun t _ P => Some (AsAl t (fun x => beta (App P x))))
+      None.
+
     Definition INTRO := @INTRO typ (expr typ func) EV EU fintro.
 
 End IntroTac.

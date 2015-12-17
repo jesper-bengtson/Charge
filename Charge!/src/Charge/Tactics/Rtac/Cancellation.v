@@ -37,17 +37,17 @@ Section Canceller.
   Context {uis_pure : expr typ func -> bool}.
 
   Definition sls : SepLogAndSpec typ func :=
-  {| is_pure e := run_default
+  {| is_pure e := run_ptrn
                     (pmap (fun _ => true)
                           (inj (ptrn_view _ (por (fptrnTrue ignore) (fptrnFalse ignore)))))
                     (uis_pure e) e
    ; is_emp := fun e =>
-                 run_default (pmap (fun _ => true)
+                 run_ptrn (pmap (fun _ => true)
                                    (inj (ptrn_view _ (fptrnEmp ignore)))) false e
-   ; is_star := run_default
+   ; is_star := run_ptrn
                   (pmap (fun _ => true) (inj (ptrn_view _ (fptrnStar ignore))))
                   false
-   ; is_and := run_default
+   ; is_and := run_ptrn
                  (pmap (fun _ => true) (inj (ptrn_view _ (fptrnAnd ignore))))
                  false
    |}.
@@ -70,14 +70,12 @@ Section Canceller.
                  end
    ; e_emp := mkEmp tyLogic
    ; e_and := fun l r =>
-                let lt := run_tptrn 
-                            (pdefault 
+                let lt := run_ptrn
+                            (inj (ptrn_view _ (pmap (fun _ => true) (fptrnTrue ignore))))
+                            false l in
+                let rt := run_ptrn
                                (inj (ptrn_view _ (pmap (fun _ => true) (fptrnTrue ignore))))
-                               false) l in
-                let rt := run_tptrn
-                            (pdefault 
-                               (inj (ptrn_view _ (pmap (fun _ => true) (fptrnTrue ignore))))
-                               false) r in
+                               false r in
                 match lt, rt with
                 | true, true => mkTrue tyLogic
                 | true, false => r
@@ -87,12 +85,11 @@ Section Canceller.
    ; e_true := mkTrue tyLogic
    |}.
 
-  Definition eproveTrue c (s : ctx_subst (typ := typ) (expr := expr typ func) c) : 
+  Definition eproveTrue c (s : ctx_subst (typ := typ) (expr := expr typ func) c) :
     expr typ func -> option (ctx_subst c) :=
-    run_tptrn
-      (pdefault
+    run_ptrn
          (inj (ptrn_view _ (pmap (fun _ => Some s) (fptrnTrue ignore))))
-         None).
+         None.
 
   Definition is_solved (e1 e2 : conjunctives typ func) : bool :=
     match e1 , e2 with
@@ -139,26 +136,24 @@ Section Canceller.
 
   Definition CANCELLATION : rtac typ (expr typ func) :=
     fun tus tvs nus nvs c s e =>
-      run_tptrn
-        (pdefault
-           (pmap (fun t_a_b => 
+      run_ptrn
+           (pmap (fun t_a_b =>
                     let '(t, a, b) := t_a_b in
                     match t ?[ eq ] tyLogic with
                     | true =>
                       match the_canceller tus tvs a b s with
-                      | inl (l, r, s') => 
-                        run_tptrn
-                          (pdefault
+                      | inl (l, r, s') =>
+                        run_ptrn
                              (pmap (fun _ => Solved s') (ptrnEmp get))
-                             (More s' (GGoal (mkEntails tyLogic l r)))) r
+                             (More s' (GGoal (mkEntails tyLogic l r))) r
                       | inr s' => Solved s'
                       end
                     | false => More s (GGoal e)
                     end)
                  (ptrnEntails get get get))
-           (More s (GGoal e))) e.
-(*      
-      
+           (More s (GGoal e)) e.
+(*
+
 Definition the_canceller2 tus tvs (lhs rhs : expr typ func) :=
     match @normalize_and typ _ _ func _ ssl sls tus tvs tyLogic lhs
         , @normalize_and typ _ _ func _ ssl sls tus tvs tyLogic rhs
