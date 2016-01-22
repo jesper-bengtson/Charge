@@ -1,6 +1,7 @@
 Require Import ExtLib.Core.RelDec.
 Require Import ExtLib.Structures.Applicative.
 Require Import ExtLib.Data.String.
+Require Import ExtLib.Data.PList.
 Require Import ExtLib.Data.Map.FMapPositive.
 Require Import ExtLib.Data.SumN.
 Require Import ExtLib.Data.Positive.
@@ -15,6 +16,7 @@ Require Import MirrorCore.Lambda.ExprTac.
 Require Import MirrorCore.Lambda.Ptrns.
 Require Import MirrorCore.Lambda.RedAll.
 Require Import MirrorCore.Lambda.AppN.
+Require Import MirrorCore.Lambda.Rtac.
 Require Import MirrorCore.SymI.
 Require Import MirrorCore.syms.SymSum.
 Require Import MirrorCore.Views.FuncView.
@@ -23,7 +25,6 @@ Require Import MirrorCore.Views.ApplicativeView.
 Require Import MirrorCore.Views.StringView.
 Require Import MirrorCore.Views.ListView.
 Require Import MirrorCore.Views.ProdView.
-Require Import MirrorCore.RTac.RTac.
 
 Require Import Charge.Views.ILogicView.
 Require Import Charge.Views.BILogicView.
@@ -40,6 +41,7 @@ Require Import FunctionalExtensionality.
 Set Implicit Arguments.
 Set Strict Implicit.
 Set Maximal Implicit Insertion.
+Set Universe Polymorphism.
 
 Inductive subst_func {typ : Type} :=
 | of_null
@@ -64,7 +66,7 @@ Section SubstFuncInst.
   Context {Typ0_tyVar : Typ0 _ var}.
   Context {Typ2_tyArr : Typ2 _ RFun}.
   Context {Typ2_tyProd : Typ2 _ prod}.
-  Context {Typ1_tyList : Typ1 _ list}.
+  Context {Typ1_tyList : Typ1 _ plist}.
   Context {Typ0_tyProp : Typ0 _ Prop}.
 
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyArr.
@@ -82,7 +84,7 @@ Section SubstFuncInst.
   Local Notation "'Tstack'" := (RFun var val).
   Local Notation "'Tsubst'" := (RFun var (RFun (RFun var val) val)).
   Local Notation "'Texpr'" := (RFun (RFun var val) val).
-  Local Notation "'Tsubstlist'" := (list (var * Texpr)).
+  Local Notation "'Tsubstlist'" := (plist (var * Texpr)).
 
   Definition stack := @stack (typD tyVar) (typD tyVal).
 
@@ -137,7 +139,9 @@ Section SubstFuncInst.
           apply_subst.
 
   Definition singleSubstR : typD (tyArr tyExpr (tyArr tyVar tySubst)) :=
-    castR id (RFun Texpr (RFun var Tsubst)) subst1.
+    castR id (RFun Texpr (RFun var Tsubst)) (@subst1 var val _).
+
+Set Printing Universes.
 
   Definition parSubstR : typD (tyArr tySubstList tySubst) :=
     castR id (RFun Tsubstlist Tsubst) substl_aux.
@@ -492,7 +496,7 @@ Section SubstPtrn.
 End SubstPtrn.
 
 Section SubstTac.
-  Context {typ func : Type} {RType_typ : RType typ}.
+  Context {typ func : Type} {RType_typ : RType typ} {RSym_func : RSym func}.
   Context {FV_subst : FuncView func (subst_func typ)}.
   Context {FV_ap : FuncView func (ap_func typ)}.
   Context {FV_string : FuncView func stringFunc}.
@@ -640,5 +644,5 @@ Section SubstTac.
                                       red_push_subst t e sub)
                       (ptrnApplySubst Ptrns.get Ptrns.get Ptrns.get)).
 
-  Definition SUBST := SIMPLIFY (typ := typ) (fun _ _ _ _ => beta_all (fun x e args => red_subst (apps e args))).
+  Definition SUBST := SIMPL true (red_beta (fun x e args => red_subst (apps e args))).
 End SubstTac.

@@ -59,16 +59,16 @@ Section seplog_fold.
   ; His_pure : forall e,
                  sls.(is_pure) e = true ->
                  forall us vs val,
-                   exprD us vs e SL = Some val ->
+                   env_exprD us vs SL e = Some val ->
                    pure val
   ; His_emp : forall e,
                 sls.(is_emp) e = true ->
                 forall us vs,
-                  exprD us vs e SL = Some empSP
+                  env_exprD us vs SL e = Some empSP
   ; His_star : forall e,
                  sls.(is_star) e = true ->
                  forall us vs,
-                   exprD us vs e (tyArr SL (tyArr SL SL)) =
+                   env_exprD us vs (tyArr SL (tyArr SL SL)) e =
                    Some match eq_sym (typ2_cast SL (tyArr SL SL)) in _ = t
                               return t
                         with

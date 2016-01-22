@@ -49,35 +49,35 @@ Section syn_sep_log.
   Record SynSepLogOk : Type :=
   { e_empOk : forall tus tvs,
               exists val,
-                exprD' tus tvs SL SSL.(e_emp) = Some val /\
+                lambda_exprD tus tvs SL SSL.(e_emp) = Some val /\
                 forall us vs, val us vs -|- empSP
   ; e_trueOk : forall tus tvs,
                exists val,
-                 exprD' tus tvs SL SSL.(e_true) = Some val /\
+                 lambda_exprD tus tvs SL SSL.(e_true) = Some val /\
                  forall us vs, val us vs -|- ltrue
   ; e_starOk : forall tus tvs x y valx valy,
-                 exprD' tus tvs SL x = Some valx ->
-                 exprD' tus tvs SL y = Some valy ->
+                 lambda_exprD tus tvs SL x = Some valx ->
+                 lambda_exprD tus tvs SL y = Some valy ->
                  exists val,
-                   exprD' tus tvs SL (SSL.(e_star) x y) = Some val /\
+                   lambda_exprD tus tvs SL (SSL.(e_star) x y) = Some val /\
                    forall us vs, val us vs -|- valx us vs ** valy us vs
   ; e_starValid : forall tus tvs x y val,
-                    exprD' tus tvs SL (SSL.(e_star) x y) = Some val ->
+                    lambda_exprD tus tvs SL (SSL.(e_star) x y) = Some val ->
                     exists valx valy,
-                      exprD' tus tvs SL x = Some valx /\
-                      exprD' tus tvs SL y = Some valy /\
+                      lambda_exprD tus tvs SL x = Some valx /\
+                      lambda_exprD tus tvs SL y = Some valy /\
                       forall us vs, val us vs -|- valx us vs ** valy us vs
   ; e_andOk : forall tus tvs x y valx valy,
-                exprD' tus tvs SL x = Some valx ->
-                exprD' tus tvs SL y = Some valy ->
+                lambda_exprD tus tvs SL x = Some valx ->
+                lambda_exprD tus tvs SL y = Some valy ->
                 exists val,
-                  exprD' tus tvs SL (SSL.(e_and) x y) = Some val /\
+                  lambda_exprD tus tvs SL (SSL.(e_and) x y) = Some val /\
                   forall us vs, val us vs -|- valx us vs //\\ valy us vs
   ; e_andValid : forall tus tvs x y val,
-                   exprD' tus tvs SL (SSL.(e_and) x y) = Some val ->
+                   lambda_exprD tus tvs SL (SSL.(e_and) x y) = Some val ->
                    exists valx valy,
-                     exprD' tus tvs SL x = Some valx /\
-                     exprD' tus tvs SL y = Some valy /\
+                     lambda_exprD tus tvs SL x = Some valx /\
+                     lambda_exprD tus tvs SL y = Some valy /\
                      forall us vs, val us vs -|- valx us vs //\\ valy us vs
   }.
 

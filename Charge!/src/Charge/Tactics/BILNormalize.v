@@ -131,7 +131,7 @@ Section conjunctives.
     Definition well_formed (PO : PureOp)
                (c : conjunctives) (us vs : env) : Prop :=
       List.Forall (fun e =>
-                     exists val, exprD us vs e SL  = Some val
+                     exists val, env_exprD us vs SL e = Some val
                               /\ @Pure.pure _ PO val) c.(pure).
 
     Variable SSL : SynSepLog typ sym.
@@ -156,11 +156,11 @@ Section conjunctives.
 
     Lemma iterated_base_true_and_pure
     : forall us vs ps x1,
-        exprD us vs (iterated_base (e_true SSL) (e_and SSL) ps) SL = Some x1 ->
+        env_exprD us vs SL (iterated_base (e_true SSL) (e_and SSL) ps) = Some x1 ->
         List.Forall
           (fun e : expr typ sym =>
              exists val : typD SL,
-               exprD us vs e SL = Some val /\ Pure.pure val) ps -> Pure.pure x1.
+               env_exprD us vs SL e = Some val /\ Pure.pure val) ps -> Pure.pure x1.
     Proof.
 (*
       intros.
@@ -503,8 +503,8 @@ generalize (@iterated_base_cons _ SSL.(e_true) SSL.(e_and)
     Theorem conjunctives_to_expr_conjunctives_to_expr_star_iff
     : forall tvs tus c,
         match
-            exprD' tus tvs SL (conjunctives_to_expr c)
-          , exprD' tus tvs SL (conjunctives_to_expr_star c)
+            exprD tus tvs SL (conjunctives_to_expr c)
+          , exprD tus tvs SL (conjunctives_to_expr_star c)
         with
           | Some cE , Some cE' =>
             forall us (vs : hlist typD tvs),
