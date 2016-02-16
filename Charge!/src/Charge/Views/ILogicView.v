@@ -2,6 +2,7 @@ Require Import ExtLib.Core.RelDec.
 Require Import ExtLib.Data.Nat.
 Require Import ExtLib.Data.Bool.
 Require Import ExtLib.Data.String.
+Require Import ExtLib.Data.POption.
 Require Import ExtLib.Data.Map.FMapPositive.
 Require Import ExtLib.Data.SumN.
 Require Import ExtLib.Data.Positive.
@@ -61,20 +62,13 @@ Section ILogicFuncInst.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
   Let tyProp : typ := @typ0 _ _ _ _.
 
-  Inductive _option (T : Type) : Type :=
-  | _None
-  | _Some (_ : T).
-
-  Arguments _None {_}.
-  Arguments _Some {_} _.
-
   Definition logic_ops := forall (t : typ),
-    _option (ILogicOps (typD t)).
+    poption (ILogicOps (typD t)).
     
   Definition logic_opsOk (l : logic_ops) : Prop :=
     forall g, match l g return Prop with
-                | _Some T => @ILogic _ T
-                | _None => True
+                | pSome T => @ILogic _ T
+                | pNone => True
               end.
 
   Variable gs : logic_ops.
@@ -392,23 +386,23 @@ Section ILogicFuncInst.
     match f with
     | ilf_true t
     | ilf_false t => match gs t with
-  		     | _Some _ => Some t
-		     | _None => None
+  		     | pSome _ => Some t
+		     | pNone => None
   		     end
     | ilf_entails t => match gs t with
-		       | _Some _ => Some (tyArr t (tyArr t tyProp))
-		       | _None => None
+		       | pSome _ => Some (tyArr t (tyArr t tyProp))
+		       | pNone => None
 		       end
     | ilf_and t
     | ilf_or t
     | ilf_impl t => match gs t with
-		    | _Some _ => Some (tyArr t (tyArr t t))
-		    | _None => None
+		    | pSome _ => Some (tyArr t (tyArr t t))
+		    | pNone => None
 		    end
     | ilf_forall a t
     | ilf_exists a t => match gs t with
-			| _Some _ => Some (tyArr (tyArr a t) t)
-			| _None => None
+			| pSome _ => Some (tyArr (tyArr a t) t)
+			| pNone => None
 			end
     end.
   
@@ -467,96 +461,96 @@ Section ILogicFuncInst.
 		end
    with
    | ilf_true t => match gs t as x return (match match x with
-						 | _Some _ => Some t
-						 | _None => None
+						 | pSome _ => Some t
+						 | pNone => None
 						 end with
 				           | Some t0 => typD t0
 					   | None => unit
 					   end) with
-		   | _Some t => @ltrue _ t
-		   | _None => tt
+		   | pSome t => @ltrue _ t
+		   | pNone => tt
 		   end
    | ilf_false t =>
      match gs t as x
            return (match match x with
-			 | _Some _ => Some t
-			 | _None => None
+			 | pSome _ => Some t
+			 | pNone => None
 			 end with
 		   | Some t0 => typD t0
 		   | None => unit
 		   end) with
-     | _Some t => lfalse
-     | _None => tt
+     | pSome t => lfalse
+     | pNone => tt
      end
    | ilf_entails t =>
      match gs t as x
            return (match match x with
-			 | _Some _ => Some (tyArr t (tyArr t tyProp))
-			 | _None => None
+			 | pSome _ => Some (tyArr t (tyArr t tyProp))
+			 | pNone => None
 			 end with
 		   | Some t0 => typD t0
 		   | None => unit
 		   end) with
-     | _Some t => entailsR
-     | _None => tt
+     | pSome t => entailsR
+     | pNone => tt
      end
    | ilf_and t =>
      match gs t as x
            return (match match x with
-			 | _Some _ => Some (tyArr t (tyArr t t))
-			 | _None => None
+			 | pSome _ => Some (tyArr t (tyArr t t))
+			 | pNone => None
 			 end with
 		   | Some t0 => typD t0
 		   | None => unit
 		   end) with
-     | _Some t => andR
-     | _None => tt
+     | pSome t => andR
+     | pNone => tt
      end
    | ilf_impl t =>
      match gs t as x
            return (match match x with
-			 | _Some _ => Some (tyArr t (tyArr t t))
-			 | _None => None
+			 | pSome _ => Some (tyArr t (tyArr t t))
+			 | pNone => None
 			 end with
 		   | Some t0 => typD t0
 		   | None => unit
 		   end) with
-     | _Some t => implR
-     | _None => tt
+     | pSome t => implR
+     | pNone => tt
      end
    | ilf_or t =>
      match gs t as x
            return (match match x with
-			 | _Some _ => Some (tyArr t (tyArr t t))
-			 | _None => None
+			 | pSome _ => Some (tyArr t (tyArr t t))
+			 | pNone => None
 			 end with
 		   | Some t0 => typD t0
 		   | None => unit
 		   end) with
-     | _Some t => orR
-     | _None => tt
+     | pSome t => orR
+     | pNone => tt
      end
    | ilf_exists a t =>
      match gs t as x return (match match x with
-				   | _Some _ => Some (tyArr (tyArr a t) t)
-				   | _None => None
+				   | pSome _ => Some (tyArr (tyArr a t) t)
+				   | pNone => None
 				   end with
 			     | Some t0 => typD t0
 			     | None => unit
 			     end) with
-     | _Some t0 => existsR
-     | _None => tt
+     | pSome t0 => existsR
+     | pNone => tt
      end
    | ilf_forall a t =>
      match gs t as x return (match match x with
-				   | _Some _ => Some (tyArr (tyArr a t) t)
-				   | _None => None
+				   | pSome _ => Some (tyArr (tyArr a t) t)
+				   | pNone => None
 				   end with
 			     | Some t0 => typD t0
 			     | None => unit
 			     end) with
-     | _Some t0 => forallR
-     | _None => tt
+     | pSome t0 => forallR
+     | pNone => tt
      end
    end.
  

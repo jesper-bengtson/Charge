@@ -7,6 +7,7 @@ Require Import ExtLib.Tactics.Consider.
 Require Import ExtLib.Data.Map.FMapPositive.
 Require Import ExtLib.Data.SumN.
 Require Import ExtLib.Data.Positive.
+Require Import ExtLib.Data.POption.
 
 Require Import MirrorCore.TypesI.
 Require Import MirrorCore.syms.SymEnv.
@@ -61,7 +62,7 @@ Section BILogicFuncInst.
     
   Definition bilogic_opsOk (l : bilogic_ops) : Prop :=
     forall g, match is g, l g return Prop with
-                | _Some T, Some U => BILogic (typD g)
+                | pSome T, Some U => BILogic (typD g)
                 | _, _ => True
               end.
 

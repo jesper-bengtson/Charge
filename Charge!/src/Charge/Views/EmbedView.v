@@ -2,6 +2,7 @@ Require Import ExtLib.Core.RelDec.
 Require Import ExtLib.Data.Map.FMapPositive.
 Require Import ExtLib.Data.SumN.
 Require Import ExtLib.Data.Positive.
+Require Import ExtLib.Data.POption.
 Require Import ExtLib.Tactics.
 Require Import ExtLib.Tactics.Consider.
 
@@ -49,7 +50,7 @@ Section EmbedFuncInst.
   Definition embed_opsOk (es : embed_ops) : Prop :=
     forall t t',
       match is t , is t' , es t t' return Prop with
-        | _Some a , _Some b , Some T => @Embed _ a _ _ T
+        | pSome a , pSome b , Some T => @Embed _ a _ _ T
         | _ , _ , _ => True
       end.
 
