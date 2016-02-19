@@ -58,11 +58,11 @@ Section BILogicFuncInst.
   Variable is : logic_ops.
 
   Definition bilogic_ops := forall (t : typ),
-    option (BILOperators (typD t)).
+    poption (BILOperators (typD t)).
     
   Definition bilogic_opsOk (l : bilogic_ops) : Prop :=
     forall g, match is g, l g return Prop with
-                | pSome T, Some U => BILogic (typD g)
+                | pSome T, pSome U => BILogic (typD g)
                 | _, _ => True
               end.
 
@@ -284,13 +284,13 @@ Section BILogicFuncInst.
   Definition typeof_bilfunc (f : bilfunc typ) : option typ :=
     match f with
     | bilf_emp t => match gs t with
-  		    | Some _ => Some t
-		    | None => None
+  		    | pSome _ => Some t
+		    | pNone => None
   		    end
     | bilf_star t
     | bilf_wand t => match gs t with
-		     | Some _ => Some (tyArr t (tyArr t t))
-		     | None => None
+		     | pSome _ => Some (tyArr t (tyArr t t))
+		     | pNone => None
 		     end
     end.
   
@@ -328,38 +328,38 @@ Section BILogicFuncInst.
       | bilf_emp t =>
         match gs t as x
           return (match match x with
-                          | Some _ => Some t
-                          | None => None
+                          | pSome _ => Some t
+                          | pNone => None
                         end with
                     | Some t0 => typD t0
                     | None => unit
                   end) with
-        | Some BIL => empR _ BIL
-        | None => tt
+        | pSome BIL => empR _ BIL
+        | pNone => tt
         end
       | bilf_star t =>
         match gs t as x
               return (match match x with
-			      | Some _ => Some (tyArr t (tyArr t t))
-			      | None => None
+			      | pSome _ => Some (tyArr t (tyArr t t))
+			      | pNone => None
 			    end with
 			| Some t0 => typD t0
 			| None => unit
 		      end) with
-	  | Some t => starR _ t
-	  | None => tt
+	  | pSome t => starR _ t
+	  | pNone => tt
         end
       | bilf_wand t =>
         match gs t as x
               return (match match x with
-			      | Some _ => Some (tyArr t (tyArr t t))
-			      | None => None
+			      | pSome _ => Some (tyArr t (tyArr t t))
+			      | pNone => None
 			    end with
 			| Some t0 => typD t0
 			| None => unit
 		      end) with
-	  | Some t => wandR _ t
-	  | None => tt
+	  | pSome t => wandR _ t
+	  | pNone => tt
         end
     end.
 
