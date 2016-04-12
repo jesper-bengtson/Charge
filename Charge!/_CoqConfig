@@ -1,5 +1,4 @@
 -Q src/Charge Charge
--arg -type-in-type
 
 src/Charge/SepAlg/SepAlgMap.v
 src/Charge/Tactics/Rtac/Intro.v
