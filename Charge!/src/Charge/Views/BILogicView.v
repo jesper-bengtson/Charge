@@ -379,7 +379,7 @@ Section BILogicFuncInst.
 End BILogicFuncInst.
 
 Section MakeBILogic.
-  Context {typ func : Type} {FV : FuncView func (bilfunc typ)}.
+  Context {typ func : Type} {FV : PartialView func (bilfunc typ)}.
 
   Definition fEmp t := f_insert (bilf_emp t).
   Definition fStar t := f_insert (bilf_star t).
@@ -509,7 +509,7 @@ Section MakeBILogic.
 End MakeBILogic.
 
 Section BILogicPtrn.
-  Context {typ func : Type} {FV : FuncView func (bilfunc typ)}.
+  Context {typ func : Type} {FV : PartialView func (bilfunc typ)}.
   
  Definition ptrnEmp {T : Type}
              (p : ptrn typ T) : ptrn (expr typ func) T :=

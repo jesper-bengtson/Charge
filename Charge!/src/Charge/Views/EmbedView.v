@@ -191,7 +191,7 @@ End EmbedFuncInst.
 
 Section MakeEmbed.
 
-  Context {typ func : Type} {FV : FuncView func (embed_func typ)}.
+  Context {typ func : Type} {FV : PartialView func (embed_func typ)}.
 
   Definition fEmbed t u := f_insert (eilf_embed t u).
 
@@ -239,7 +239,7 @@ Section MakeEmbed.
 End MakeEmbed.
 
 Section EmbedPtrn.
-  Context {typ func : Type} {FV : FuncView func (embed_func typ)}.
+  Context {typ func : Type} {FV : PartialView func (embed_func typ)}.
   
   Definition ptrnEmbed {A T : Type}
              (p : ptrn (typ * typ) T)

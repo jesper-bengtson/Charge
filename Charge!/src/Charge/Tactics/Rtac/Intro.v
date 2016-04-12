@@ -12,7 +12,7 @@ Require Import Charge.Views.ILogicView.
 
 Section IntroTac.
   Context {typ func subst : Type}.
-  Context {HIL : FuncView func (ilfunc typ)}.
+  Context {HIL : PartialView func (ilfunc typ)}.
   Context {EV : ExprVar (expr typ func)}.
   Context {EU : ExprUVar (expr typ func)}.
 

@@ -24,8 +24,8 @@ Set Strict Implicit.
 
 Section Canceller.
   Context (typ func subst : Type) (tyLogic : typ).
-  Context {FVIL : FuncView func (ilfunc typ)}.
-  Context {FVBIL : FuncView func (bilfunc typ)}.
+  Context {FVIL : PartialView func (ilfunc typ)}.
+  Context {FVBIL : PartialView func (bilfunc typ)}.
   Context {RType_typ : RType typ} {RelDec_typ : RelDec (@eq typ)}.
   Context {Typ2_typ : Typ2 RType_typ RFun}.
   Context {RSym_func : @RSym _ RType_typ func}.

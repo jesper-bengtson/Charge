@@ -571,7 +571,7 @@ End ILogicFuncInst.
 
 
 Section MakeILogic.
-  Context {typ func : Type} {FV : FuncView func (ilfunc typ)}.
+  Context {typ func : Type} {FV : PartialView func (ilfunc typ)}.
 
   Definition fTrue t := f_insert (ilf_true t).
   Definition fFalse t := f_insert (ilf_false t).
@@ -987,7 +987,7 @@ Section MakeILogic.
 End MakeILogic.
 
 Section ILogicPtrn.
-  Context {typ func : Type} {FV : FuncView func (ilfunc typ)}.
+  Context {typ func : Type} {FV : PartialView func (ilfunc typ)}.
 
  Definition ptrnTrue {T : Type}
              (p : ptrn typ T) : ptrn (expr typ func) T :=

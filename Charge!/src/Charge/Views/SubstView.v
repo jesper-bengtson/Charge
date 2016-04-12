@@ -182,7 +182,7 @@ Set Printing Universes.
 End SubstFuncInst.
 
 Section MakeSubst.
-  Context {typ func : Type} {FV : FuncView func (subst_func typ)}.
+  Context {typ func : Type} {FV : PartialView func (subst_func typ)}.
 
   Definition fNull := f_insert of_null.
   Definition fStackGet := f_insert of_stack_get.
@@ -456,7 +456,7 @@ Section MakeSubst.
 End MakeSubst.
 
 Section SubstPtrn.
-  Context {typ func : Type} {FV : FuncView func (subst_func typ)}.
+  Context {typ func : Type} {FV : PartialView func (subst_func typ)}.
 
   Definition ptrnNull : ptrn (expr typ func) unit :=
     inj (ptrn_view _ fptrnNull).
@@ -497,14 +497,14 @@ End SubstPtrn.
 
 Section SubstTac.
   Context {typ func : Type} {RType_typ : RType typ} {RSym_func : RSym func}.
-  Context {FV_subst : FuncView func (subst_func typ)}.
-  Context {FV_ap : FuncView func (ap_func typ)}.
-  Context {FV_string : FuncView func stringFunc}.
-  Context {FV_list : FuncView func (list_func typ)}.
-  Context {FV_prod : FuncView func (prod_func typ)}.
-  Context {FV_ilogic : FuncView func (ilfunc typ)}.
-  Context {FV_bilogic : FuncView func (bilfunc typ)}.
-  Context {FV_embed : FuncView func (embed_func typ)}.
+  Context {FV_subst : PartialView func (subst_func typ)}.
+  Context {FV_ap : PartialView func (ap_func typ)}.
+  Context {FV_string : PartialView func stringFunc}.
+  Context {FV_list : PartialView func (list_func typ)}.
+  Context {FV_prod : PartialView func (prod_func typ)}.
+  Context {FV_ilogic : PartialView func (ilfunc typ)}.
+  Context {FV_bilogic : PartialView func (bilfunc typ)}.
+  Context {FV_embed : PartialView func (embed_func typ)}.
   Context {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
   Context {val : Type}.
 
