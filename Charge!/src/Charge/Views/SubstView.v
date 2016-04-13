@@ -1,7 +1,6 @@
 Require Import ExtLib.Core.RelDec.
 Require Import ExtLib.Structures.Applicative.
 Require Import ExtLib.Data.String.
-Require Import ExtLib.Data.PList.
 Require Import ExtLib.Data.Map.FMapPositive.
 Require Import ExtLib.Data.SumN.
 Require Import ExtLib.Data.Positive.
@@ -66,7 +65,7 @@ Section SubstFuncInst.
   Context {Typ0_tyVar : Typ0 _ var}.
   Context {Typ2_tyArr : Typ2 _ RFun}.
   Context {Typ2_tyProd : Typ2 _ prod}.
-  Context {Typ1_tyList : Typ1 _ plist}.
+  Context {Typ1_tyList : Typ1 _ list}.
   Context {Typ0_tyProp : Typ0 _ Prop}.
 
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyArr.
@@ -84,7 +83,7 @@ Section SubstFuncInst.
   Local Notation "'Tstack'" := (RFun var val).
   Local Notation "'Tsubst'" := (RFun var (RFun (RFun var val) val)).
   Local Notation "'Texpr'" := (RFun (RFun var val) val).
-  Local Notation "'Tsubstlist'" := (plist (var * Texpr)).
+  Local Notation "'Tsubstlist'" := (list (var * Texpr)).
 
   Definition stack := @stack (typD tyVar) (typD tyVal).
 
