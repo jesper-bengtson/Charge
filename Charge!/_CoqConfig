@@ -1,6 +1,5 @@
 -Q src/Charge Charge
 
-src/Charge/SepAlg/SepAlgMap.v
 src/Charge/Tactics/Rtac/Intro.v
 src/Charge/Tactics/Rtac/Minify.v
 src/Charge/Tactics/Rtac/Instantiate.v

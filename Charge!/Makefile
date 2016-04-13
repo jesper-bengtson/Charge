@@ -13,12 +13,11 @@ ifneq ("$(wildcard _CoqPath)","")
 	@ cat _CoqPath >> _CoqProject
 endif
 
-_CoqPath:
-	@ echo > /dev/null
-
 clean: Makefile.coq
 	$(MAKE) -f Makefile.coq clean
 	rm -f Makefile.coq _CoqProject
 
 install: Makefile.coq
 	$(MAKE) -f Makefile.coq install
+
+PHONEY: coq
