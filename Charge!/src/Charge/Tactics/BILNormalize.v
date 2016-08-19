@@ -128,7 +128,7 @@ Section conjunctives.
     Variable IL : @ILogic _ ILO.
     Variable BIL : @BILogic _ ILO BILO.
 
-    Definition well_formed (PO : PureOp)
+    Definition well_formed (PO : PureOp (typD SL))
                (c : conjunctives) (us vs : env) : Prop :=
       List.Forall (fun e =>
                      exists val, env_exprD us vs SL e = Some val

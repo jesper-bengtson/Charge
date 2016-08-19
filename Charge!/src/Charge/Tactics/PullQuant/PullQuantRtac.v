@@ -2,7 +2,7 @@ Require Import ExtLib.Core.RelDec.
 Require Import MirrorCore.Lambda.ExprCore.
 Require Import MirrorCore.Lambda.ExprD.
 Require Import MirrorCore.Lambda.RedAll.
-Require Import MirrorCore.Lambda.AutoSetoidRewriteRtac.
+Require Import MirrorCore.Lambda.RewriteStrat.
 Require Import MirrorCore.Views.Ptrns.
 Require Import MirrorCore.Lambda.Ptrns.
 Require Import MirrorCore.Views.FuncView.

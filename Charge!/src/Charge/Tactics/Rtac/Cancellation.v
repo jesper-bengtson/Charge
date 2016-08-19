@@ -135,13 +135,13 @@ Section Canceller.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
 
   Definition CANCELLATION : rtac typ (expr typ func) :=
-    fun tus tvs nus nvs c s e =>
+    fun c s e =>
       run_ptrn
            (pmap (fun t_a_b =>
                     let '(t, a, b) := t_a_b in
                     match t ?[ eq ] tyLogic with
                     | true =>
-                      match the_canceller tus tvs a b s with
+                      match the_canceller (getUVars c) (getVars c) a b s with
                       | inl (l, r, s') =>
                         run_ptrn
                              (pmap (fun _ => Solved s') (ptrnEmp get))

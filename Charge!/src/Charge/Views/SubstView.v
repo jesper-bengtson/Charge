@@ -20,10 +20,10 @@ Require Import MirrorCore.SymI.
 Require Import MirrorCore.syms.SymSum.
 Require Import MirrorCore.Views.FuncView.
 Require Import MirrorCore.Views.Ptrns.
-Require Import MirrorCore.Views.ApplicativeView.
-Require Import MirrorCore.Views.StringView.
-Require Import MirrorCore.Views.ListView.
-Require Import MirrorCore.Views.ProdView.
+Require Import MirrorCore.Lib.ApplicativeView.
+Require Import MirrorCore.Lib.StringView.
+Require Import MirrorCore.Lib.ListView.
+Require Import MirrorCore.Lib.ProdView.
 
 Require Import Charge.Views.ILogicView.
 Require Import Charge.Views.BILogicView.
