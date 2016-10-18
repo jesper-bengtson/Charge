@@ -43,7 +43,6 @@ OBJECTS = \
 	bin/Charge/Views/BILogicView.vo \
 	bin/Charge/Tactics/SepLogFoldWithAnd.vo \
 	bin/Charge/Tactics/Rtac/Apply.vo \
-	bin/Charge/Reify/ILogicReify.vo \
 	bin/Charge/Views/SubstView.vo \
 	bin/Charge/Tactics/PullQuant/PullQuantRtac.vo \
 	bin/Charge/Views/EmbedView.vo \
