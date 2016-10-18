@@ -1,4 +1,4 @@
--Q src/Charge Charge
+-Q bin/Charge Charge
 
 src/Charge/Tactics/Rtac/Intro.v
 src/Charge/Tactics/Rtac/Minify.v

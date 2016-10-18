@@ -76,9 +76,9 @@ Section SubstFuncInst.
   Let tyVar : typ := @typ0 _ _ _ Typ0_tyVar.
 
   Local Notation "'tyStack'" := (tyArr tyVar tyVal).
-  Local Notation "'tySubst'" := (tyArr tyVar (tyArr tyStack tyVal)).
   Local Notation "'tyExpr'" := (tyArr tyStack tyVal).
-  Local Notation "'tySubstList'" := (tyList (tyProd tyVar (tyArr tyStack tyVal))).
+  Local Notation "'tySubst'" := (tyArr tyVar tyExpr).
+  Local Notation "'tySubstList'" := (tyList (tyProd tyVar tyExpr)).
 
   Local Notation "'Tstack'" := (RFun var val).
   Local Notation "'Tsubst'" := (RFun var (RFun (RFun var val) val)).
@@ -126,7 +126,7 @@ Section SubstFuncInst.
     repeat rewrite rel_dec_correct; try intuition congruence.
   Qed.
 
-  Definition stack_getR : typD (tyArr tyVar (tyArr tyStack tyVal)) :=
+  Definition stack_getR : typD (tyArr tyVar tyExpr) :=
     castR id (RFun var (RFun Tstack val)) stack_get.
 
   Definition stack_setR : typD (tyArr tyVar (tyArr tyVal (tyArr tyStack tyStack))) :=
@@ -645,3 +645,114 @@ Section SubstTac.
 
   Definition SUBST := SIMPL true (red_beta (fun x e args => red_subst (apps e args))).
 End SubstTac.
+
+Section ReifySubstType.
+  Context {typ : Type} {RType_typ : RType typ}.
+  Context {var val : Type}.
+
+  Context {Typ0_tyVal : Typ0 _ val}.
+  Context {Typ0_tyVar : Typ0 _ var}.
+  Context {Typ2_tyArr : Typ2 _ RFun}.
+  Context {Typ2_tyProd : Typ2 _ prod}.
+  Context {Typ1_tyList : Typ1 _ list}.
+
+  Let tyArr : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyArr.
+  Let tyProd : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyProd.
+  Let tyList : typ -> typ := @typ1 _ _ _ Typ1_tyList.
+  Let tyVal : typ := @typ0 _ _ _ Typ0_tyVal.
+  Let tyVar : typ := @typ0 _ _ _ Typ0_tyVar.
+
+  Local Notation "'tyStack'" := (tyArr tyVar tyVal).
+  Local Notation "'tyExpr'" := (tyArr tyStack tyVal).
+  Local Notation "'tySubst'" := (tyArr tyVar tyExpr).
+  Local Notation "'tySubstList'" := (tyList (tyProd tyVar tyExpr)).
+
+  Definition reify_tyVar : Command typ :=
+    CPattern (ls := nil) (RExact var) tyVar.
+
+  Definition reify_tyVal : Command typ :=
+    CPattern (ls := nil) (RExact var) tyVal.
+
+  Definition reify_tyStack : Command typ :=
+    CPattern (ls := nil) (RExact (@Stack.stack var val)) tyStack.
+
+  Definition reify_tyExpr : Command typ :=
+    CPattern (ls := nil) (RExact (@expr var val)) tyExpr.
+
+  Definition reify_tySubst : Command typ :=
+    CPattern (ls := nil) (RExact (@subst var val)) tySubst.
+
+  Definition reify_tySubstList : Command typ :=
+    CPattern (ls := nil) (RExact (@substlist var val)) tySubstList.
+
+  Definition reify_subst_typ : Command typ :=
+    CFirst (reify_tyVar :: reify_tyVal :: reify_tyStack :: reify_tyExpr ::
+            reify_tySubst :: reify_tySubstList :: nil).
+
+End ReifySubstType.
+
+Arguments reify_subst_typ _ {_} _ _ {_ _ _ _ _}.
+
+Require Import MirrorCore.Reify.ReifyClass.
+
+Section ReifySubst.
+  Context {typ func: Type} {RType_typ : RType typ}.
+  Context {var val : Type}.
+  Context {PV : PartialView func (subst_func typ)}.
+  Context {RelDec_eq : RelDec (@eq var)}.
+  Context {r : Reify typ}.
+
+  Context {Typ0_tyVal : Typ0 _ val}.
+  Context {Typ0_tyVar : Typ0 _ var}.
+  Context {Typ2_tyArr : Typ2 _ RFun}.
+  Context {Typ2_tyProd : Typ2 _ prod}.
+  Context {Typ1_tyList : Typ1 _ list}.
+
+  Let tyArr : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyArr.
+  Let tyProd : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyProd.
+  Let tyList : typ -> typ := @typ1 _ _ _ Typ1_tyList.
+  Let tyVal : typ := @typ0 _ _ _ Typ0_tyVal.
+  Let tyVar : typ := @typ0 _ _ _ Typ0_tyVar.
+
+  Local Notation "'tyStack'" := (tyArr tyVar tyVal).
+  Local Notation "'tyExpr'" := (tyArr tyStack tyVal).
+  Local Notation "'tySubst'" := (tyArr tyVar tyExpr).
+  Local Notation "'tySubstList'" := (tyList (tyProd tyVar tyExpr)).
+
+  Definition reify_stack_get : Command (expr typ func) :=
+    CPattern (ls := nil) 
+             (RExact (@stack_get var val))
+             (Inj (@fStackGet typ func PV)).
+
+  Definition reify_stack_set : Command (expr typ func) :=
+    CPattern (ls := nil)
+             (RExact (@stack_add var val _))
+             (Inj (@fStackSet typ func PV)).
+
+  Definition reify_apply_subst : Command (expr typ func) :=
+    CPattern (ls := typ::nil) 
+             (RApp (RExact (@apply_subst var val)) (RGet 0 RIgnore))
+             (fun (x : function (CCall (reify_scheme typ))) => Inj (fApplySubst x)).
+
+  Definition reify_single_subst : Command (expr typ func) :=
+    CPattern (ls := nil)
+             (RExact (@subst1 var val RelDec_eq))
+             (Inj (@fSingleSubst typ func PV)).
+
+  Definition reify_substl : Command (expr typ func) :=
+    CPattern (ls := nil)
+             (RExact (@substl var val RelDec_eq))
+             (Inj (@fSubst typ func PV)).
+
+  Definition reify_trunc_subst : Command (expr typ func) :=
+    CPattern (ls := nil)
+             (RExact (@substl_trunc var val RelDec_eq))
+             (Inj (@fTruncSubst typ func PV)).
+
+  Definition reify_subst : Command (expr typ func) :=
+    CFirst (reify_stack_get :: reify_stack_set :: reify_apply_subst ::
+            reify_single_subst :: reify_substl :: reify_trunc_subst :: nil).
+
+End ReifySubst.
+
+Arguments reify_subst _ _ _ _ {_ _ _}.

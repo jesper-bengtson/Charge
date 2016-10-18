@@ -14,6 +14,7 @@ Require Import MirrorCore.Lambda.Ptrns.
 Require Import MirrorCore.SymI.
 Require Import MirrorCore.Views.FuncView.
 Require Import MirrorCore.Views.Ptrns.
+Require Import MirrorCore.Reify.ReifyClass.
 
 Require Import ChargeCore.Logics.ILogic.
 Require Import ChargeCore.Logics.ILEmbed.
@@ -247,3 +248,19 @@ Section EmbedPtrn.
     app (inj (ptrn_view _ (fptrnEmbed p))) a.
 
 End EmbedPtrn.
+
+Section ReifyEmbed.
+  Context {typ func : Type} {FV : PartialView func (embed_func typ)}.
+  Context {t : Reify typ}.
+
+  Definition reify_eilf_embed : Command (expr typ func) :=
+    CPattern (ls := typ::typ::nil) 
+             (RApp (RApp (RApp (RExact (@embed)) (RGet 0 RIgnore)) (RGet 1 RIgnore)) RIgnore)
+             (fun (x y : function (CCall (reify_scheme typ))) => Inj (fEmbed x y)).
+
+  Definition reify_embed : Command (expr typ func) :=
+    CFirst (reify_eilf_embed :: nil).
+
+End ReifyEmbed.
+
+Arguments reify_embed _ _ {_ _}.

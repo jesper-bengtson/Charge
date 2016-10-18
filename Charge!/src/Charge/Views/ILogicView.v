@@ -17,6 +17,7 @@ Require Import MirrorCore.SymI.
 Require Import MirrorCore.syms.SymSum.
 Require Import MirrorCore.Views.Ptrns.
 Require Import MirrorCore.Views.FuncView.
+Require Import MirrorCore.Reify.ReifyClass.
 
 Require Import ChargeCore.Logics.ILogic.
 
@@ -1067,5 +1068,52 @@ Definition ilogic_cases {T : Type}
            do_default.
            
 End ILogicPtrn.
+
+Section ReifyILogic.
+  Context {typ func : Type} {FV : PartialView func (ilfunc typ)}.
+  Context {t : Reify typ}.
+
+  Definition reify_ltrue : Command (expr typ func) :=
+    CPattern (ls := typ::nil) 
+             (RApp (RApp (RExact (@ltrue)) (RGet 0 RIgnore)) RIgnore)
+             (fun (x : function (CCall (reify_scheme typ))) => mkTrue x).
+
+  Definition reify_lfalse : Command (expr typ func) :=
+    CPattern (ls := typ::nil) 
+             (RApp (RApp (RExact (@lfalse)) (RGet 0 RIgnore)) RIgnore)
+             (fun (x : function (CCall (reify_scheme typ))) => mkTrue x).
+
+  Definition reify_land : Command (expr typ func) :=
+    CPattern (ls := typ::nil) 
+             (RApp (RApp (RExact (@land)) (RGet 0 RIgnore)) RIgnore)
+             (fun (x : function (CCall (reify_scheme typ))) => Inj (fAnd x)).
+
+  Definition reify_lor : Command (expr typ func) :=
+    CPattern (ls := typ::nil) 
+             (RApp (RApp (RExact (@lor)) (RGet 0 RIgnore)) RIgnore)
+             (fun (x : function (CCall (reify_scheme typ))) => Inj (fOr x)).
+
+  Definition reify_limpl : Command (expr typ func) :=
+    CPattern (ls := typ::nil) 
+             (RApp (RApp (RExact (@limpl)) (RGet 0 RIgnore)) RIgnore)
+             (fun (x : function (CCall (reify_scheme typ))) => Inj (fImpl x)).
+
+  Definition reify_lforall : Command (expr typ func) :=
+    CPattern (ls := typ::typ::nil) 
+             (RApp (RApp (RApp (RExact (@lforall)) (RGet 0 RIgnore)) RIgnore) (RGet 1 RIgnore))
+             (fun (x y : function (CCall (reify_scheme typ))) => Inj (fForall y x)).
+
+  Definition reify_lexists : Command (expr typ func) :=
+    CPattern (ls := typ::typ::nil) 
+             (RApp (RApp (RApp (RExact (@lexists)) (RGet 0 RIgnore)) RIgnore) (RGet 1 RIgnore))
+             (fun (x y : function (CCall (reify_scheme typ))) => Inj (fExists y x)).
+
+  Definition reify_ilogic : Command (expr typ func) :=
+    CFirst (reify_ltrue :: reify_lfalse :: reify_land :: reify_lor :: 
+            reify_limpl :: reify_lforall :: reify_lexists :: nil).
+
+End ReifyILogic.
+
+Arguments reify_ilogic _ _ {_ _}.
 
 Implicit Arguments RSym_ilfunc [[typ] [HR] [Heq] [Typ2_tyArr] [Typ0_tyProp]].

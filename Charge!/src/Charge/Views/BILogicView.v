@@ -17,6 +17,7 @@ Require Import MirrorCore.SymI.
 Require Import MirrorCore.syms.SymSum.
 Require Import MirrorCore.Views.FuncView.
 Require Import MirrorCore.Views.Ptrns.
+Require Import MirrorCore.Reify.ReifyClass.
 
 Require Import ChargeCore.Logics.ILogic.
 Require Import ChargeCore.Logics.BILogic.
@@ -546,3 +547,29 @@ Section BILogicPtrn.
                   do_emp do_star do_wand)
                do_default.
 End BILogicPtrn.
+
+Section ReifyBILogic.
+  Context {typ func : Type} {FV : PartialView func (bilfunc typ)}.
+  Context {t : Reify typ}.
+
+  Definition reify_emp : Command (expr typ func) :=
+    CPattern (ls := typ::nil) 
+             (RApp (RApp (RExact (@empSP)) (RGet 0 RIgnore)) RIgnore)
+             (fun (x : function (CCall (reify_scheme typ))) => mkEmp x).
+
+  Definition reify_star : Command (expr typ func) :=
+    CPattern (ls := typ::nil) 
+             (RApp (RApp (RExact (@sepSP)) (RGet 0 RIgnore)) RIgnore)
+             (fun (x : function (CCall (reify_scheme typ))) => Inj (fStar x)).
+
+  Definition reify_wand : Command (expr typ func) :=
+    CPattern (ls := typ::nil) 
+             (RApp (RApp (RExact (@wandSP)) (RGet 0 RIgnore)) RIgnore)
+             (fun (x : function (CCall (reify_scheme typ))) => Inj (fWand x)).
+
+  Definition reify_bilogic : Command (expr typ func) :=
+    CFirst (reify_emp :: reify_star :: reify_wand :: nil).
+
+End ReifyBILogic.
+
+Arguments reify_bilogic _ _ {_ _}.
