@@ -74,10 +74,10 @@ Section lemmas.
 End lemmas.
 
 Section conjunctives.
-  Variable typ : Type.
+  Variable typ : Set.
   Variable RType_typ : RType typ.
   Variable Typ2_Fun : Typ2 _ RFun.
-  Variable sym : Type.
+  Variable sym : Set.
   Variable RSym_sym : RSym sym.
 
   Let Expr_expr : Expr _ (expr typ sym) := Expr_expr.

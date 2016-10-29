@@ -27,12 +27,12 @@ Set Implicit Arguments.
 Set Strict Implicit.
 Set Maximal Implicit Insertion.
 
-Inductive embed_func typ :=
+Inductive embed_func (typ : Set) : Set :=
   | eilf_embed (_ _ : typ).
 
 Section EmbedFuncInst.
 
-  Context {typ func : Type}.
+  Context {typ func : Set}.
   Context {RType_typ : RType typ} {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
   Context {RType_typOk : RTypeOk}.
 
@@ -41,9 +41,9 @@ Section EmbedFuncInst.
 
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
   Let tyProp : typ := @typ0 _ _ _ _.
-  
+
   Context {Typ2_tyArrOk : Typ2Ok Typ2_tyArr}.
-  
+
   Variable is : logic_ops.
 
   Definition embed_ops := forall (t u : typ),
@@ -56,7 +56,7 @@ Section EmbedFuncInst.
       end.
 
   Variable gs : embed_ops.
-  
+
   Definition typeof_embed_func (f : embed_func typ) : option typ :=
     match f with
     | eilf_embed t u => match gs t u with
@@ -64,7 +64,7 @@ Section EmbedFuncInst.
 			| None => None
 			end
     end.
-  
+
   Global Instance RelDec_embed_func : RelDec (@eq (embed_func typ)) :=
     { rel_dec := fun a b =>
 	           match a, b with
@@ -79,7 +79,7 @@ Section EmbedFuncInst.
     repeat rewrite rel_dec_correct; intuition congruence.
   Qed.
 
- Definition embedD t u (EIL : EmbedOp (typD t) (typD u)) := 
+ Definition embedD t u (EIL : EmbedOp (typD t) (typD u)) :=
    castR id (RFun (typD t) (typD u)) (@embed _ _ EIL).
 
  Definition funcD (f : embed_func typ) : match typeof_embed_func f return Type with
@@ -140,9 +140,9 @@ Section EmbedFuncInst.
               end)
             True)
         True.
- 
-  Lemma eil_pointwise_embed (eilp : eil_pointwise) (eilpOk : eil_pointwiseOk eilp) (t u v w : typ) 
-  	(H : eilp (tyArr t u) (tyArr v w) = true) : exists EIL, gs (tyArr t u) (tyArr v w) = Some EIL. 
+
+  Lemma eil_pointwise_embed (eilp : eil_pointwise) (eilpOk : eil_pointwiseOk eilp) (t u v w : typ)
+  	(H : eilp (tyArr t u) (tyArr v w) = true) : exists EIL, gs (tyArr t u) (tyArr v w) = Some EIL.
   Proof.
     specialize (eilpOk (tyArr t u) (tyArr v w)).
     unfold tyArr in eilpOk.
@@ -152,7 +152,7 @@ Section EmbedFuncInst.
     exists e. assumption.
   Qed.
 
-  Lemma eil_pointwise_embed_range (eilp : eil_pointwise) (eilpOk : eil_pointwiseOk eilp) (t u v w : typ) (H : eilp (tyArr t u) (tyArr v w) = true) : exists EIL, gs u w = Some EIL. 
+  Lemma eil_pointwise_embed_range (eilp : eil_pointwise) (eilpOk : eil_pointwiseOk eilp) (t u v w : typ) (H : eilp (tyArr t u) (tyArr v w) = true) : exists EIL, gs u w = Some EIL.
   Proof.
     specialize (eilpOk (tyArr t u) (tyArr v w)).
     unfold tyArr in *.
@@ -160,7 +160,7 @@ Section EmbedFuncInst.
     forward.
     exists e0. reflexivity.
   Qed.
-  
+
   Lemma eilf_pointwise_embed_eq (eilp : eil_pointwise) (eilpOk : eil_pointwiseOk eilp) (t u v : typ) (H : eilp (tyArr t u) (tyArr t v) = true) EIL1 EIL2
     (gstu : gs (tyArr t u) (tyArr t v) = Some EIL1) (gsu : gs u v = Some EIL2) (a : typD (tyArr t u)) s :
     (tyArrD (embed a)) s = embed (tyArrD a s).
@@ -171,8 +171,8 @@ Section EmbedFuncInst.
     rewrite type_cast_refl in eilpOk.
     rewrite gstu, gsu in eilpOk. rewrite <- eilpOk, tyArrRD. reflexivity.
     apply _.
-  Qed.    
-  
+  Qed.
+
   Lemma eilf_pointwise_embed_eq2 (eilp : eil_pointwise) (eilpOk : eil_pointwiseOk eilp) (t u v : typ) (H : eilp (tyArr t u) (tyArr t v) = true) EIL1 EIL2
     (gstu : gs (tyArr t u) (tyArr t v) = Some EIL1) (gsu : gs u v = Some EIL2) (a : typD t -> typD u) :
     tyArrR (fun s => embed (a s)) = embed (tyArrR a).
@@ -185,18 +185,18 @@ Section EmbedFuncInst.
     symmetry in eilpOk.
     Require Import Charge.Tactics.Base.MirrorCoreTacs.
     rewriteD eilpOk. rewrite tyArrRD. reflexivity.
-  Qed.    
+  Qed.
 *)
 
 End EmbedFuncInst.
 
 Section MakeEmbed.
 
-  Context {typ func : Type} {FV : PartialView func (embed_func typ)}.
+  Context {typ func : Set} {FV : PartialView func (embed_func typ)}.
 
   Definition fEmbed t u := f_insert (eilf_embed t u).
 
-  Definition mkEmbed (t u : typ) (p : expr typ func): expr typ func := 
+  Definition mkEmbed (t u : typ) (p : expr typ func): expr typ func :=
     App (Inj (fEmbed t u)) p.
 
   Definition fptrnEmbed {T : Type} (p : Ptrns.ptrn (typ * typ) T) : ptrn (embed_func typ) T :=
@@ -229,8 +229,8 @@ Section MakeEmbed.
     rewrite H0 in H; inv_all; subst.
     exists t, t0; split; [assumption | reflexivity].
   Qed.
-  
-  Global Instance fptrnEmbed_SucceedsE {T : Type} {f : embed_func typ} 
+
+  Global Instance fptrnEmbed_SucceedsE {T : Type} {f : embed_func typ}
          {p : ptrn (typ * typ) T} {res : T} {pok : ptrn_ok p} :
     SucceedsE f (fptrnEmbed p) res := {
       s_result := exists t u, Succeeds (t, u) p res /\ f = eilf_embed t u;
@@ -240,8 +240,8 @@ Section MakeEmbed.
 End MakeEmbed.
 
 Section EmbedPtrn.
-  Context {typ func : Type} {FV : PartialView func (embed_func typ)}.
-  
+  Context {typ func : Set} {FV : PartialView func (embed_func typ)}.
+
   Definition ptrnEmbed {A T : Type}
              (p : ptrn (typ * typ) T)
              (a : ptrn (expr typ func) A) : ptrn (expr typ func) (T * A) :=
@@ -250,11 +250,11 @@ Section EmbedPtrn.
 End EmbedPtrn.
 
 Section ReifyEmbed.
-  Context {typ func : Type} {FV : PartialView func (embed_func typ)}.
+  Context {typ func : Set} {FV : PartialView func (embed_func typ)}.
   Context {t : Reify typ}.
 
   Definition reify_eilf_embed : Command (expr typ func) :=
-    CPattern (ls := typ::typ::nil) 
+    CPattern (ls := (typ:Type)::(typ:Type)::nil)
              (RApp (RApp (RApp (RExact (@embed)) (RGet 0 RIgnore)) (RGet 1 RIgnore)) RIgnore)
              (fun (x y : function (CCall (reify_scheme typ))) => Inj (fEmbed x y)).
 

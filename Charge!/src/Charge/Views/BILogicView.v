@@ -31,7 +31,7 @@ Set Implicit Arguments.
 Set Strict Implicit.
 Set Maximal Implicit Insertion.
 
-Inductive bilfunc typ :=
+Inductive bilfunc (typ : Set) : Set :=
   | bilf_emp (logic : typ)
   | bilf_star (logic : typ)
   | bilf_wand (logic : typ).
@@ -45,22 +45,22 @@ Definition bilfunc_logic typ (x : bilfunc typ) : typ :=
 
 Section BILogicFuncInst.
 
-  Context {typ func : Type}.
+  Context {typ func : Set}.
   Context {HR : RType typ} {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
-  
+
   Context {Typ2_tyArr : Typ2 _ RFun}.
   Context {Typ0_tyProp : Typ0 _ Prop}.
-  
+
   Context {Typ2Ok_tyArr : Typ2Ok Typ2_tyArr}.
 
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
   Let tyProp : typ := @typ0 _ _ _ _.
-	
+
   Variable is : logic_ops.
 
   Definition bilogic_ops := forall (t : typ),
     poption (BILOperators (typD t)).
-    
+
   Definition bilogic_opsOk (l : bilogic_ops) : Prop :=
     forall g, match is g, l g return Prop with
                 | pSome T, pSome U => BILogic (typD g)
@@ -68,7 +68,7 @@ Section BILogicFuncInst.
               end.
 
   Variable gs : bilogic_ops.
-  
+
   Definition bil_pointwise := typ -> bool.
 (*
   Definition bil_pointwiseOk (bilp : bil_pointwise) :=
@@ -78,10 +78,10 @@ Section BILogicFuncInst.
     match bilp (tyArr d r) with
       | true =>
         match gs (tyArr d r), gs r with
-          | Some BILOps, Some _ => 
+          | Some BILOps, Some _ =>
             match eq_sym (typ2_cast d r)  in (_ = t) return BILOperators t -> Prop with
-              | eq_refl => 
-                fun _ => 
+              | eq_refl =>
+                fun _ =>
                   (forall a, empSP a = empSP) /\
                   (forall (P Q : typD d -> typD r) a, (P ** Q) a = (P a ** Q a)) /\
                   (forall (P Q : typD d -> typD r) a, (wandSP P Q) a = wandSP (P a) (Q a))
@@ -92,13 +92,13 @@ Section BILogicFuncInst.
     end) True.
 
   Lemma bil_pointwise_bilogic (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ)
-    (H : bilp (tyArr t u) = true) : exists BIL, gs (tyArr t u) = Some BIL. 
+    (H : bilp (tyArr t u) = true) : exists BIL, gs (tyArr t u) = Some BIL.
   Proof.
     specialize (bilpOk (tyArr t u)).
     rewrite typ2_match_zeta in bilpOk; [|apply _].
     rewrite H in bilpOk.
     unfold eq_sym in bilpOk.
-    revert bilpOk H. unfold tyArr. 
+    revert bilpOk H. unfold tyArr.
     generalize (typ2_cast t u).
     generalize (typ2 t u).
     generalize dependent (typD t).
@@ -107,18 +107,18 @@ Section BILogicFuncInst.
     intros ? ? ? ?.
     generalize dependent (gs t0).
     generalize (typD t0).
-    intros; subst. 
+    intros; subst.
     forward. eexists. subst. reflexivity.
   Qed.
 
   Lemma bil_pointwise_bilogic_range (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ)
-    (H : bilp (tyArr t u) = true) : exists BIL, gs u = Some BIL. 
+    (H : bilp (tyArr t u) = true) : exists BIL, gs u = Some BIL.
   Proof.
     specialize (bilpOk (tyArr t u)).
     rewrite typ2_match_zeta in bilpOk; [|apply _].
     rewrite H in bilpOk.
     unfold eq_sym in bilpOk.
-    revert bilpOk H. unfold tyArr. 
+    revert bilpOk H. unfold tyArr.
     generalize (typ2_cast t u).
     generalize (typ2 t u).
     generalize dependent (typD t).
@@ -127,11 +127,11 @@ Section BILogicFuncInst.
     intros ? ? ? ?.
     generalize dependent (gs t0).
     generalize (typD t0).
-    intros; subst. 
+    intros; subst.
     forward. eexists. subst. reflexivity.
   Qed.
-  
-  Lemma bil_pointwise_empD (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ) 
+
+  Lemma bil_pointwise_empD (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ)
     (H : bilp (tyArr t u) = true) BIL1 BIL2
     (gstu : gs (tyArr t u) = Some BIL1) (gsu : gs u = Some BIL2) a :
     (tyArrD empSP) a = empSP.
@@ -154,9 +154,9 @@ Section BILogicFuncInst.
     intros; subst.
     destruct bilpOk as [HEmp _].
     apply HEmp.
-  Qed.    
+  Qed.
 
-  Lemma bil_pointwise_empR (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ) 
+  Lemma bil_pointwise_empR (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ)
     (H : bilp (tyArr t u) = true) BIL1 BIL2
     (gstu : gs (tyArr t u) = Some BIL1) (gsu : gs u = Some BIL2) :
     tyArrR (fun _ => empSP) = empSP.
@@ -180,7 +180,7 @@ Section BILogicFuncInst.
     destruct bilpOk as [HEmp _].
     unfold RFun in *.
 	apply functional_extensionality; intros; rewrite HEmp; reflexivity.
-  Qed.    
+  Qed.
 
   Lemma bil_pointwise_starD (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ)
     (H : bilp (tyArr t u) = true) BIL1 BIL2
@@ -205,9 +205,9 @@ Section BILogicFuncInst.
     intros; subst.
     destruct bilpOk as [_ [HStar _]].
     apply HStar.
-  Qed.    
+  Qed.
 
-  Lemma bil_pointwise_starR (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ) 
+  Lemma bil_pointwise_starR (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ)
     (H : bilp (tyArr t u) = true) BIL1 BIL2
     (gstu : gs (tyArr t u) = Some BIL1) (gsu : gs u = Some BIL2) (a b : typD t -> typD u) :
     (tyArrR (fun s => sepSP (a s) (b s))) = sepSP (tyArrR a) (tyArrR b).
@@ -230,7 +230,7 @@ Section BILogicFuncInst.
     intros; subst.
     destruct bilpOk as [_ [HStar _]].
 	apply functional_extensionality; intros; rewrite HStar; reflexivity.
-  Qed.    
+  Qed.
 
   Lemma bil_pointwise_wandD (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ)
     (H : bilp (tyArr t u) = true) BIL1 BIL2
@@ -255,9 +255,9 @@ Section BILogicFuncInst.
     intros; subst.
     destruct bilpOk as [_ [_ HWand]].
     apply HWand.
-  Qed.    
+  Qed.
 
-  Lemma bil_pointwise_wandR (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ) 
+  Lemma bil_pointwise_wandR (bilp : bil_pointwise) (bilpOk : bil_pointwiseOk bilp) (t u : typ)
     (H : bilp (tyArr t u) = true) BIL1 BIL2
     (gstu : gs (tyArr t u) = Some BIL1) (gsu : gs u = Some BIL2) (a b : typD t -> typD u) :
     (tyArrR (fun s => wandSP (a s) (b s))) = wandSP (tyArrR a) (tyArrR b).
@@ -280,7 +280,7 @@ Section BILogicFuncInst.
     intros; subst.
     destruct bilpOk as [_ [_ HWand]].
 	apply functional_extensionality; intros; rewrite HWand; reflexivity.
-  Qed.    
+  Qed.
 *)
   Definition typeof_bilfunc (f : bilfunc typ) : option typ :=
     match f with
@@ -294,7 +294,7 @@ Section BILogicFuncInst.
 		     | pNone => None
 		     end
     end.
-  
+
   Global Instance RelDec_bilfunc : RelDec (@eq (bilfunc typ)) :=
     { rel_dec := fun a b =>
 	           match a, b with
@@ -315,7 +315,7 @@ Section BILogicFuncInst.
  Definition empR t BIL := @empSP (typD t) BIL.
  Definition starR t BIL := castR id (RFun (typD t) (RFun (typD t) (typD t))) (@sepSP (typD t) BIL).
  Definition wandR t BIL := castR id (RFun (typD t) (RFun (typD t) (typD t))) (@wandSP (typD t) BIL).
- 
+
  Definition funcD (f : bilfunc typ) : match typeof_bilfunc f return Type with
 							       | Some t => typD t
 							       | None => unit
@@ -376,11 +376,11 @@ Section BILogicFuncInst.
     intros. unfold sym_eqb; simpl.
     consider (a ?[ eq ] b); auto.
   Qed.
-  
+
 End BILogicFuncInst.
 
 Section MakeBILogic.
-  Context {typ func : Type} {FV : PartialView func (bilfunc typ)}.
+  Context {typ func : Set} {FV : PartialView func (bilfunc typ)}.
 
   Definition fEmp t := f_insert (bilf_emp t).
   Definition fStar t := f_insert (bilf_star t).
@@ -485,22 +485,22 @@ Section MakeBILogic.
     rewrite H0 in H; inv_all; subst.
     exists logic; split; [assumption | reflexivity].
   Qed.
-  
-  Global Instance fptrnEmp_SucceedsE {T : Type} {f : bilfunc typ} 
+
+  Global Instance fptrnEmp_SucceedsE {T : Type} {f : bilfunc typ}
          {p : ptrn typ T} {res : T} {pok : ptrn_ok p} :
     SucceedsE f (fptrnEmp p) res := {
       s_result := exists t, Succeeds t p res /\ f = bilf_emp t;
       s_elim := @Succeeds_fptrnEmp T f p res pok
     }.
 
-  Global Instance fptrnAnd_SucceedsE {T : Type} {f : bilfunc typ} 
+  Global Instance fptrnAnd_SucceedsE {T : Type} {f : bilfunc typ}
          {p : ptrn typ T} {res : T} {pok : ptrn_ok p} :
     SucceedsE f (fptrnStar p) res := {
       s_result := exists t, Succeeds t p res /\ f = bilf_star t;
       s_elim := @Succeeds_fptrnStar T f p res pok
     }.
 
-  Global Instance fptrnWand_SucceedsE {T : Type} {f : bilfunc typ} 
+  Global Instance fptrnWand_SucceedsE {T : Type} {f : bilfunc typ}
          {p : ptrn typ T} {res : T} {pok : ptrn_ok p} :
     SucceedsE f (fptrnWand p) res := {
       s_result := exists t, Succeeds t p res /\ f = bilf_wand t;
@@ -510,21 +510,21 @@ Section MakeBILogic.
 End MakeBILogic.
 
 Section BILogicPtrn.
-  Context {typ func : Type} {FV : PartialView func (bilfunc typ)}.
-  
+  Context {typ func : Set} {FV : PartialView func (bilfunc typ)}.
+
  Definition ptrnEmp {T : Type}
              (p : ptrn typ T) : ptrn (expr typ func) T :=
     inj (ptrn_view _ (fptrnEmp p)).
 
   Definition ptrnStar {A B T : Type}
              (p : ptrn typ T)
-             (a : ptrn (expr typ func) A) 
+             (a : ptrn (expr typ func) A)
              (b : ptrn (expr typ func) B) : ptrn (expr typ func) (T * A * B) :=
     app (app (inj (ptrn_view _ (fptrnStar p))) a) b.
 
   Definition ptrnWand {A B T : Type}
              (p : ptrn typ T)
-             (a : ptrn (expr typ func) A) 
+             (a : ptrn (expr typ func) A)
              (b : ptrn (expr typ func) B) : ptrn (expr typ func) (T * A * B) :=
     app (app (inj (ptrn_view _ (fptrnWand p))) a) b.
 
@@ -534,8 +534,8 @@ Section BILogicPtrn.
              (do_wand : typ -> expr typ func -> expr typ func -> T) :=
     por (inj (ptrn_view _ (fptrnEmp (pmap do_emp Ptrns.get))))
         (appr (appr (inj (ptrn_view _ (por (fptrnStar (pmap do_star Ptrns.get))
-                                           (fptrnWand (pmap do_wand Ptrns.get))))) 
-                    Ptrns.get) 
+                                           (fptrnWand (pmap do_wand Ptrns.get)))))
+                    Ptrns.get)
               Ptrns.get).
 
   Definition bilogic_cases {T : Type}
@@ -549,21 +549,21 @@ Section BILogicPtrn.
 End BILogicPtrn.
 
 Section ReifyBILogic.
-  Context {typ func : Type} {FV : PartialView func (bilfunc typ)}.
+  Context {typ func : Set} {FV : PartialView func (bilfunc typ)}.
   Context {t : Reify typ}.
 
   Definition reify_emp : Command (expr typ func) :=
-    CPattern (ls := typ::nil) 
+    CPattern (ls := (typ:Type)::nil)
              (RApp (RApp (RExact (@empSP)) (RGet 0 RIgnore)) RIgnore)
              (fun (x : function (CCall (reify_scheme typ))) => mkEmp x).
 
   Definition reify_star : Command (expr typ func) :=
-    CPattern (ls := typ::nil) 
+    CPattern (ls := (typ:Type)::nil)
              (RApp (RApp (RExact (@sepSP)) (RGet 0 RIgnore)) RIgnore)
              (fun (x : function (CCall (reify_scheme typ))) => Inj (fStar x)).
 
   Definition reify_wand : Command (expr typ func) :=
-    CPattern (ls := typ::nil) 
+    CPattern (ls := (typ:Type)::nil)
              (RApp (RApp (RExact (@wandSP)) (RGet 0 RIgnore)) RIgnore)
              (fun (x : function (CCall (reify_scheme typ))) => Inj (fWand x)).
 

@@ -23,7 +23,7 @@ Set Implicit Arguments.
 Set Strict Implicit.
 
 Section Canceller.
-  Context (typ func subst : Type) (tyLogic : typ).
+  Context (typ func : Set) (subst : Type) (tyLogic : typ).
   Context {FVIL : PartialView func (ilfunc typ)}.
   Context {FVBIL : PartialView func (bilfunc typ)}.
   Context {RType_typ : RType typ} {RelDec_typ : RelDec (@eq typ)}.

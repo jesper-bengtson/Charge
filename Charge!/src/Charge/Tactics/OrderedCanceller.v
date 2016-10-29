@@ -22,16 +22,16 @@ Set Implicit Arguments.
 Set Strict Implicit.
 
 Section ordered_cancel.
-  Variable typ : Type.
+  Variable typ : Set.
   Variable RType_typ : RType typ.
   Variable Typ2_Fun : Typ2 _ RFun.
-  Variable func : Type.
+  Variable func : Set.
   Variable RSym_func : RSym func.
 
   Let Expr_expr : ExprI.Expr _ (expr typ func) := Expr_expr.
   Local Existing Instance Expr_expr.
 
-  Inductive Conjuncts : Type :=
+  Inductive Conjuncts : Set :=
   | Pure (_ : expr typ func) (c : Conjuncts)
   | Impure (f : expr typ func) (xs : list (expr typ func)) (c : Conjuncts)
   | Frame (_ : expr typ func) (xs : list (expr typ func)) (c : Conjuncts)
@@ -770,10 +770,10 @@ End ordered_cancel.
  ** map without looking at unification variables.
  **)
 Section simple_ordering.
-  Variable typ : Type.
+  Variable typ : Set.
   Variable RType_typ : RType typ.
   Variable Typ2_Fun : Typ2 _ RFun.
-  Variable func : Type.
+  Variable func : Set.
   Variable RSym_func : RSym func.
 
   Variable tySL : typ.

@@ -11,7 +11,7 @@ Require Import MirrorCore.Views.FuncView.
 Require Import Charge.Views.ILogicView.
 
 Section ReifyLemma.
-  Context {typ func : Type} {HIL : PartialView func (ilfunc typ)}.
+  Context {typ func : Set} {HIL : PartialView func (ilfunc typ)}.
   Context {RType_typ : RType typ}.
   Context {Typ0_tyProp : Typ0 RType_typ Prop}.
   Context {Heq : RelDec (@eq typ)}.

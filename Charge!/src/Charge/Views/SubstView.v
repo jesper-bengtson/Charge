@@ -42,7 +42,7 @@ Set Strict Implicit.
 Set Maximal Implicit Insertion.
 Set Universe Polymorphism.
 
-Inductive subst_func {typ : Type} :=
+Inductive subst_func {typ : Set} : Set :=
 | of_null
 | of_stack_get
 | of_stack_set
@@ -51,10 +51,10 @@ Inductive subst_func {typ : Type} :=
 | of_subst
 | of_trunc_subst.
 
-Implicit Arguments subst_func [].
+Arguments subst_func _ : clear implicits.
 
 Section SubstFuncInst.
-  Context {typ func : Type} {RType_typ : RType typ}.
+  Context {typ func : Set} {RType_typ : RType typ}.
   Context {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
   Context {var val : Type}.
 
@@ -181,7 +181,7 @@ Set Printing Universes.
 End SubstFuncInst.
 
 Section MakeSubst.
-  Context {typ func : Type} {FV : PartialView func (subst_func typ)}.
+  Context {typ func : Set} {FV : PartialView func (subst_func typ)}.
 
   Definition fNull := f_insert of_null.
   Definition fStackGet := f_insert of_stack_get.
@@ -455,7 +455,7 @@ Section MakeSubst.
 End MakeSubst.
 
 Section SubstPtrn.
-  Context {typ func : Type} {FV : PartialView func (subst_func typ)}.
+  Context {typ func : Set} {FV : PartialView func (subst_func typ)}.
 
   Definition ptrnNull : ptrn (expr typ func) unit :=
     inj (ptrn_view _ fptrnNull).
@@ -495,7 +495,7 @@ Section SubstPtrn.
 End SubstPtrn.
 
 Section SubstTac.
-  Context {typ func : Type} {RType_typ : RType typ} {RSym_func : RSym func}.
+  Context {typ func : Set} {RType_typ : RType typ} {RSym_func : RSym func}.
   Context {FV_subst : PartialView func (subst_func typ)}.
   Context {FV_ap : PartialView func (ap_func typ)}.
   Context {FV_string : PartialView func stringFunc}.
@@ -647,7 +647,7 @@ Section SubstTac.
 End SubstTac.
 
 Section ReifySubstType.
-  Context {typ : Type} {RType_typ : RType typ}.
+  Context {typ sym : Set} {RType_typ : RType typ}.
   Context {var val : Type}.
 
   Context {Typ0_tyVal : Typ0 _ val}.
@@ -676,14 +676,14 @@ Section ReifySubstType.
   Definition reify_tyStack : Command typ :=
     CPattern (ls := nil) (RExact (@Stack.stack var val)) tyStack.
 
-  Definition reify_tyExpr : Command typ :=
-    CPattern (ls := nil) (RExact (@expr var val)) tyExpr.
-
   Definition reify_tySubst : Command typ :=
     CPattern (ls := nil) (RExact (@subst var val)) tySubst.
 
   Definition reify_tySubstList : Command typ :=
     CPattern (ls := nil) (RExact (@substlist var val)) tySubstList.
+
+  Definition reify_tyExpr : Command typ :=
+    CPattern (ls := nil) (RExact (expr typ sym)) tyExpr.
 
   Definition reify_subst_typ : Command typ :=
     CFirst (reify_tyVar :: reify_tyVal :: reify_tyStack :: reify_tyExpr ::
@@ -691,12 +691,12 @@ Section ReifySubstType.
 
 End ReifySubstType.
 
-Arguments reify_subst_typ _ {_} _ _ {_ _ _ _ _}.
+Arguments reify_subst_typ _ _ {_} _ _ {_ _ _ _ _}.
 
 Require Import MirrorCore.Reify.ReifyClass.
 
 Section ReifySubst.
-  Context {typ func: Type} {RType_typ : RType typ}.
+  Context {typ func: Set} {RType_typ : RType typ}.
   Context {var val : Type}.
   Context {PV : PartialView func (subst_func typ)}.
   Context {RelDec_eq : RelDec (@eq var)}.
@@ -720,7 +720,7 @@ Section ReifySubst.
   Local Notation "'tySubstList'" := (tyList (tyProd tyVar tyExpr)).
 
   Definition reify_stack_get : Command (expr typ func) :=
-    CPattern (ls := nil) 
+    CPattern (ls := nil)
              (RExact (@stack_get var val))
              (Inj (@fStackGet typ func PV)).
 
@@ -730,7 +730,7 @@ Section ReifySubst.
              (Inj (@fStackSet typ func PV)).
 
   Definition reify_apply_subst : Command (expr typ func) :=
-    CPattern (ls := typ::nil) 
+    CPattern (ls := (typ:Type)::nil)
              (RApp (RExact (@apply_subst var val)) (RGet 0 RIgnore))
              (fun (x : function (CCall (reify_scheme typ))) => Inj (fApplySubst x)).
 

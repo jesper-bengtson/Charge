@@ -28,7 +28,7 @@ Set Implicit Arguments.
 Set Strict Implicit.
 Set Maximal Implicit Insertion.
 
-Inductive ilfunc (typ : Type) : Type :=
+Inductive ilfunc (typ : Set) : Set :=
   | ilf_entails (logic : typ)
   | ilf_true (logic : typ)
   | ilf_false (logic : typ)
@@ -52,7 +52,7 @@ Definition ilfunc_logic typ (x : ilfunc typ) : typ :=
 
 Section ILogicFuncInst.
   
-  Context {typ func : Type}.
+  Context {typ func : Set}.
   Context {HR : RType typ} {Heq : RelDec (@eq typ)} {HC : RelDec_Correct Heq}.
 
   Context {Typ2_tyArr : Typ2 _ RFun}.
@@ -572,7 +572,7 @@ End ILogicFuncInst.
 
 
 Section MakeILogic.
-  Context {typ func : Type} {FV : PartialView func (ilfunc typ)}.
+  Context {typ func : Set} {FV : PartialView func (ilfunc typ)}.
 
   Definition fTrue t := f_insert (ilf_true t).
   Definition fFalse t := f_insert (ilf_false t).
@@ -988,7 +988,7 @@ Section MakeILogic.
 End MakeILogic.
 
 Section ILogicPtrn.
-  Context {typ func : Type} {FV : PartialView func (ilfunc typ)}.
+  Context {typ func : Set} {FV : PartialView func (ilfunc typ)}.
 
  Definition ptrnTrue {T : Type}
              (p : ptrn typ T) : ptrn (expr typ func) T :=
@@ -1053,7 +1053,7 @@ Definition ilogic_ptrn_cases {T : Type}
                                                         (fun x f => do_forall (fst x) 
                                                                               (snd x) f) get))))))
             get).
-Check run_ptrn.
+
 Definition ilogic_cases {T : Type}
            (do_true : typ -> T)
            (do_false : typ -> T)
@@ -1070,41 +1070,41 @@ Definition ilogic_cases {T : Type}
 End ILogicPtrn.
 
 Section ReifyILogic.
-  Context {typ func : Type} {FV : PartialView func (ilfunc typ)}.
+  Context {typ func : Set} {FV : PartialView func (ilfunc typ)}.
   Context {t : Reify typ}.
 
   Definition reify_ltrue : Command (expr typ func) :=
-    CPattern (ls := typ::nil) 
+    CPattern (ls := (typ:Type)::nil) 
              (RApp (RApp (RExact (@ltrue)) (RGet 0 RIgnore)) RIgnore)
              (fun (x : function (CCall (reify_scheme typ))) => mkTrue x).
 
   Definition reify_lfalse : Command (expr typ func) :=
-    CPattern (ls := typ::nil) 
+    CPattern (ls := (typ:Type)::nil) 
              (RApp (RApp (RExact (@lfalse)) (RGet 0 RIgnore)) RIgnore)
              (fun (x : function (CCall (reify_scheme typ))) => mkTrue x).
 
   Definition reify_land : Command (expr typ func) :=
-    CPattern (ls := typ::nil) 
+    CPattern (ls := (typ:Type)::nil) 
              (RApp (RApp (RExact (@land)) (RGet 0 RIgnore)) RIgnore)
              (fun (x : function (CCall (reify_scheme typ))) => Inj (fAnd x)).
 
   Definition reify_lor : Command (expr typ func) :=
-    CPattern (ls := typ::nil) 
+    CPattern (ls := (typ:Type)::nil) 
              (RApp (RApp (RExact (@lor)) (RGet 0 RIgnore)) RIgnore)
              (fun (x : function (CCall (reify_scheme typ))) => Inj (fOr x)).
 
   Definition reify_limpl : Command (expr typ func) :=
-    CPattern (ls := typ::nil) 
+    CPattern (ls := (typ:Type)::nil) 
              (RApp (RApp (RExact (@limpl)) (RGet 0 RIgnore)) RIgnore)
              (fun (x : function (CCall (reify_scheme typ))) => Inj (fImpl x)).
 
   Definition reify_lforall : Command (expr typ func) :=
-    CPattern (ls := typ::typ::nil) 
+    CPattern (ls := (typ:Type)::(typ:Type)::nil) 
              (RApp (RApp (RApp (RExact (@lforall)) (RGet 0 RIgnore)) RIgnore) (RGet 1 RIgnore))
              (fun (x y : function (CCall (reify_scheme typ))) => Inj (fForall y x)).
 
   Definition reify_lexists : Command (expr typ func) :=
-    CPattern (ls := typ::typ::nil) 
+    CPattern (ls := (typ:Type)::(typ:Type)::nil) 
              (RApp (RApp (RApp (RExact (@lexists)) (RGet 0 RIgnore)) RIgnore) (RGet 1 RIgnore))
              (fun (x y : function (CCall (reify_scheme typ))) => Inj (fExists y x)).
 

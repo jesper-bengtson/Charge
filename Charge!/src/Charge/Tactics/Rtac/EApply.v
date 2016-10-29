@@ -9,7 +9,7 @@ Require Import MirrorCore.SubstI.
 Require Import MirrorCore.Lambda.ExprUnify_simul.
 
 Section EAutoTac.
-  Context {typ func : Type}.
+  Context {typ func : Set}.
   Context {RType_typ : RType typ}.
   Context {Typ2_typ : Typ2 RType_typ RFun}.
   Context {Typ0_typ : Typ0 RType_typ Prop}.
