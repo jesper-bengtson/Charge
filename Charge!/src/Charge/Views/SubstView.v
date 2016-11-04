@@ -647,8 +647,8 @@ Section SubstTac.
 End SubstTac.
 
 Section ReifySubstType.
-  Context {typ sym : Set} {RType_typ : RType typ}.
-  Context {var val : Type}.
+  Context {typ : Set} {RType_typ : RType typ}.
+  Context {var val : Type@{Urefl}}.
 
   Context {Typ0_tyVal : Typ0 _ val}.
   Context {Typ0_tyVar : Typ0 _ var}.
@@ -676,22 +676,29 @@ Section ReifySubstType.
   Definition reify_tyStack : Command typ :=
     CPattern (ls := nil) (RExact (@Stack.stack var val)) tyStack.
 
-  Definition reify_tySubst : Command typ :=
+  Definition reify_tySubst : Command@{Set} typ :=
     CPattern (ls := nil) (RExact (@subst var val)) tySubst.
 
-  Definition reify_tySubstList : Command typ :=
+  Definition reify_tySubstList : Command@{Set} typ :=
     CPattern (ls := nil) (RExact (@substlist var val)) tySubstList.
 
+(*
   Definition reify_tyExpr : Command typ :=
     CPattern (ls := nil) (RExact (expr typ sym)) tyExpr.
+*)
 
-  Definition reify_subst_typ : Command typ :=
-    CFirst (reify_tyVar :: reify_tyVal :: reify_tyStack :: reify_tyExpr ::
+  Definition reify_subst_typ : Command@{Set} typ :=
+    CFirst (reify_tyVar :: reify_tyVal :: reify_tyStack :: (* reify_tyExpr :: *)
             reify_tySubst :: reify_tySubstList :: nil).
+
 
 End ReifySubstType.
 
+(*
 Arguments reify_subst_typ _ _ {_} _ _ {_ _ _ _ _}.
+*)
+Arguments reify_subst_typ _ _ _ _ {_ _ _ _ _}.
+
 
 Require Import MirrorCore.Reify.ReifyClass.
 
