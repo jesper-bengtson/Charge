@@ -9,6 +9,7 @@ Require Import ExtLib.Data.Positive.
 Require Import ExtLib.Tactics.
 Require Import ExtLib.Tactics.Consider.
 
+Require Import MirrorCore.ExprI.
 Require Import MirrorCore.TypesI.
 Require Import MirrorCore.syms.SymEnv.
 Require Import MirrorCore.Lambda.Expr.
@@ -18,6 +19,8 @@ Require Import MirrorCore.syms.SymSum.
 Require Import MirrorCore.Views.Ptrns.
 Require Import MirrorCore.Views.FuncView.
 Require Import MirrorCore.Reify.ReifyClass.
+Require Import MirrorCore.Lambda.RewriteRelations.
+
 
 Require Import ChargeCore.Logics.ILogic.
 
@@ -1159,7 +1162,55 @@ Section ReifyProp.
     CFirst (reify_ptrue :: reify_pfalse :: reify_pand :: reify_por :: 
             reify_pimpl :: reify_pforall :: reify_pexists :: nil).
 
- End ReifyProp.
+End ReifyProp.
+
+Section RewriteILogic.
+  Context {typ func : Set}.
+  Context {RType_typ : RType typ}.
+  Context {RelDec_eq : RelDec (@eq typ)}.
+  Context {Expr_expr : Expr typ (expr typ func)}.
+  Context {Typ2_tyArr : Typ2 _ RFun}.
+  Context {Typ2Ok_tyArr : Typ2Ok Typ2_tyArr}.
+  Context {Typ0_tyProp : Typ0 _ Prop}.
+  Context {FV : PartialView func (ilfunc typ)}.
+
+  Let tyProp : typ := @typ0 _ _ _ Typ0_tyProp.
+  Let tyArr : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyArr.
+  Let Rbase := expr typ func.
+  
+  Definition RbaseD (e : expr typ func) (t : typ) : option (TypesI.typD t -> TypesI.typD t -> Prop) :=
+    castD option (RFun (typD t) (RFun (typD t) Prop)) (env_exprD nil nil (tyArr t (tyArr t tyProp)) e).
+(*
+  Theorem RbaseD_single_type
+  : forall (r : expr typ func) (t1 t2 : typ)
+           (rD1 : TypesI.typD t1 -> TypesI.typD t1 -> Prop)
+           (rD2 : TypesI.typD t2 -> TypesI.typD t2 -> Prop),
+      RbaseD r t1 = Some rD1 -> RbaseD r t2 = Some rD2 -> t1 = t2.
+  Proof.
+    unfold RbaseD, env_exprD, castD. simpl; intros.
+    unfold eq_sym in *. simpl in *.
+    
+    generalize (lambda_exprD_deterministic _ _ _ H0 H). unfold Rty.
+    intros. inversion H3. reflexivity.
+  Qed.  
+*)
+ 
+  Fixpoint from_terms (rs : list (expr typ func))
+  : refl_dec Rbase :=
+    match rs with
+    | nil => fun _ => false
+    | r :: rs => fun r' =>
+      if expr_eq_dec _ _ r r' then true else from_terms rs r'
+    end.
+
+  Definition is_refl : refl_dec Rbase :=
+    fun (r : Rbase) =>
+      match r with
+      | Inj (Eq _)
+      | _ => false
+      end.
+    
+End RewriteILogic.
 
 Arguments reify_ilogic _ _ {_ _}.
 Arguments reify_plogic _ _ {_ _ _ _}.
