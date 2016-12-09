@@ -1,4 +1,5 @@
 -Q bin/Charge Charge
+-Q ../../ChargeCore/ChargeCore/src ChargeCore
 
 src/Charge/Tactics/Rtac/Intro.v
 src/Charge/Tactics/Rtac/Minify.v
