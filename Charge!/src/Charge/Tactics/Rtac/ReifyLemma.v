@@ -52,8 +52,8 @@ End ReifyLemma.
 
 Ltac reify_lemma_aux reify T :=
   let k e :=
-    let e := constr:(convert_to_lemma e) in
-    let e := eval unfold convert_to_lemma in e in
+      let e := constr:(convert_to_lemma e) in
+      let e := eval unfold convert_to_lemma in e in
   let e := eval simpl in e in
                           refine e
                         in
