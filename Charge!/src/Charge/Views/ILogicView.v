@@ -15,10 +15,14 @@ Require Import MirrorCore.syms.SymEnv.
 Require Import MirrorCore.Lambda.Expr.
 Require Import MirrorCore.Lambda.Ptrns.
 Require Import MirrorCore.SymI.
+Require Import MirrorCore.Lemma.
+Require Import MirrorCore.PLemma.
+Require Import MirrorCore.Polymorphic.
 Require Import MirrorCore.syms.SymSum.
 Require Import MirrorCore.Views.Ptrns.
 Require Import MirrorCore.Views.FuncView.
 Require Import MirrorCore.Reify.ReifyClass.
+Require Import MirrorCore.Reify.Reify.
 Require Import MirrorCore.Lambda.RewriteRelations.
 
 
@@ -448,12 +452,11 @@ Section ILogicFuncInst.
  Definition forallR {t u : typ} {IL : ILogicOps (typD t)} :=
    castR id (RFun (RFun (typD u) (typD t)) (typD t)) (@lforall (typD t) IL (typD u)).
  
- Implicit Arguments trueR [[t] [IL]].
- Implicit Arguments falseR [[t] [IL]].
- Implicit Arguments andR [[t] [IL]]. 
- Implicit Arguments orR [[t] [IL]].
- Implicit Arguments implR [[t] [IL]].
- 
+ Arguments trueR {_ _}.
+ Arguments andR {_ _}.
+ Arguments orR {_ _}.
+ Arguments implR {_ _}.
+  
  Definition funcD (f : ilfunc typ) : match typeof_ilfunc f return Type with
 				     | Some t => typD t
 				     | None => unit
@@ -1167,19 +1170,23 @@ End ReifyProp.
 Section RewriteILogic.
   Context {typ func : Set}.
   Context {RType_typ : RType typ}.
-  Context {RelDec_eq : RelDec (@eq typ)}.
+  Context {RelDec_eq_typ : RelDec (@eq typ)}.
+  Context {RelDec_eq_func : RelDec (@eq func)}.
   Context {Expr_expr : Expr typ (expr typ func)}.
   Context {Typ2_tyArr : Typ2 _ RFun}.
   Context {Typ2Ok_tyArr : Typ2Ok Typ2_tyArr}.
   Context {Typ0_tyProp : Typ0 _ Prop}.
   Context {FV : PartialView func (ilfunc typ)}.
 
+  Context {Reify_typ : Reify typ}.
+  Context {Reify_expr : Reify (expr typ func)}.
+  
   Let tyProp : typ := @typ0 _ _ _ Typ0_tyProp.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyArr.
-  Let Rbase := expr typ func.
   
   Definition RbaseD (e : expr typ func) (t : typ) : option (TypesI.typD t -> TypesI.typD t -> Prop) :=
     castD option (RFun (typD t) (RFun (typD t) Prop)) (env_exprD nil nil (tyArr t (tyArr t tyProp)) e).
+
 (*
   Theorem RbaseD_single_type
   : forall (r : expr typ func) (t1 t2 : typ)
@@ -1193,22 +1200,29 @@ Section RewriteILogic.
     generalize (lambda_exprD_deterministic _ _ _ H0 H). unfold Rty.
     intros. inversion H3. reflexivity.
   Qed.  
-*)
+ 
  
-  Fixpoint from_terms (rs : list (expr typ func))
-  : refl_dec Rbase :=
+  Fixpoint from_terms (rs : list (expr typ func) : refl_dec Rbase :=
     match rs with
     | nil => fun _ => false
     | r :: rs => fun r' =>
       if expr_eq_dec _ _ r r' then true else from_terms rs r'
     end.
+*)
+ 
+  Definition is_refl : refl_dec (expr typ func) :=
+   	run_ptrn
+      (pmap (fun _ => true) (inj (ptrn_view _ (fptrnEntails ignore))))
+      false.
+    
+  Definition is_trans : trans_dec (expr typ func) :=
+   	run_ptrn 
+      (pmap (fun _ => true) (inj (ptrn_view _ (fptrnEntails ignore))))
+      false.
 
-  Definition is_refl : refl_dec Rbase :=
-    fun (r : Rbase) =>
-      match r with
-      | Inj (Eq _)
-      | _ => false
-      end.
+  Definition lem_landexistsDL : polymorphic typ 4 (Lemma.lemma typ (expr typ func) (rw_concl typ func (expr typ func))) :=
+    Eval unfold Lemma.add_var, Lemma.add_prem , Lemma.vars , Lemma.concl , Lemma.premises in
+        <:: @landexistsDL ::>.
     
 End RewriteILogic.
 
