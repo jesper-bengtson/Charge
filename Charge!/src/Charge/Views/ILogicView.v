@@ -23,8 +23,10 @@ Require Import MirrorCore.Views.Ptrns.
 Require Import MirrorCore.Views.FuncView.
 Require Import MirrorCore.Reify.ReifyClass.
 Require Import MirrorCore.Reify.Reify.
+Require Import MirrorCore.Reify.ReifyView.
 Require Import MirrorCore.Lambda.RewriteRelations.
 
+Require Import MirrorCore.CTypes.BaseType.
 
 Require Import ChargeCore.Logics.ILogic.
 
@@ -1078,7 +1080,7 @@ End ILogicPtrn.
 Section ReifyILogic.
   Context {typ func : Set} {FV : PartialView func (ilfunc typ)}.
   Context {t : Reify typ}.
-
+  
   Definition reify_lentails : Command@{Set} (expr typ func) :=
     CPattern (ls := (typ:Type)::nil)
              (RApp (RApp (RExact (@lentails)) (RGet 0 RIgnore)) RIgnore)
@@ -1132,7 +1134,17 @@ Section ReifyProp.
   Context {Typ0_tyProp : Typ0 _ Prop}.
 
   Let tyProp : typ := @typ0 _ _ _ Typ0_tyProp.
+      
+  Definition reify_ILogicOps : Command@{Set} (expr typ func) :=
+    CPattern (ls := (expr typ func : Type) :: nil)
+             (RPi (RApp (RExact (@ILogicOps)) RIgnore) (RGet 0 RIgnore))
+             (fun (x : function (CRec 0)) => x).
   
+  Definition reify_ILogic : Command@{Set} (expr typ func) :=
+    CPattern (ls := (expr typ func : Type) :: nil)
+             (RImpl (RApp (RApp (RExact (@ILogic)) RIgnore) RIgnore) (RGet 0 RIgnore))
+             (fun (x : function (CRec 0)) => x).
+    
   Definition reify_ptrue : Command@{Set} (expr typ func) :=
     CPattern (ls := nil) (RExact True) (mkTrue tyProp).
 
@@ -1162,10 +1174,15 @@ Section ReifyProp.
                 mkForall x tyProp y).
 
   Definition reify_plogic : Command@{Set} (expr typ func) :=
-    CFirst (reify_ptrue :: reify_pfalse :: reify_pand :: reify_por :: 
+    CFirst (reify_ILogicOps :: reify_ILogic :: 
+            reify_ptrue :: reify_pfalse :: reify_pand :: reify_por :: 
             reify_pimpl :: reify_pforall :: reify_pexists :: nil).
 
 End ReifyProp.
+
+Arguments reify_ilogic _ _ {_ _}.
+Arguments reify_plogic _ _ {_ _ _ _}.
+Arguments RSym_ilfunc {_ _ _ _ _} _.
 
 Section RewriteILogic.
   Context {typ func : Set}.
@@ -1177,10 +1194,8 @@ Section RewriteILogic.
   Context {Typ2Ok_tyArr : Typ2Ok Typ2_tyArr}.
   Context {Typ0_tyProp : Typ0 _ Prop}.
   Context {FV : PartialView func (ilfunc typ)}.
-
-  Context {Reify_typ : Reify typ}.
-  Context {Reify_expr : Reify (expr typ func)}.
-  
+  Context {FV_typ : PartialView typ (base_typ 0)}.
+      
   Let tyProp : typ := @typ0 _ _ _ Typ0_tyProp.
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ Typ2_tyArr.
   
@@ -1219,14 +1234,44 @@ Section RewriteILogic.
    	run_ptrn 
       (pmap (fun _ => true) (inj (ptrn_view _ (fptrnEntails ignore))))
       false.
+    
+  Local Instance Reify_typ : Reify typ :=
+    Reify_typ typ (reify_base_typ typ :: nil).
 
-  Definition lem_landexistsDL : polymorphic typ 4 (Lemma.lemma typ (expr typ func) (rw_concl typ func (expr typ func))) :=
+  Local Instance Reify_expr : Reify (expr typ func) :=
+    Reify_func' typ func (reify_plogic typ func :: reify_ilogic typ func :: nil).
+
+Definition reify_java := reify_scheme@{Set} (expr typ func).
+Ltac reify_java e :=
+  let k e :=
+      pose e in
+  reify_expr reify_java k
+             [[ True ]]
+             [[ e ]].
+
+Goal True.
+  reify_java (forall x : ILogicOps Prop,  @ILogic Prop x -> True -> False).
+  reify_java (forall ILOps : ILogicOps Prop,
+                              ILogic Prop ->
+                              forall (f : nat -> Prop)
+                                (P : Prop),
+                              (Exists a : nat, f a) //\\ P
+                              |-- Exists a : nat, f a //\\ P).
+  apply I.
+Qed.
+
+  Lemma landexistsDL2 :
+  forall (A T : Type) (ILOps : ILogicOps A),
+       ILogic A -> forall (f : T -> A) (P : A),
+       (Exists a : T, f a) //\\ P |-- Exists a : T, f a //\\ P.
+  Proof.
+    intros; apply landexistsDL.
+  Qed.
+
+(* GREGORY: The following reification does not work, but the monomorphised one above does *)
+    
+  Definition lem_landexistsDL : polymorphic typ 2 (Lemma.lemma typ (expr typ func) (rw_concl typ func (expr typ func))) :=
     Eval unfold Lemma.add_var, Lemma.add_prem , Lemma.vars , Lemma.concl , Lemma.premises in
-        <:: @landexistsDL ::>.
+        <:: @landexistsDL2 ::>.
     
 End RewriteILogic.
-
-Arguments reify_ilogic _ _ {_ _}.
-Arguments reify_plogic _ _ {_ _ _ _}.
-
-Implicit Arguments RSym_ilfunc [[typ] [HR] [Heq] [Typ2_tyArr] [Typ0_tyProp]].
