@@ -1134,17 +1134,7 @@ Section ReifyProp.
   Context {Typ0_tyProp : Typ0 _ Prop}.
 
   Let tyProp : typ := @typ0 _ _ _ Typ0_tyProp.
-      
-  Definition reify_ILogicOps : Command@{Set} (expr typ func) :=
-    CPattern (ls := (expr typ func : Type) :: nil)
-             (RPi (RApp (RExact (@ILogicOps)) RIgnore) (RGet 0 RIgnore))
-             (fun (x : function (CRec 0)) => x).
-  
-  Definition reify_ILogic : Command@{Set} (expr typ func) :=
-    CPattern (ls := (expr typ func : Type) :: nil)
-             (RImpl (RApp (RApp (RExact (@ILogic)) RIgnore) RIgnore) (RGet 0 RIgnore))
-             (fun (x : function (CRec 0)) => x).
-    
+          
   Definition reify_ptrue : Command@{Set} (expr typ func) :=
     CPattern (ls := nil) (RExact True) (mkTrue tyProp).
 
@@ -1174,8 +1164,7 @@ Section ReifyProp.
                 mkForall x tyProp y).
 
   Definition reify_plogic : Command@{Set} (expr typ func) :=
-    CFirst (reify_ILogicOps :: reify_ILogic :: 
-            reify_ptrue :: reify_pfalse :: reify_pand :: reify_por :: 
+    CFirst (reify_ptrue :: reify_pfalse :: reify_pand :: reify_por :: 
             reify_pimpl :: reify_pforall :: reify_pexists :: nil).
 
 End ReifyProp.
@@ -1183,6 +1172,35 @@ End ReifyProp.
 Arguments reify_ilogic _ _ {_ _}.
 Arguments reify_plogic _ _ {_ _ _ _}.
 Arguments RSym_ilfunc {_ _ _ _ _} _.
+
+Section IgnoreILogic.
+
+  Definition reify_ILogicOps : RPattern :=
+    RPi (RApp (RExact (@ILogicOps)) RIgnore) (RGet 0 RIgnore).
+  
+  Definition reify_ILogic : RPattern  :=
+    RImpl (RApp (RApp (RExact (@ILogic)) RIgnore) RIgnore) (RGet 0 RIgnore).
+ 
+End IgnoreILogic.
+
+Definition IgnorePatterns (ls : list RPattern) (T : Set) : Set := T.
+
+Section for_ignore.
+  Variable ls : list RPattern.
+  Variable T : Set.
+ 
+  Definition reify_IgnorePatterns {R : Reify T}
+  : Command T :=
+    let ignores :=
+        map (fun p => CPattern (ls:=(T : Type)::nil) p (fun (a : function (CRec 0)) => a)) ls
+    in
+    CFix (CFirst_ (ignores ++ CCall (@reify_scheme _ R) :: nil)).
+
+  Global Instance Reify_IgnorePatterns {R : Reify T} : Reify (IgnorePatterns ls T) :=
+  { reify_scheme := @reify_IgnorePatterns R }.
+End for_ignore.
+
+Arguments reify_IgnorePatterns {_} _ {_}.
 
 Section RewriteILogic.
   Context {typ func : Set}.
@@ -1239,7 +1257,7 @@ Section RewriteILogic.
     Reify_typ typ (reify_base_typ typ :: nil).
 
   Local Instance Reify_expr : Reify (expr typ func) :=
-    Reify_func' typ func (reify_plogic typ func :: reify_ilogic typ func :: nil).
+    Reify_func_no_table typ func (reify_plogic typ func :: reify_ilogic typ func :: nil).
 
 Definition reify_java := reify_scheme@{Set} (expr typ func).
 Ltac reify_java e :=
@@ -1250,13 +1268,7 @@ Ltac reify_java e :=
              [[ e ]].
 
 Goal True.
-  reify_java (forall x : ILogicOps Prop,  @ILogic Prop x -> True -> False).
-  reify_java (forall ILOps : ILogicOps Prop,
-                              ILogic Prop ->
-                              forall (f : nat -> Prop)
-                                (P : Prop),
-                              (Exists a : nat, f a) //\\ P
-                              |-- Exists a : nat, f a //\\ P).
+
   apply I.
 Qed.
 
@@ -1268,10 +1280,25 @@ Qed.
     intros; apply landexistsDL.
   Qed.
 
-(* GREGORY: The following reification does not work, but the monomorphised one above does *)
-    
-  Definition lem_landexistsDL : polymorphic typ 2 (Lemma.lemma typ (expr typ func) (rw_concl typ func (expr typ func))) :=
+  Definition lem_typ := 
+    polymorphic typ 2 
+      (IgnorePatterns (reify_ILogicOps :: reify_ILogic :: nil) 
+                      (Lemma.lemma typ (expr typ func) 
+                                   (rw_concl typ func (expr typ func)))).   
+            
+(* GREGORY: The following claims that the reification command is ill-typed. 
+   Overall this has been behaving funny. I had to inline all definitions as 
+   the reification would otherwise fail. *)
+
+  Definition lem_landexistsDL : 
+    (polymorphic typ 2 
+      (IgnorePatterns (RPi (RApp (RExact (@ILogicOps)) RIgnore) (RGet 0 RIgnore) :: 
+                       RImpl (RApp (RApp (RExact (@ILogic)) RIgnore) RIgnore) (RGet 0 RIgnore) ::
+                       nil) 
+                      (Lemma.lemma typ (expr typ func) 
+                                   (rw_concl typ func (expr typ func))))) :=
     Eval unfold Lemma.add_var, Lemma.add_prem , Lemma.vars , Lemma.concl , Lemma.premises in
         <:: @landexistsDL2 ::>.
+              
     
 End RewriteILogic.
