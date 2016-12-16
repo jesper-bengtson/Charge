@@ -16,6 +16,7 @@ Require Import MirrorCore.Lambda.Expr.
 Require Import MirrorCore.Lambda.Ptrns.
 Require Import MirrorCore.SymI.
 Require Import MirrorCore.Lemma.
+Require Import MirrorCore.TCLemma.
 Require Import MirrorCore.PLemma.
 Require Import MirrorCore.Polymorphic.
 Require Import MirrorCore.syms.SymSum.
@@ -1176,31 +1177,12 @@ Arguments RSym_ilfunc {_ _ _ _ _} _.
 Section IgnoreILogic.
 
   Definition reify_ILogicOps : RPattern :=
-    RPi (RApp (RExact (@ILogicOps)) RIgnore) (RGet 0 RIgnore).
+    RApp (RExact (@ILogicOps)) RIgnore.
   
   Definition reify_ILogic : RPattern  :=
-    RImpl (RApp (RApp (RExact (@ILogic)) RIgnore) RIgnore) (RGet 0 RIgnore).
+    RApp (RApp (RExact (@ILogic)) RIgnore) RIgnore.
  
 End IgnoreILogic.
-
-Definition IgnorePatterns (ls : list RPattern) (T : Set) : Set := T.
-
-Section for_ignore.
-  Variable ls : list RPattern.
-  Variable T : Set.
- 
-  Definition reify_IgnorePatterns {R : Reify T}
-  : Command T :=
-    let ignores :=
-        map (fun p => CPattern (ls:=(T : Type)::nil) p (fun (a : function (CRec 0)) => a)) ls
-    in
-    CFix (CFirst_ (ignores ++ CCall (@reify_scheme _ R) :: nil)).
-
-  Global Instance Reify_IgnorePatterns {R : Reify T} : Reify (IgnorePatterns ls T) :=
-  { reify_scheme := @reify_IgnorePatterns R }.
-End for_ignore.
-
-Arguments reify_IgnorePatterns {_} _ {_}.
 
 Section RewriteILogic.
   Context {typ func : Set}.
@@ -1280,25 +1262,64 @@ Qed.
     intros; apply landexistsDL.
   Qed.
 
-  Definition lem_typ := 
+  Lemma landexistsDL3 :
+  forall (A T : Type) (ILOps : ILogicOps A),
+       ILogic A -> True.
+  Proof.
+    intuition.
+  Qed.
+
+    Definition lem_typ := 
     polymorphic typ 2 
-      (IgnorePatterns (reify_ILogicOps :: reify_ILogic :: nil) 
+      ( 
                       (Lemma.lemma typ (expr typ func) 
                                    (rw_concl typ func (expr typ func)))).   
             
 (* GREGORY: The following claims that the reification command is ill-typed. 
    Overall this has been behaving funny. I had to inline all definitions as 
    the reification would otherwise fail. *)
+(*
+Goal True.
+  pose (@reify_scheme (polymorphic typ 2 
+      ((TCLemma.tc_lemma typ (expr typ func) 
+                                   (rw_concl typ func (expr typ func))
+                                   (reify_ILogicOps :: reify_ILogic :: nil)))) _).
+  simpl in c.
+  unfold reify_tc_lemma in c.
+  simpl in c.
+  unfold reify_ILogicOps in c.
+  idtac. *)
+  
+Check (rpolymorphic typ
+   (tc_lemma typ (expr typ func) (rw_concl typ func (expr typ func))
+      (@cons RPattern
+         (RApp (@RExact (forall _ : Type, Type) ILogicOps) RIgnore)
+         (@cons RPattern
+            (RApp
+               (RApp
+                  (@RExact (forall (A : Type) (_ : ILogicOps A), Prop) ILogic)
+                  RIgnore) RIgnore) (@nil RPattern))))
+   (@Reify_tc_lemma typ (expr typ func) (rw_concl typ func (expr typ func))
+      Reify_typ Reify_expr
+      (@Reify_rw_concl typ func (expr typ func) Reify_typ Reify_expr
+         Reify_expr)
+      (@cons RPattern
+         (RApp (@RExact (forall _ : Type, Type) ILogicOps) RIgnore)
+         (@cons RPattern
+            (RApp
+               (RApp
+                  (@RExact (forall (A : Type) (_ : ILogicOps A), Prop) ILogic)
+                  RIgnore) RIgnore) (@nil RPattern)))) 
+   (S (S O))).
 
+  Set Printing All.
   Definition lem_landexistsDL : 
     (polymorphic typ 2 
-      (IgnorePatterns (RPi (RApp (RExact (@ILogicOps)) RIgnore) (RGet 0 RIgnore) :: 
-                       RImpl (RApp (RApp (RExact (@ILogic)) RIgnore) RIgnore) (RGet 0 RIgnore) ::
-                       nil) 
-                      (Lemma.lemma typ (expr typ func) 
-                                   (rw_concl typ func (expr typ func))))) :=
+      ((TCLemma.tc_lemma typ (expr typ func) 
+                                   (rw_concl typ func (expr typ func))
+                                   ((RApp (RExact (@ILogicOps)) RIgnore) :: (RApp (RApp (RExact (@ILogic)) RIgnore) RIgnore) :: nil)))) :=
     Eval unfold Lemma.add_var, Lemma.add_prem , Lemma.vars , Lemma.concl , Lemma.premises in
-        <:: @landexistsDL2 ::>.
+        <:: @landexistsDL3 ::>.
               
     
 End RewriteILogic.
