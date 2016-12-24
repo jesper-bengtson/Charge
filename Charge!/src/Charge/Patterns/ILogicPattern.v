@@ -1,3 +1,11 @@
+Require Import ExtLib.Tactics.
+Require Import ExtLib.Tactics.Consider.
+
+Require Import MirrorCore.Lambda.Ptrns.
+Require Import MirrorCore.Views.Ptrns.
+
+Require Import Charge.Views.ILogicView.
+
 Section MakeILogic.
   Context {typ func : Set} {FV : PartialView func (ilfunc typ)}.
 

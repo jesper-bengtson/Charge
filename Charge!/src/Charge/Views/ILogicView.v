@@ -1,47 +1,16 @@
 Require Import ExtLib.Core.RelDec.
-Require Import ExtLib.Data.Nat.
-Require Import ExtLib.Data.Bool.
-Require Import ExtLib.Data.String.
 Require Import ExtLib.Data.POption.
-Require Import ExtLib.Data.Map.FMapPositive.
-Require Import ExtLib.Data.SumN.
-Require Import ExtLib.Data.Positive.
 Require Import ExtLib.Tactics.
 Require Import ExtLib.Tactics.Consider.
 
 Require Import MirrorCore.ExprI.
-Require Import MirrorCore.TypesI.
 Require Import MirrorCore.syms.SymEnv.
-Require Import MirrorCore.Lambda.Expr.
-Require Import MirrorCore.Lambda.Ptrns.
 Require Import MirrorCore.SymI.
-Require Import MirrorCore.Lemma.
-Require Import MirrorCore.TCLemma.
-Require Import MirrorCore.PLemma.
-Require Import MirrorCore.Polymorphic.
-Require Import MirrorCore.syms.SymSum.
-Require Import MirrorCore.Views.Ptrns.
-Require Import MirrorCore.Views.FuncView.
-Require Import MirrorCore.Reify.ReifyClass.
-Require Import MirrorCore.Reify.Reify.
-Require Import MirrorCore.Reify.ReifyView.
 
-Require Import MirrorCore.Lambda.RewriteRelations.
-Require Import MirrorCore.Lambda.Rewrite.Respectful.
-Require Import MirrorCore.Lambda.Rewrite.Core.
-Require Import MirrorCore.Lambda.Rewrite.HintDbs.
-Require Import MirrorCore.Lambda.PolyInst.
-
-Require Import MirrorCore.CTypes.CTypeUnify.
 Require Import MirrorCore.CTypes.CoreTypes.
-Require Import MirrorCore.CTypes.BaseType.
+Require Import MirrorCore.CTypes.CTypeUnify.
 
 Require Import ChargeCore.Logics.ILogic.
-
-Require Import Charge.Tactics.Rtac.EApply.
-
-Require Import Coq.Bool.Bool.
-
 
 Set Implicit Arguments.
 Set Strict Implicit.

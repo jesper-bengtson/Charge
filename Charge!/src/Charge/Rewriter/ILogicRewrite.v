@@ -1,4 +1,32 @@
-ection IgnoreILogic.
+Require Import ExtLib.Core.RelDec.
+
+Require Import MirrorCore.Lambda.Ptrns.
+Require Import MirrorCore.Lemma.
+Require Import MirrorCore.TCLemma.
+Require Import MirrorCore.PLemma.
+Require Import MirrorCore.Polymorphic.
+Require Import MirrorCore.Views.Ptrns.
+Require Import MirrorCore.Views.FuncView.
+Require Import MirrorCore.Reify.Reify.
+Require Import MirrorCore.Reify.ReifyView.
+
+Require Import MirrorCore.Lambda.RewriteRelations.
+Require Import MirrorCore.Lambda.Rewrite.Respectful.
+Require Import MirrorCore.Lambda.Rewrite.Core.
+Require Import MirrorCore.Lambda.Rewrite.HintDbs.
+Require Import MirrorCore.Lambda.PolyInst.
+
+Require Import MirrorCore.CTypes.CTypeUnify.
+Require Import MirrorCore.CTypes.CoreTypes.
+Require Import MirrorCore.CTypes.BaseType.
+
+Require Import ChargeCore.Logics.ILogic.
+
+Require Import Charge.Views.ILogicView.
+Require Import Charge.Patterns.ILogicPattern.
+Require Import Charge.Reify.ILogicReify.
+
+Section IgnoreILogic.
 
   Definition reify_ILogicOps : RPattern :=
     RApp (RExact (@ILogicOps)) RIgnore.

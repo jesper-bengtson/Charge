@@ -1,4 +1,11 @@
+Require Import MirrorCore.Lambda.Expr.
+Require Import MirrorCore.Views.FuncView.
+Require Import MirrorCore.Reify.Reify.
 
+Require Import ChargeCore.Logics.ILogic.
+
+Require Import Charge.Views.ILogicView.
+Require Import Charge.Patterns.ILogicPattern.
 
 Section ReifyILogic.
   Context {typ func : Set} {FV : PartialView func (ilfunc typ)}.
