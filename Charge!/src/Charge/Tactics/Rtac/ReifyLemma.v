@@ -9,6 +9,7 @@ Require Import MirrorCore.Views.Ptrns.
 Require Import MirrorCore.Views.FuncView.
 
 Require Import Charge.Views.ILogicView.
+Require Import Charge.Patterns.ILogicPattern.
 
 Section ReifyLemma.
   Context {typ func : Set} {HIL : PartialView func (ilfunc typ)}.

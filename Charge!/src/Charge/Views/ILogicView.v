@@ -85,7 +85,7 @@ Section ILogicFuncInst.
 			| pNone => None
 			end
     end.
-      
+  
   Global Instance RelDec_ilfunc : RelDec (@eq (ilfunc typ)) :=
     { rel_dec := fun a b =>
 	           match a, b with
@@ -253,7 +253,7 @@ Section ILogicUnify.
   
   Let typ := ctyp typ'.
 
-  Definition unify_ilfunc (n : nat) (a b : ilfunc typ) (s : FMapPositive.pmap typ) : 
+  Definition ilfunc_unify (a b : ilfunc typ) (s : FMapPositive.pmap typ) : 
     option (FMapPositive.pmap typ) :=
     match a, b with
     | ilf_entails t, ilf_entails t'
@@ -261,22 +261,14 @@ Section ILogicUnify.
  	| ilf_false t, ilf_false t'
 	| ilf_and t, ilf_and t'
 	| ilf_or t, ilf_or t'
-	| ilf_impl t, ilf_impl t' => 
-	  match ctype_unify _ 1 t t' s with
-      | Some (s', _) => Some s'
-      | None => None
-      end
+	| ilf_impl t, ilf_impl t' => ctype_unify_slow _ t t' s
 	| ilf_forall a t, ilf_forall a' t'
 	| ilf_exists a t, ilf_exists a' t' => 
-      match ctype_unify _ n a a' s with
-      | Some (s', _) =>
-        match ctype_unify _ n t t' s' with
-        | Some (s'', _) => Some s''
-        | None => None
-        end
+      match ctype_unify_slow _ a a' s with
+      | Some s' => ctype_unify_slow _ t t' s'
       | None => None
       end
     | _, _ => None
     end.
-    
+
 End ILogicUnify.

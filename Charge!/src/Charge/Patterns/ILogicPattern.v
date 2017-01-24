@@ -477,17 +477,17 @@ Definition ilogic_ptrn_cases {T : Type}
            (do_forall : typ -> typ -> expr typ func -> T) : ptrn (expr typ func) T :=
   por (inj (ptrn_view _ (por (fptrnTrue (pmap do_true get))
                              (fptrnFalse (pmap do_false get)))))
-      (appr (por (appr (inj (ptrn_view _ 
+      (por (appr (appr (inj (ptrn_view _ 
                                        (por (fptrnAnd (pmap do_and get)) 
                                             (por (fptrnOr (pmap do_or get))
-                                                 (fptrnImpl (pmap do_impl get)))))) get)
-                 (inj (ptrn_view _ (por (fptrnExists (pmap 
+                                                 (fptrnImpl (pmap do_impl get)))))) get) get)
+           (appr (inj (ptrn_view _ (por (fptrnExists (pmap 
                                                         (fun x f => do_exists (fst x) 
                                                                               (snd x) f) get))
                                         (fptrnForall (pmap 
                                                         (fun x f => do_forall (fst x) 
-                                                                              (snd x) f) get))))))
-            get).
+                                                                              (snd x) f) get)))))
+                 (abs get (fun _ => get)))).
 
 Definition ilogic_cases {T : Type}
            (do_true : typ -> T)
@@ -503,3 +503,24 @@ Definition ilogic_cases {T : Type}
            do_default.
            
 End ILogicPtrn.
+
+Section ILogicPointwiseRes.
+  Context {typ func : Set} {FV : PartialView func (ilfunc typ)}.
+  Context {RType_typ : RType typ}.
+  Context {Typ2_typ : Typ2 RType_typ RFun}.
+
+  Let tyArr := @typ2 typ _ _ _.
+
+  Definition il_pointwise_red
+    (f : typ -> expr typ func -> expr typ func) 
+    (g : typ -> typ) :=
+    ilogic_ptrn_cases
+      (fun t => mkTrue (g t))
+      (fun t => mkFalse (g t))
+      (fun t p q => mkAnd (g t) (f t p) (f t q))
+      (fun t p q => mkOr (g t) (f t p) (f t q))
+      (fun t p q => mkImpl (g t) (f t p) (f t q))
+      (fun t u p => mkExists t (g u) (f u p))
+      (fun t u p => mkForall t (g u) (f u p)).   
+
+End ILogicPointwiseRes.

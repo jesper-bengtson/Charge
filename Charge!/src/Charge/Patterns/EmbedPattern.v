@@ -67,3 +67,14 @@ Section EmbedPtrn.
     app (inj (ptrn_view _ (fptrnEmbed p))) a.
 
 End EmbedPtrn.
+
+Section EmbedPointwiseRed.
+  Context {typ func : Set} {FV : PartialView func (embed_func typ)}.
+
+  Definition embed_pointwise_red
+    (f : typ -> expr typ func -> expr typ func) 
+    (g : typ -> typ) :=
+      pmap (fun t_u_p => let '(t, u, p) := t_u_p in mkEmbed (g t) (g u) (f u p))
+           (ptrnEmbed get get).
+
+End EmbedPointwiseRed.

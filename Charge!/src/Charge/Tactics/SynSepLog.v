@@ -27,7 +27,7 @@ Section syn_sep_log.
 
   Variable SLS : SepLogSpec typ sym.
   Variable ILO : ILogicOps (typD SL).
-  Variable BILO : BILOperators (typD SL).
+  Variable BILO : BILogicOps (typD SL).
   Variable IL : @ILogic _ ILO.
   Variable BIL : @BILogic _ ILO BILO.
 

@@ -146,9 +146,9 @@ Section ordered_cancel.
 
   Variable tySL : typ.
   Variable ILogicOps_SL : ILogicOps (typD tySL).
-  Variable BILOperators_SL : BILOperators (typD tySL).
+  Variable BILogicOps_SL : BILogicOps (typD tySL).
   Hypothesis ILogic_SL : @ILogic _ ILogicOps_SL.
-  Hypothesis BILogic_SL : @BILogic _ ILogicOps_SL BILOperators_SL.
+  Hypothesis BILogic_SL : @BILogic _ ILogicOps_SL BILogicOps_SL.
 
 (*  Hypothesis eprovePureOk : eprovePure_spec.
 
@@ -778,9 +778,9 @@ Section simple_ordering.
 
   Variable tySL : typ.
   Variable ILogicOps_SL : ILogicOps (typD tySL).
-  Variable BILOperators_SL : BILOperators (typD tySL).
+  Variable BILogicOps_SL : BILogicOps (typD tySL).
   Hypothesis ILogic_SL : @ILogic _ ILogicOps_SL.
-  Hypothesis BILogic_SL : @BILogic _ ILogicOps_SL BILOperators_SL.
+  Hypothesis BILogic_SL : @BILogic _ ILogicOps_SL BILogicOps_SL.
 
   Definition simple_order (c : conjunctives typ func) : Conjuncts typ func :=
     List.fold_right (fun x =>

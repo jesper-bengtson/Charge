@@ -43,7 +43,7 @@ Section BILogicFuncInst.
   Variable is : logic_ops.
 
   Definition bilogic_ops := forall (t : typ),
-    poption (BILOperators (typD t)).
+    poption (BILogicOps (typD t)).
 
   Definition bilogic_opsOk (l : bilogic_ops) : Prop :=
     forall g, match is g, l g return Prop with
@@ -155,16 +155,12 @@ Section BILogicUnify.
   
   Let typ := ctyp typ'.
 
-  Definition unify_bilfunc (n : nat) (a b : bilfunc typ) (s : FMapPositive.pmap typ) : 
+  Definition bilfunc_unify (a b : bilfunc typ) (s : FMapPositive.pmap typ) : 
     option (FMapPositive.pmap typ) :=
     match a, b with
     | bilf_emp t, bilf_emp t'
 	| bilf_star t, bilf_star t'
-	| bilf_wand t, bilf_wand t' => 
-	  match ctype_unify _ 1 t t' s with
-      | Some (s', _) => Some s'
-      | None => None
-      end
+	| bilf_wand t, bilf_wand t' => ctype_unify_slow _ t t' s
     | _, _ => None
     end.
     

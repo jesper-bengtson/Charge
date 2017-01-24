@@ -13,7 +13,9 @@ Require Import Charge.Tactics.BILNormalize.
 Require Import Charge.Tactics.SynSepLog.
 Require Import Charge.Tactics.SepLogFoldWithAnd.
 Require Import Charge.Views.ILogicView.
+Require Import Charge.Patterns.ILogicPattern.
 Require Import Charge.Views.BILogicView.
+Require Import Charge.Patterns.BILogicPattern.
 
 Require Import MirrorCore.Views.FuncView.
 Require Import MirrorCore.Views.Ptrns.

@@ -24,10 +24,16 @@ Require Import MirrorCore.Lib.ApplicativeView.
 Require Import MirrorCore.Lib.StringView.
 Require Import MirrorCore.Lib.ListView.
 Require Import MirrorCore.Lib.ProdView.
+Require Import MirrorCore.CTypes.CoreTypes.
+Require Import MirrorCore.CTypes.CTypeUnify.
 
 Require Import Charge.Views.ILogicView.
 Require Import Charge.Views.BILogicView.
 Require Import Charge.Views.EmbedView.
+
+Require Import Charge.Patterns.ILogicPattern.
+Require Import Charge.Patterns.BILogicPattern.
+Require Import Charge.Patterns.EmbedPattern.
 
 Require Import ChargeCore.Logics.ILogic.
 Require Import ChargeCore.Open.Stack.
@@ -36,6 +42,9 @@ Require Import ChargeCore.Open.Subst.
 Require Import Coq.Strings.String.
 Require Import Coq.Bool.Bool.
 Require Import FunctionalExtensionality.
+
+Require Import MirrorCore.Reify.ReifyClass.
+
 
 Set Implicit Arguments.
 Set Strict Implicit.
@@ -140,8 +149,6 @@ Section SubstFuncInst.
   Definition singleSubstR : typD (tyArr tyExpr (tyArr tyVar tySubst)) :=
     castR id (RFun Texpr (RFun var Tsubst)) (@subst1 var val _).
 
-Set Printing Universes.
-
   Definition parSubstR : typD (tyArr tySubstList tySubst) :=
     castR id (RFun Tsubstlist Tsubst) substl_aux.
 
@@ -179,6 +186,26 @@ Set Printing Universes.
   Qed.
 
 End SubstFuncInst.
+
+Section SubstUnify.
+  Context {typ' : nat -> Set}.
+  
+  Let typ := ctyp typ'.
+
+  Definition subst_func_unify (a b : subst_func typ) (s : FMapPositive.pmap typ) : 
+    option (FMapPositive.pmap typ) :=
+    match a, b with
+	| of_apply_subst t, of_apply_subst t' => ctype_unify_slow _ t t' s
+	| of_null, of_null
+	| of_stack_get, of_stack_get
+	| of_stack_set, of_stack_set
+	| of_single_subst, of_single_subst
+	| of_subst, of_subst
+	| of_trunc_subst, of_trunc_subst => Some s
+    | _, _ => None
+   end.
+    
+End SubstUnify.
 
 Section MakeSubst.
   Context {typ func : Set} {FV : PartialView func (subst_func typ)}.
@@ -560,7 +587,7 @@ Section SubstTac.
     run_ptrn (por (pmap (fun e_y => let '(e, y) := e_y in
                                     if x ?[ eq ] y then e else mkStackGet (mkString x))
                         (ptrnSingleSubst Ptrns.get (ptrnString Ptrns.get)))
-                  (pmap (fun sub => do_subst x sub) (ptrnSubst Ptrns.get)))
+                  (pmap (do_subst x) (ptrnSubst Ptrns.get)))
              (mkStackGet (mkString x)) f.
   Definition rop {X T : Type} (l r : ptrn X T) := por r l.
 
@@ -577,8 +604,16 @@ Section SubstTac.
                           (fun t u p q =>
                              mkAp t u
                                   (red_push_subst (tyArr t u) p sub)
-                                  (red_push_subst t q sub)))
-                       (por (ilogic_ptrn_cases
+                                  (red_push_subst t q sub)))           
+                            (por (bilogic_ptrn_cases
+                                    (fun t => mkEmp t)
+                                    (fun t p q =>
+                                       mkStar t (red_push_subst t p sub) (red_push_subst t q sub))
+                                    (fun t p q =>
+                                       mkWand t (red_push_subst t p sub) (red_push_subst t q sub)))
+                                 (por (appr (inj (ptrn_view FV_embed (fptrnEmbed (pmap (fun x e => mkEmbed (fst x) (snd x) (red_push_subst (snd x) e sub)) Ptrns.get))))
+                                       Ptrns.get)
+                                      (ilogic_ptrn_cases
                                (fun t => mkTrue t)
                                (fun t => mkFalse t)
                                (fun t p q =>
@@ -588,15 +623,7 @@ Section SubstTac.
                                (fun t p q =>
                                   mkImpl t (red_push_subst t p sub) (red_push_subst t q sub))
                                mkExists
-                               mkForall)
-                            (por (bilogic_ptrn_cases
-                                    (fun t => mkEmp t)
-                                    (fun t p q =>
-                                       mkStar t (red_push_subst t p sub) (red_push_subst t q sub))
-                                    (fun t p q =>
-                                       mkWand t (red_push_subst t p sub) (red_push_subst t q sub)))
-                                 (appr (inj (ptrn_view FV_embed (fptrnEmbed (pmap (fun x e => mkEmbed (fst x) (snd x) (red_push_subst (snd x) e sub)) Ptrns.get))))
-                                       Ptrns.get)))))
+                               mkForall)))))
                   (App (App (mkApplySubst t) e) sub) e.
 
   Fixpoint red_push_subst (t : typ) (e sub : expr typ func) {struct e} :=
@@ -614,7 +641,15 @@ Section SubstTac.
                            mkAp t u
                                 (red_push_subst (tyArr t u) p sub)
                                 (red_push_subst t q sub)))
-                     (por (ilogic_ptrn_cases
+                         (por (bilogic_ptrn_cases
+                                  (fun t => mkEmp t)
+                                  (fun t p q =>
+                                     mkStar t (red_push_subst t p sub) (red_push_subst t q sub))
+                                  (fun t p q =>
+                                     mkWand t (red_push_subst t p sub) (red_push_subst t q sub)))
+                               (por (appr (inj (ptrn_view FV_embed (fptrnEmbed (pmap (fun x e => mkEmbed (fst x) (snd x) (red_push_subst (snd x) e sub)) Ptrns.get))))
+                                     Ptrns.get)
+                                         (ilogic_ptrn_cases
                              (fun t => mkTrue t)
                              (fun t => mkFalse t)
                              (fun t p q =>
@@ -624,15 +659,8 @@ Section SubstTac.
                              (fun t p q =>
                                 mkImpl t (red_push_subst t p sub) (red_push_subst t q sub))
                              mkExists
-                             mkForall)
-                          (por (bilogic_ptrn_cases
-                                  (fun t => mkEmp t)
-                                  (fun t p q =>
-                                     mkStar t (red_push_subst t p sub) (red_push_subst t q sub))
-                                  (fun t p q =>
-                                     mkWand t (red_push_subst t p sub) (red_push_subst t q sub)))
-                               (appr (inj (ptrn_view FV_embed (fptrnEmbed (pmap (fun x e => mkEmbed (fst x) (snd x) (red_push_subst (snd x) e sub)) Ptrns.get))))
-                                     Ptrns.get)))))
+                             mkForall)))))
+ 
                   (App (App (mkApplySubst t) e) sub) e.
   Proof.
     destruct e; simpl; reflexivity.
@@ -644,6 +672,7 @@ Section SubstTac.
                       (ptrnApplySubst Ptrns.get Ptrns.get Ptrns.get)).
 
   Definition SUBST := SIMPL true (red_beta (fun x e args => red_subst (apps e args))).
+
 End SubstTac.
 
 Section ReifySubstType.
@@ -698,9 +727,6 @@ End ReifySubstType.
 Arguments reify_subst_typ _ _ {_} _ _ {_ _ _ _ _}.
 *)
 Arguments reify_subst_typ _ _ _ _ {_ _ _ _ _}.
-
-
-Require Import MirrorCore.Reify.ReifyClass.
 
 Section ReifySubst.
   Context {typ func: Set} {RType_typ : RType typ}.

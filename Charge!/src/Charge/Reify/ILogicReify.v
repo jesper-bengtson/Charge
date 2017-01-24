@@ -77,6 +77,9 @@ Section ReifyProp.
   Definition reify_por : Command@{Set} (expr typ func) :=
     CPattern (ls := nil) (RExact or) (Inj (fOr tyProp)).
 
+  Definition reify_pbimpl : Command@{Set} (expr typ func) :=
+    CPattern (ls := nil) (RExact (Basics.impl)) (Inj (fImpl tyProp)).
+
   Definition reify_pimpl : Command@{Set} (expr typ func) :=
     CPattern (ls := (expr typ func:Type)::(expr typ func:Type)::nil) 
              (RImpl (RGet 0 RIgnore) (RGet 1 RIgnore))
@@ -95,9 +98,19 @@ Section ReifyProp.
 
   Definition reify_plogic : Command@{Set} (expr typ func) :=
     CFirst (reify_ptrue :: reify_pfalse :: reify_pand :: reify_por :: 
-            reify_pimpl :: reify_pforall :: reify_pexists :: nil).
+            reify_pbimpl :: reify_pimpl :: reify_pforall :: reify_pexists :: nil).
 
 End ReifyProp.
+
+Section IgnoreILogic.
+
+  Definition reify_ILogicOps : RPattern :=
+    RApp (RExact (@ILogicOps)) RIgnore.
+  
+  Definition reify_ILogic : RPattern  :=
+    RApp (RApp (RExact (@ILogic)) RIgnore) RIgnore.
+ 
+End IgnoreILogic.
 
 Arguments reify_ilogic _ _ {_ _}.
 Arguments reify_plogic _ _ {_ _ _ _}.

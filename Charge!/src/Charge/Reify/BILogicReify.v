@@ -36,4 +36,15 @@ Section ReifyBILogic.
 
 End ReifyBILogic.
 
+Section IgnoreILogic.
+
+  Definition reify_BILogicOps : RPattern :=
+    RApp (RExact (@BILogicOps)) RIgnore.
+  
+  Definition reify_BILogic : RPattern  :=
+    RApp (RApp (RApp (RExact (@BILogic)) RIgnore) RIgnore) RIgnore.
+ 
+End IgnoreILogic.
+
+
 Arguments reify_bilogic _ _ {_ _}.

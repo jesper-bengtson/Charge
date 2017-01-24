@@ -55,7 +55,7 @@ Section seplog_fold.
 
   Record SepLogAndSpecOk (sls : SepLogAndSpec)
          (OPS : ILogic.ILogicOps (typD SL))
-         (BI : BILOperators (typD SL)) : Type :=
+         (BI : BILogicOps (typD SL)) : Type :=
   { _PureOp : @PureOp (typD SL)
   ; _Pure : @Pure _ OPS BI _PureOp
   ; His_pure : forall e,
@@ -230,7 +230,7 @@ Section seplog_fold.
 
 (* TODO(gmalecha): Port the proof!
   Section sound.
-    Hypothesis BILOps : BILOperators (typD nil SL).
+    Hypothesis BILOps : BILogicOps (typD nil SL).
     Context R_t `{slaok : SepLogArgsOk R_t}.
 
     Lemma atomic_ok
@@ -366,7 +366,7 @@ Section seplog_fold.
 
 (*
   Variable OPS : ILogic.ILogicOps (typD ts nil SL).
-  Variable BI : BILOperators (typD ts nil SL).
+  Variable BI : BILogicOps (typD ts nil SL).
   Variable slsok : SepLogSpecOk sls OPS BI.
 
   Require Import Relations.

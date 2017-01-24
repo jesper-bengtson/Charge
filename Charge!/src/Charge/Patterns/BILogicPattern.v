@@ -181,3 +181,16 @@ Section BILogicPtrn.
                   do_emp do_star do_wand)
                do_default.
 End BILogicPtrn.
+
+Section BILogicPointwiseRes.
+  Context {typ func : Set} {FV : PartialView func (bilfunc typ)}.
+
+  Definition bil_pointwise_red
+    (f : typ -> expr typ func -> expr typ func) 
+    (g : typ -> typ) :=
+    bilogic_ptrn_cases
+      (fun t => mkEmp (g t))
+      (fun t p q => mkStar (g t) (f t p) (f t q))
+      (fun t p q => mkWand (g t) (f t p) (f t q)).
+
+End BILogicPointwiseRes.

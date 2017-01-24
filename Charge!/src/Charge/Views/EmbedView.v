@@ -3,6 +3,8 @@ Require Import ExtLib.Data.POption.
 Require Import ExtLib.Tactics.Consider.
 
 Require Import MirrorCore.SymI.
+Require Import MirrorCore.CTypes.CoreTypes.
+Require Import MirrorCore.CTypes.CTypeUnify.
 
 Require Import ChargeCore.Logics.ILogic.
 Require Import ChargeCore.Logics.ILEmbed.
@@ -111,3 +113,20 @@ Section EmbedFuncInst.
   Definition eil_pointwise := typ -> typ -> bool.
 
 End EmbedFuncInst.
+
+Section BILogicUnify.
+  Context {typ' : nat -> Set}.
+  
+  Let typ := ctyp typ'.
+
+  Definition embed_func_unify (a b : embed_func typ) (s : FMapPositive.pmap typ) : 
+    option (FMapPositive.pmap typ) :=
+    match a, b with
+	| eilf_embed t u, eilf_embed t' u' => 
+      match ctype_unify_slow _ t t' s with
+      | Some s' => ctype_unify_slow _ u u' s'
+      | None => None
+      end
+    end.
+    
+End BILogicUnify.
