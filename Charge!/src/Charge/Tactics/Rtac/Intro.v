@@ -24,8 +24,8 @@ Section IntroTac.
       (fun _ _ _ => None)
       (fun _ _ _ => None)
       (fun _ P Q => Some (AsHy P Q))
-      (fun t _ P => Some (AsEx t (fun x => beta (App P x))))
-      (fun t _ P => Some (AsAl t (fun x => beta (App P x))))
+      (fun t _ P => Some (AsEx t (fun x => beta (App (Abs t P) x))))
+      (fun t _ P => Some (AsAl t (fun x => beta (App (Abs t P) x))))
       None.
 
     Definition INTRO := @INTRO typ (expr typ func) EV EU fintro.

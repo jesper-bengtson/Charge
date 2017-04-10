@@ -732,6 +732,7 @@ Section ReifySubst.
   Context {typ func: Set} {RType_typ : RType typ}.
   Context {var val : Type}.
   Context {PV : PartialView func (subst_func typ)}.
+  Context {VN : ValNull val}.
   Context {RelDec_eq : RelDec (@eq var)}.
   Context {r : Reify typ}.
 
@@ -779,7 +780,7 @@ Section ReifySubst.
 
   Definition reify_trunc_subst : Command (expr typ func) :=
     CPattern (ls := nil)
-             (RExact (@substl_trunc var val RelDec_eq))
+             (RExact (@substl_trunc var val RelDec_eq VN))
              (Inj (@fTruncSubst typ func PV)).
 
   Definition reify_subst : Command (expr typ func) :=
@@ -788,4 +789,4 @@ Section ReifySubst.
 
 End ReifySubst.
 
-Arguments reify_subst _ _ _ _ {_ _ _}.
+Arguments reify_subst _ _ _ _ {_ _ _ _}.
