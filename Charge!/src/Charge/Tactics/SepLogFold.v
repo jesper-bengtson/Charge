@@ -15,16 +15,17 @@ Require Import MirrorCore.ExprI.
 Require Import MirrorCore.Lambda.Expr.
 Require Import MirrorCore.Lambda.AppN.
 Require Import MirrorCore.Lambda.TypedFoldApp.
+Require Import ExtLib.Structures.Applicative.
 
 Set Implicit Arguments.
 Set Strict Implicit.
 
 (** NOTE: This could work on arbitrary expr's **)
 Section seplog_fold.
-  Variable typ : Type.
+  Variable typ : Set.
   Variable RType_typ : RType typ.
   Variable Typ2_Fun : Typ2 _ RFun.
-  Variable sym : Type.
+  Variable sym : Set.
   Variable RSym_sym : RSym sym.
 
   Let tyArr : typ -> typ -> typ := @typ2 _ _ _ _.
@@ -53,14 +54,14 @@ Section seplog_fold.
 
   Record SepLogSpecOk (sls : SepLogSpec)
          (OPS : ILogic.ILogicOps (typD SL))
-         (BI : BILOperators (typD SL)) : Type :=
+         (BI : BILogicOps (typD SL)) : Type :=
   { _PureOp : @PureOp (typD SL)
   ; _Pure : @Pure _ OPS BI _PureOp
   ; His_pure : forall e,
                  sls.(is_pure) e = true ->
                  forall us vs val,
                    env_exprD us vs SL e = Some val ->
-                   pure val
+                   Pure.pure val
   ; His_emp : forall e,
                 sls.(is_emp) e = true ->
                 forall us vs,
@@ -111,7 +112,6 @@ Section seplog_fold.
         R_t (apps (Inj e) (l :: r :: nil)) (sla.(do_star) l_res r_res) tus tvs
   }.
 
-  Require Import ExtLib.Structures.Applicative.
   Instance Applicative_Lazy : Applicative Lazy :=
   { ap := fun _ _ f x z =>
             match f z , x z with
@@ -193,7 +193,7 @@ Section seplog_fold.
 
 (* TODO(gmalecha): Port the proof!
   Section sound.
-    Hypothesis BILOps : BILOperators (typD nil SL).
+    Hypothesis BILOps : BILogicOps (typD nil SL).
     Context R_t `{slaok : SepLogArgsOk R_t}.
 
     Lemma atomic_ok
@@ -329,7 +329,7 @@ Section seplog_fold.
 
 (*
   Variable OPS : ILogic.ILogicOps (typD ts nil SL).
-  Variable BI : BILOperators (typD ts nil SL).
+  Variable BI : BILogicOps (typD ts nil SL).
   Variable slsok : SepLogSpecOk sls OPS BI.
 
   Require Import Relations.

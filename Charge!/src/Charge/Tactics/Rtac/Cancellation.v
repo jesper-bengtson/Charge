@@ -13,7 +13,9 @@ Require Import Charge.Tactics.BILNormalize.
 Require Import Charge.Tactics.SynSepLog.
 Require Import Charge.Tactics.SepLogFoldWithAnd.
 Require Import Charge.Views.ILogicView.
+Require Import Charge.Patterns.ILogicPattern.
 Require Import Charge.Views.BILogicView.
+Require Import Charge.Patterns.BILogicPattern.
 
 Require Import MirrorCore.Views.FuncView.
 Require Import MirrorCore.Views.Ptrns.
@@ -23,7 +25,7 @@ Set Implicit Arguments.
 Set Strict Implicit.
 
 Section Canceller.
-  Context (typ func subst : Type) (tyLogic : typ).
+  Context (typ func : Set) (subst : Type) (tyLogic : typ).
   Context {FVIL : PartialView func (ilfunc typ)}.
   Context {FVBIL : PartialView func (bilfunc typ)}.
   Context {RType_typ : RType typ} {RelDec_typ : RelDec (@eq typ)}.

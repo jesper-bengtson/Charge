@@ -22,16 +22,16 @@ Set Implicit Arguments.
 Set Strict Implicit.
 
 Section ordered_cancel.
-  Variable typ : Type.
+  Variable typ : Set.
   Variable RType_typ : RType typ.
   Variable Typ2_Fun : Typ2 _ RFun.
-  Variable func : Type.
+  Variable func : Set.
   Variable RSym_func : RSym func.
 
   Let Expr_expr : ExprI.Expr _ (expr typ func) := Expr_expr.
   Local Existing Instance Expr_expr.
 
-  Inductive Conjuncts : Type :=
+  Inductive Conjuncts : Set :=
   | Pure (_ : expr typ func) (c : Conjuncts)
   | Impure (f : expr typ func) (xs : list (expr typ func)) (c : Conjuncts)
   | Frame (_ : expr typ func) (xs : list (expr typ func)) (c : Conjuncts)
@@ -146,9 +146,9 @@ Section ordered_cancel.
 
   Variable tySL : typ.
   Variable ILogicOps_SL : ILogicOps (typD tySL).
-  Variable BILOperators_SL : BILOperators (typD tySL).
+  Variable BILogicOps_SL : BILogicOps (typD tySL).
   Hypothesis ILogic_SL : @ILogic _ ILogicOps_SL.
-  Hypothesis BILogic_SL : @BILogic _ ILogicOps_SL BILOperators_SL.
+  Hypothesis BILogic_SL : @BILogic _ ILogicOps_SL BILogicOps_SL.
 
 (*  Hypothesis eprovePureOk : eprovePure_spec.
 
@@ -770,17 +770,17 @@ End ordered_cancel.
  ** map without looking at unification variables.
  **)
 Section simple_ordering.
-  Variable typ : Type.
+  Variable typ : Set.
   Variable RType_typ : RType typ.
   Variable Typ2_Fun : Typ2 _ RFun.
-  Variable func : Type.
+  Variable func : Set.
   Variable RSym_func : RSym func.
 
   Variable tySL : typ.
   Variable ILogicOps_SL : ILogicOps (typD tySL).
-  Variable BILOperators_SL : BILOperators (typD tySL).
+  Variable BILogicOps_SL : BILogicOps (typD tySL).
   Hypothesis ILogic_SL : @ILogic _ ILogicOps_SL.
-  Hypothesis BILogic_SL : @BILogic _ ILogicOps_SL BILOperators_SL.
+  Hypothesis BILogic_SL : @BILogic _ ILogicOps_SL BILogicOps_SL.
 
   Definition simple_order (c : conjunctives typ func) : Conjuncts typ func :=
     List.fold_right (fun x =>

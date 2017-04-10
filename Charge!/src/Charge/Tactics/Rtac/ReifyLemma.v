@@ -9,9 +9,10 @@ Require Import MirrorCore.Views.Ptrns.
 Require Import MirrorCore.Views.FuncView.
 
 Require Import Charge.Views.ILogicView.
+Require Import Charge.Patterns.ILogicPattern.
 
 Section ReifyLemma.
-  Context {typ func : Type} {HIL : PartialView func (ilfunc typ)}.
+  Context {typ func : Set} {HIL : PartialView func (ilfunc typ)}.
   Context {RType_typ : RType typ}.
   Context {Typ0_tyProp : Typ0 RType_typ Prop}.
   Context {Heq : RelDec (@eq typ)}.
@@ -52,8 +53,8 @@ End ReifyLemma.
 
 Ltac reify_lemma_aux reify T :=
   let k e :=
-    let e := constr:(convert_to_lemma e) in
-    let e := eval unfold convert_to_lemma in e in
+      let e := constr:(convert_to_lemma e) in
+      let e := eval unfold convert_to_lemma in e in
   let e := eval simpl in e in
                           refine e
                         in

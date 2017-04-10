@@ -37,7 +37,7 @@ Section lemmas.
   Variable P : Type.
   Variable ILogicOps_P : ILogicOps P.
   Variable ILogic_P : ILogic P.
-  Variable BILOperators_P : BILOperators P.
+  Variable BILogicOps_P : BILogicOps P.
   Variable BILogic_P : BILogic P.
   Variable PureOp_P : @PureOp P.
   Variable Pure_P : Pure PureOp_P.
@@ -74,10 +74,10 @@ Section lemmas.
 End lemmas.
 
 Section conjunctives.
-  Variable typ : Type.
+  Variable typ : Set.
   Variable RType_typ : RType typ.
   Variable Typ2_Fun : Typ2 _ RFun.
-  Variable sym : Type.
+  Variable sym : Set.
   Variable RSym_sym : RSym sym.
 
   Let Expr_expr : Expr _ (expr typ sym) := Expr_expr.
@@ -124,7 +124,7 @@ Section conjunctives.
 
   Section conjunctivesD.
     Variable ILO : ILogicOps (typD SL).
-    Variable BILO : BILOperators (typD SL).
+    Variable BILO : BILogicOps (typD SL).
     Variable IL : @ILogic _ ILO.
     Variable BIL : @BILogic _ ILO BILO.
 
@@ -941,7 +941,7 @@ generalize (@iterated_base_cons _ SSL.(e_true) SSL.(e_and)
 (*
   Theorem normalizeOk
           (ILO : ILogicOps (typD nil SL))
-          (BILO : BILOperators (typD nil SL))
+          (BILO : BILogicOps (typD nil SL))
           (IL : @ILogic _ ILO)
           (BIL : @BILogic _ ILO BILO)
           (sls : SepLogSpec _ sym) (slsOk : SepLogSpecOk _ _ _ sls _ _)

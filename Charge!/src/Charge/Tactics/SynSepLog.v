@@ -17,17 +17,17 @@ Set Implicit Arguments.
 Set Strict Implicit.
 
 Section syn_sep_log.
-  Variable typ : Type.
+  Variable typ : Set.
   Variable RType_typ : RType typ.
   Variable Typ2_Fun : Typ2 _ RFun.
-  Variable sym : Type.
+  Variable sym : Set.
   Variable RSym_sym : RSym sym.
 
   Variable SL : typ.
 
   Variable SLS : SepLogSpec typ sym.
   Variable ILO : ILogicOps (typD SL).
-  Variable BILO : BILOperators (typD SL).
+  Variable BILO : BILogicOps (typD SL).
   Variable IL : @ILogic _ ILO.
   Variable BIL : @BILogic _ ILO BILO.
 

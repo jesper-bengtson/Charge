@@ -7,7 +7,7 @@ Require Import ExtLib.Data.HList.
 
 Section Reflexivity.
 (*
-  Context {typ func : Type} {RType_typ : RType typ} {RSym_func : RSym (expr typ func)}.
+  Context {typ func : Set} {RType_typ : RType typ} {RSym_func : RSym (expr typ func)}.
   Context {BF : BaseFunc typ func}.
   
   Context {Expr_func : Expr RType_typ (expr typ func)}.
