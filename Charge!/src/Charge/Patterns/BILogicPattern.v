@@ -185,12 +185,12 @@ End BILogicPtrn.
 Section BILogicPointwiseRes.
   Context {typ func : Set} {FV : PartialView func (bilfunc typ)}.
 
-  Definition bil_pointwise_red
-    (f : typ -> expr typ func -> expr typ func) 
+  Definition bil_pointwise_red 
+    (f : typ -> expr typ func -> typ * expr typ func) 
     (g : typ -> typ) :=
     bilogic_ptrn_cases
-      (fun t => mkEmp (g t))
-      (fun t p q => mkStar (g t) (f t p) (f t q))
-      (fun t p q => mkWand (g t) (f t p) (f t q)).
+      (fun t => (t, mkEmp (g t)))
+      (fun t p q => (t, mkStar (g t) (snd (f t p)) (snd (f t q))))
+      (fun t p q => (t, mkWand (g t) (snd (f t p)) (snd (f t q)))).
 
 End BILogicPointwiseRes.

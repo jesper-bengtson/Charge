@@ -511,16 +511,16 @@ Section ILogicPointwiseRes.
 
   Let tyArr := @typ2 typ _ _ _.
 
-  Definition il_pointwise_red
-    (f : typ -> expr typ func -> expr typ func) 
+  Definition il_pointwise_red (tus tvs : tenv typ)
+    (f : tenv typ -> tenv typ -> typ -> expr typ func -> typ * expr typ func) 
     (g : typ -> typ) :=
     ilogic_ptrn_cases
-      (fun t => mkTrue (g t))
-      (fun t => mkFalse (g t))
-      (fun t p q => mkAnd (g t) (f t p) (f t q))
-      (fun t p q => mkOr (g t) (f t p) (f t q))
-      (fun t p q => mkImpl (g t) (f t p) (f t q))
-      (fun t u p => mkExists t (g u) (f u p))
-      (fun t u p => mkForall t (g u) (f u p)).   
+      (fun t => (t, mkTrue (g t)))
+      (fun t => (t, mkFalse (g t)))
+      (fun t p q => (t, mkAnd (g t) (snd (f tus tvs t p)) (snd (f tus tvs t q))))
+      (fun t p q => (t, mkOr (g t) (snd (f tus tvs t p)) (snd (f tus tvs t q))))
+      (fun t p q => (t, mkImpl (g t) (snd (f tus tvs t p)) (snd (f tus tvs t q))))
+      (fun t u p => (t, mkExists t (g u) (snd (f tus (t::tvs) u p))))
+      (fun t u p => (t, mkForall t (g u) (snd (f tus (t::tvs) u p)))).      
 
 End ILogicPointwiseRes.
